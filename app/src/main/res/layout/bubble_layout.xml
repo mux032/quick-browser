@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Bubble Head -->
+    <FrameLayout
+        android:id="@+id/bubble_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/bubble_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bubble_background"
+            android:contentDescription="@string/bubble_description"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            tools:src="@drawable/ic_globe" />
+
+        <ProgressBar
+            android:id="@+id/progress_circular"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/progress_circle" />
+    </FrameLayout>
+
+    <!-- Expanded Bubble Content -->
+    <FrameLayout
+        android:id="@+id/expanded_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <!-- Main Content Area -->
+        <FrameLayout
+            android:id="@+id/content_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="48dp">
+
+            <!-- WebView for regular bubbles -->
+            <WebView
+                android:id="@+id/web_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <!-- Tab list for main bubble -->
+            <LinearLayout
+                android:id="@+id/tabs_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/open_tabs"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
+                        android:textColor="?android:attr/textColorPrimary" />
+
+                    <ImageButton
+                        android:id="@+id/btn_new_tab"
+                        style="@style/Bubble.Button"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/add_new_bubble"
+                        android:src="@drawable/ic_add" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/tabs_recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:clipToPadding="false"
+                    android:padding="8dp" />
+
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Toolbar -->
+        <LinearLayout
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="?attr/colorPrimary"
+            android:elevation="4dp"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_close"
+                style="@style/Bubble.Button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/close_bubble"
+                android:src="@drawable/ic_close" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/btn_read_mode"
+                style="@style/Bubble.Button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/read_mode"
+                android:src="@drawable/ic_read_mode" />
+
+            <ImageButton
+                android:id="@+id/btn_save_offline"
+                style="@style/Bubble.Button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/save_for_offline"
+                android:src="@drawable/ic_save" />
+
+            <ImageButton
+                android:id="@+id/btn_open_full"
+                style="@style/Bubble.Button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/open_in_full_view"
+                android:src="@drawable/ic_open_full" />
+        </LinearLayout>
+
+        <!-- Feedback message -->
+        <TextView
+            android:id="@+id/save_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/message_background"
+            android:padding="8dp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:visibility="gone" />
+
+    </FrameLayout>
+</LinearLayout>

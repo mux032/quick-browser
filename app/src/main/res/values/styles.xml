@@ -1,0 +1,39 @@
+<resources>
+    <!-- Base text styles -->
+    <style name="TextAppearance.QBrowser.Headline" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.QBrowser.Title" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <style name="TextAppearance.QBrowser.Body" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textSize">16sp</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
+    </style>
+
+    <!-- Bubble specific styles -->
+    <style name="Bubble.Button" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:minWidth">36dp</item>
+        <item name="android:minHeight">36dp</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+    </style>
+    
+    <!-- Read mode styles -->
+    <style name="ReadMode.Title" parent="TextAppearance.QBrowser.Headline">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="android:layout_marginBottom">16dp</item>
+    </style>
+    
+    <style name="ReadMode.Content" parent="TextAppearance.QBrowser.Body">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="android:lineSpacingMultiplier">1.5</item>
+    </style>
+</resources>

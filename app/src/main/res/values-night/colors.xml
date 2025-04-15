@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night theme colors -->
+    <color name="primaryColorDark">#303F9F</color>
+    <color name="primaryDarkColorDark">#1A237E</color>
+    <color name="primaryTextColorDark">#FFFFFF</color>
+    <color name="secondaryColorDark">#5C6BC0</color>
+    <color name="secondaryDarkColorDark">#3949AB</color>
+    <color name="secondaryTextColorDark">#FFFFFF</color>
+    
+    <!-- Override daylight colors with night colors -->
+    <color name="bubble_background">#303F9F</color>
+    <color name="bubble_inactive">#5C6BC0</color>
+    <color name="tab_background">#283593</color>
+    <color name="tab_selected_background">#303F9F</color>
+    <color name="tab_text">#E8EAF6</color>
+    <color name="tab_selected_text">#FFFFFF</color>
+</resources>

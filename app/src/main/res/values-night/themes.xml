@@ -1,0 +1,22 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dark application theme. -->
+    <style name="Theme.QBrowser" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primaryColorDark</item>
+        <item name="colorPrimaryVariant">@color/primaryDarkColorDark</item>
+        <item name="colorOnPrimary">@color/primaryTextColorDark</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/secondaryColorDark</item>
+        <item name="colorSecondaryVariant">@color/secondaryDarkColorDark</item>
+        <item name="colorOnSecondary">@color/secondaryTextColorDark</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">@color/primaryDarkColorDark</item>
+        <!-- Customize your theme here. -->
+        <item name="android:navigationBarColor">@color/primaryDarkColorDark</item>
+    </style>
+
+    <style name="Theme.QBrowser.ReadMode" parent="Theme.QBrowser">
+        <item name="android:background">@color/read_mode_background_dark</item>
+        <item name="android:textColor">@color/read_mode_text_dark</item>
+    </style>
+</resources>

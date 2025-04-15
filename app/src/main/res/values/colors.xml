@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Main colors -->
+    <color name="primary">#3F51B5</color>
+    <color name="primary_dark">#303F9F</color>
+    <color name="primary_light">#C5CAE9</color>
+    <color name="colorAccent">#FF4081</color>
+    
+    <!-- Aliases for themes.xml compatibility -->
+    <color name="colorPrimary">@color/primary</color>
+    <color name="colorPrimaryDark">@color/primary_dark</color>
+    <color name="primaryTextColor">#FFFFFF</color>
+    <color name="secondaryColor">#E91E63</color>
+    <color name="secondaryDarkColor">#C2185B</color>
+    <color name="secondaryTextColor">#FFFFFF</color>
+    
+    <!-- Text colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    
+    <!-- Bubble UI colors -->
+    <color name="bubble_background">#F5F5F5</color>
+    <color name="tab_background">#EEEEEE</color>
+    <color name="tab_text">#424242</color>
+    <color name="selected_tab">#E8F0FE</color>
+    
+    <!-- Read mode colors -->
+    <color name="read_mode_background_light">#FAFAFA</color>
+    <color name="read_mode_text_light">#212121</color>
+    <color name="read_mode_background_dark">#121212</color>
+    <color name="read_mode_text_dark">#E0E0E0</color>
+    <color name="read_mode_background_sepia">#F9F2E7</color>
+    <color name="read_mode_text_sepia">#5B4636</color>
+    <color name="read_mode_link_light">#1976D2</color>
+    <color name="read_mode_link_dark">#90CAF9</color>
+    <color name="read_mode_link_sepia">#8E644B</color>
+
+    <color name="primaryColorDark">#303F9F</color>
+    <color name="primaryDarkColorDark">#1A237E</color>
+    <color name="primaryTextColorDark">#FFFFFF</color>
+    <color name="secondaryColorDark">#5C6BC0</color>
+    <color name="secondaryDarkColorDark">#3949AB</color>
+    <color name="secondaryTextColorDark">#FFFFFF</color>
+
+
+    <color name="bubble_inactive">#5C6BC0</color>
+    <color name="tab_selected_background">#303F9F</color>
+    <color name="tab_selected_text">#FFFFFF</color>
+</resources>

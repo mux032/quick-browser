@@ -1,0 +1,70 @@
+# Ad blocking hosts file for QB Browser
+# This is a simplified hosts file for demonstration purposes
+
+# Google Ads
+127.0.0.1 pagead2.googlesyndication.com
+127.0.0.1 adservice.google.com
+127.0.0.1 googleads.g.doubleclick.net
+127.0.0.1 ad.doubleclick.net
+127.0.0.1 static.doubleclick.net
+127.0.0.1 partnerad.l.doubleclick.net
+127.0.0.1 pubads.g.doubleclick.net
+127.0.0.1 securepubads.g.doubleclick.net
+127.0.0.1 www.googleadservices.com
+127.0.0.1 tpc.googlesyndication.com
+
+# Google Analytics (tracking)
+127.0.0.1 google-analytics.com
+127.0.0.1 ssl.google-analytics.com
+127.0.0.1 www.google-analytics.com
+
+# Facebook ads and tracking
+127.0.0.1 pixel.facebook.com
+127.0.0.1 an.facebook.com
+127.0.0.1 ads.facebook.com
+
+# Twitter ads and tracking
+127.0.0.1 ads-twitter.com
+127.0.0.1 static.ads-twitter.com
+127.0.0.1 analytics.twitter.com
+
+# General ad networks
+127.0.0.1 ads.youtube.com
+127.0.0.1 ad.mo.doubleclick.net
+127.0.0.1 adclick.g.doubleclick.net
+127.0.0.1 adeventtracker.spotify.com
+127.0.0.1 adserver.adtechus.com
+127.0.0.1 adserver.snapads.com
+127.0.0.1 advertising.com
+127.0.0.1 amplifypixel.outbrain.com
+127.0.0.1 analytics-api.samsunghealthcn.com
+127.0.0.1 analytics.mopub.com
+127.0.0.1 analytics.yahoo.com
+127.0.0.1 analytics.query.yahoo.com
+127.0.0.1 api.taboola.com
+127.0.0.1 banners.itunes.apple.com
+127.0.0.1 cdn.taboola.com
+127.0.0.1 collector.github.com
+127.0.0.1 engine.4dsply.com
+127.0.0.1 events.redditmedia.com
+127.0.0.1 log.pinterest.com
+127.0.0.1 logc.yandex.ru
+127.0.0.1 logging.galaxyappstore.com
+127.0.0.1 mads.amazon-adsystem.com
+127.0.0.1 match.adsrvr.org
+127.0.0.1 pings.conviva.com
+127.0.0.1 pixel.adsafeprotected.com
+127.0.0.1 pixel.wp.com
+127.0.0.1 pixels.asia
+127.0.0.1 sb.scorecardresearch.com
+127.0.0.1 share.baidu.com
+127.0.0.1 smetrics.samsung.com
+127.0.0.1 snapads.com
+127.0.0.1 soma.smaato.net
+127.0.0.1 stats.wp.com
+127.0.0.1 telemetry.microsoft.com
+127.0.0.1 tpc.googlesyndication.com
+127.0.0.1 track.adform.net
+127.0.0.1 vid.applovin.com
+127.0.0.1 ws.tapjoyads.com
+127.0.0.1 www.clarity.ms

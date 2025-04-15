@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Share files from app's internal storage -->
+    <files-path
+        name="offline_pages"
+        path="offline_pages/" />
+    
+    <!-- Share files from external storage -->
+    <external-files-path
+        name="external_offline_pages"
+        path="offline_pages/" />
+    
+    <!-- Share files from app cache -->
+    <cache-path
+        name="offline_cache"
+        path="offline_pages/" />
+</paths>

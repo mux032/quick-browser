@@ -1,0 +1,5 @@
+#folders
+.gradle/
+.DS_Store
+android-sdk/
+app/build/
