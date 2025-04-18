@@ -101,17 +101,18 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        Log.d(TAG, "startBubbleServiceWithUrl: Starting service with URL: $url")
         val intent =
                 Intent(this, BubbleService::class.java).apply {
                     action = Constants.ACTION_CREATE_BUBBLE
-                    putExtra(BubbleService.EXTRA_URL, url)
+                    putExtra(Constants.EXTRA_URL, url)
                 }
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)
             } else {
-                Log.e(TAG, "Its not great Build.VERSION.SDK_INT >= Build.VERSION_CODES.O")
+                Log.d(TAG, "Using startService for pre-Oreo devices")
                 startService(intent)
             }
             moveTaskToBack(true)
@@ -151,14 +152,21 @@ class MainActivity : AppCompatActivity() {
      * Handles incoming intents to perform actions like opening URLs or starting the bubble browser.
      */
     private fun handleIntent(intent: Intent) {
+        Log.d(TAG, "handleIntent | Received intent: ${intent.action}, data: ${intent.extras}")
         when (intent.action) {
             Intent.ACTION_SEND -> {
-                intent.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedText ->
+                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                Log.d(TAG, "Received shared text: $sharedText")
+                if (sharedText != null) {
                     startBubbleServiceWithUrl(sharedText)
                 }
             }
             Intent.ACTION_VIEW -> {
-                intent.data?.toString()?.let { url -> startBubbleServiceWithUrl(url) }
+                val url = intent.data?.toString()
+                Log.d(TAG, "Received view URL: $url")
+                if (url != null) {
+                    startBubbleServiceWithUrl(url)
+                }
             }
             else -> {
                 if (!isBubbleServiceRunning()) {

@@ -258,6 +258,7 @@ class BubbleView @JvmOverloads constructor(
         }
     }
     
+    
     /**
      * Open the web page in a full WebView activity
      */

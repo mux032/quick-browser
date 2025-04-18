@@ -6,6 +6,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.qb.browser.Constants
 import com.qb.browser.QBApplication
+import com.qb.browser.manager.BubbleDisplayManager
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.manager.BubbleNotificationManager
 import com.qb.browser.manager.BubblePositionManager
@@ -31,6 +32,7 @@ class BubbleService : LifecycleService() {
     private lateinit var bubbleManager: BubbleManager
     private lateinit var notificationManager: BubbleNotificationManager
     private lateinit var positionManager: BubblePositionManager
+    private lateinit var bubbleDisplayManager: BubbleDisplayManager
     private lateinit var intentProcessor: BubbleIntentProcessor
     private lateinit var webPageDao: WebPageDao
 
@@ -76,7 +78,14 @@ class BubbleService : LifecycleService() {
             notificationManager = BubbleNotificationManager(this)
             positionManager = BubblePositionManager(this)
             val database = AppDatabase.getInstance(this)
-            val webPageDao = database.webPageDao() // Inject WebPageDao from application context
+            webPageDao = database.webPageDao() // Inject WebPageDao from application context
+
+            // Initialize BubbleDisplayManager to handle UI
+            bubbleDisplayManager = BubbleDisplayManager(
+                context = this,
+                bubbleViewModel = app.bubbleViewModel,
+                lifecycleScope = lifecycleScope
+            )
 
             // Initialize BubbleIntentProcessor with necessary dependencies
             intentProcessor =
@@ -109,7 +118,9 @@ class BubbleService : LifecycleService() {
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
+        bubbleDisplayManager.cleanup()
         bubbleManager.cleanup()
         serviceJob.cancel()
+        Log.d(TAG, "BubbleService onDestroy()")
     }
 }

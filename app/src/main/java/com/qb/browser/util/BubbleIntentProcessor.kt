@@ -133,7 +133,8 @@ class BubbleIntentProcessor(
      * @param intent The incoming intent containing the shared content.
      */
     private fun handleSharedContent(intent: Intent) {
-        val sharedText = intent.getStringExtra(Constants.EXTRA_URL)
+        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+        Log.d(TAG, "handleSharedContent | Received shared text: $sharedText")
         if (sharedText != null && isValidUrl(sharedText)) {
             bubbleManager.createOrUpdateBubbleWithNewUrl(sharedText)
             Log.d(TAG, "Opened shared URL in bubble: $sharedText")
@@ -159,6 +160,17 @@ class BubbleIntentProcessor(
      * @return True if the URL is valid, false otherwise.
      */
     private fun isValidUrl(url: String): Boolean {
-        return Patterns.WEB_URL.matcher(url).matches()
+        // First try with Android's built-in pattern
+        if (Patterns.WEB_URL.matcher(url).matches()) {
+            return true
+        }
+        
+        // If that fails, try a more lenient approach for URLs that might have special characters
+        // or don't strictly match the pattern but are still valid URLs
+        val lowerUrl = url.lowercase()
+        return lowerUrl.startsWith("http://") || 
+               lowerUrl.startsWith("https://") || 
+               lowerUrl.startsWith("www.") ||
+               lowerUrl.contains(".")
     }
 }
