@@ -75,12 +75,15 @@ class BubbleIntentProcessor(
     private fun handleActivateBubble(intent: Intent) {
         // Since there's only one bubble, we can simulate activation by re-loading the current URL.
         val currentBubbles = bubbleManager.bubbles.value
-        val bubble = currentBubbles["single_bubble"]
+        val bubbleId = intent.getStringExtra(BubbleService.EXTRA_BUBBLE_ID) ?: "single_bubble"
+        val bubble = currentBubbles[bubbleId]
+        
         if (bubble != null) {
-            bubbleManager.createOrUpdateBubbleWithNewUrl(bubble.url)
-            Log.d(TAG, "Bubble activated with URL: ${bubble.url}")
+            // We don't need to reload the URL here since the BubbleView now handles expansion directly
+            // Just log that the bubble was activated
+            Log.d(TAG, "Bubble activated with ID: $bubbleId, URL: ${bubble.url}")
         } else {
-            Log.w(TAG, "No bubble found to activate")
+            Log.w(TAG, "No bubble found to activate with ID: $bubbleId")
         }
     }
 

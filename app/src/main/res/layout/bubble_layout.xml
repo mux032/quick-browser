@@ -37,8 +37,10 @@
     <!-- Expanded Bubble Content -->
     <FrameLayout
         android:id="@+id/expanded_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="300dp"
+        android:layout_height="400dp"
+        android:background="@android:color/white"
+        android:elevation="8dp"
         android:visibility="gone">
 
         <!-- Main Content Area -->
@@ -53,6 +55,7 @@
                 android:id="@+id/web_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@android:color/white"
                 android:visibility="gone" />
 
             <!-- Tab list for main bubble -->

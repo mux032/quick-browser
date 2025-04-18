@@ -115,15 +115,22 @@ class BubbleView @JvmOverloads constructor(
 
         // Set up click listeners
         setOnClickListener {
-            val intent = Intent(context, BubbleService::class.java).apply {
-                if (isMainBubble) {
+            if (isMainBubble) {
+                val intent = Intent(context, BubbleService::class.java).apply {
                     action = BubbleService.ACTION_TOGGLE_BUBBLES
-                } else {
+                }
+                context.startService(intent)
+            } else {
+                // Directly toggle the expanded state for regular bubbles
+                toggleBubbleExpanded()
+                
+                // Also notify the service that this bubble is active
+                val intent = Intent(context, BubbleService::class.java).apply {
                     action = BubbleService.ACTION_ACTIVATE_BUBBLE
                     putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
                 }
+                context.startService(intent)
             }
-            context.startService(intent)
         }
         
         findViewById<View>(R.id.btn_close).setOnClickListener {
@@ -189,6 +196,9 @@ class BubbleView @JvmOverloads constructor(
             useWideViewPort = true
             builtInZoomControls = true
             displayZoomControls = false
+            setSupportZoom(true)
+            setGeolocationEnabled(true)
+            loadsImagesAutomatically = true
         }
 
         webViewContainer.webChromeClient =
@@ -201,10 +211,12 @@ class BubbleView @JvmOverloads constructor(
                         icon?.let { updateFavicon(it) }
                     }
                 }
-
-        // Load the URL
-        Log.e(TAG, "Loading URL: $url")
-        webViewContainer.loadUrl(url)
+                
+        // Set WebView background to be transparent until page loads
+        webViewContainer.setBackgroundColor(0x00000000)
+        
+        // Don't load the URL here - we'll load it when the bubble is expanded
+        Log.d(TAG, "WebView initialized and ready to load URL: $url")
     } catch (e: Exception) {
         Log.e(TAG, "Error setting up WebView", e)
     }
@@ -224,9 +236,24 @@ class BubbleView @JvmOverloads constructor(
             // Bounce the bubble
             bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), true)
             
-            // For non-main bubbles, load the webpage when expanded
+            // For non-main bubbles, ensure WebView is visible and load the webpage
             if (!isMainBubble) {
-                webViewContainer.loadUrl(url)
+                // Make sure WebView is visible
+                webViewContainer.visibility = View.VISIBLE
+                tabsContainer.visibility = View.GONE
+                
+                // Set the dimensions for the expanded container
+                val layoutParams = expandedContainer.layoutParams
+                layoutParams.width = resources.displayMetrics.widthPixels * 3 / 4
+                layoutParams.height = resources.displayMetrics.heightPixels / 2
+                expandedContainer.layoutParams = layoutParams
+                
+                // Load the URL if needed
+                if (webViewContainer.url != url) {
+                    webViewContainer.loadUrl(url)
+                }
+                
+                Log.d(TAG, "Expanded bubble with WebView visible, loading URL: $url")
             }
         } else {
             // Hide expanded container with animation
