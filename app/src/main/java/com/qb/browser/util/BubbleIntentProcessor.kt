@@ -73,17 +73,20 @@ class BubbleIntentProcessor(
     }
 
     private fun handleActivateBubble(intent: Intent) {
-        // Since there's only one bubble, we can simulate activation by re-loading the current URL.
-        val currentBubbles = bubbleManager.bubbles.value
-        val bubbleId = intent.getStringExtra(BubbleService.EXTRA_BUBBLE_ID) ?: "single_bubble"
-        val bubble = currentBubbles[bubbleId]
-        
-        if (bubble != null) {
-            // We don't need to reload the URL here since the BubbleView now handles expansion directly
-            // Just log that the bubble was activated
-            Log.d(TAG, "Bubble activated with ID: $bubbleId, URL: ${bubble.url}")
+        val bubbleId = intent.getStringExtra(BubbleService.EXTRA_BUBBLE_ID)
+        if (bubbleId != null) {
+            val currentBubbles = bubbleManager.bubbles.value
+            val bubble = currentBubbles[bubbleId]
+            
+            if (bubble != null) {
+                // The BubbleView now handles expansion directly
+                // Just log that the bubble was activated
+                Log.d(TAG, "Bubble activated with ID: $bubbleId, URL: ${bubble.url}")
+            } else {
+                Log.w(TAG, "No bubble found to activate with ID: $bubbleId")
+            }
         } else {
-            Log.w(TAG, "No bubble found to activate with ID: $bubbleId")
+            Log.w(TAG, "No bubble ID provided in handleActivateBubble")
         }
     }
 
@@ -91,11 +94,11 @@ class BubbleIntentProcessor(
         // Optional: implement show/hide behavior if needed. Here’s a basic toggle logic idea.
         val bubbles = bubbleManager.bubbles.value
         if (bubbles.isNotEmpty()) {
-            bubbleManager.removeBubble()
-            Log.d(TAG, "Bubbles hidden")
+            // We now have multiple bubbles, so we'll just log this action
+            // The main bubble will show all bubbles in its expanded state
+            Log.d(TAG, "Toggle bubbles requested with ${bubbles.size} bubbles")
         } else {
-            // Recreate last URL? Or just show empty state?
-            Log.d(TAG, "Toggle bubbles requested, but no previous state to restore.")
+            Log.d(TAG, "Toggle bubbles requested, but no bubbles exist.")
         }
     }
 

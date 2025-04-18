@@ -97,18 +97,29 @@ class BubbleView @JvmOverloads constructor(
             tabsAdapter = TabsAdapter(
                 context,
                 onTabSelected = { bubbleId ->
+                    // When a tab is selected, activate that bubble
                     val intent = Intent(context, BubbleService::class.java).apply {
-                        action = Constants.ACTION_CREATE_BUBBLE
+                        action = Constants.ACTION_ACTIVATE_BUBBLE
                         putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
                     }
                     context.startService(intent)
+                    
+                    // Collapse the main bubble
+                    if (isBubbleExpanded) {
+                        toggleBubbleExpanded()
+                    }
+                    
+                    Log.d(TAG, "Selected bubble with ID: $bubbleId")
                 },
                 onTabClosed = { bubbleId ->
+                    // When a tab is closed, close that bubble
                     val intent = Intent(context, BubbleService::class.java).apply {
                         action = Constants.ACTION_CLOSE_BUBBLE
                         putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
                     }
                     context.startService(intent)
+                    
+                    Log.d(TAG, "Closed bubble with ID: $bubbleId")
                 }
             )
         }
@@ -177,10 +188,16 @@ class BubbleView @JvmOverloads constructor(
             findViewById<View>(R.id.btn_read_mode).visibility = View.GONE
             findViewById<View>(R.id.btn_save_offline).visibility = View.GONE
             findViewById<View>(R.id.btn_open_full).visibility = View.GONE
+            
+            // Show the new tab button for main bubble
+            findViewById<View>(R.id.btn_new_tab)?.visibility = View.VISIBLE
         } else {
             // Show WebView for regular bubbles
             webViewContainer.visibility = View.VISIBLE
             tabsContainer.visibility = View.GONE
+            
+            // Hide the new tab button for regular bubbles
+            findViewById<View>(R.id.btn_new_tab)?.visibility = View.GONE
             
             // Set up WebView
             setupWebView()
@@ -199,6 +216,11 @@ class BubbleView @JvmOverloads constructor(
             setSupportZoom(true)
             setGeolocationEnabled(true)
             loadsImagesAutomatically = true
+            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            allowContentAccess = true
+            allowFileAccess = true
+            cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+            databaseEnabled = true
         }
 
         webViewContainer.webChromeClient =
@@ -210,12 +232,41 @@ class BubbleView @JvmOverloads constructor(
                     override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
                         icon?.let { updateFavicon(it) }
                     }
+                    
+                    override fun onReceivedTitle(view: WebView?, title: String?) {
+                        title?.let {
+                            Log.d(TAG, "Received page title: $it")
+                            // Update bubble title if needed
+                        }
+                    }
                 }
                 
-        // Set WebView background to be transparent until page loads
-        webViewContainer.setBackgroundColor(0x00000000)
+        // Add WebViewClient to handle page loading and errors
+        webViewContainer.webViewClient = object : android.webkit.WebViewClient() {
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                Log.d(TAG, "WebView page loading started: $url")
+                progressBar.visibility = View.VISIBLE
+            }
+            
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                Log.d(TAG, "WebView page loading finished: $url")
+                progressBar.visibility = View.GONE
+            }
+            
+            override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
+                super.onReceivedError(view, errorCode, description, failingUrl)
+                Log.e(TAG, "WebView error: $errorCode - $description for URL: $failingUrl")
+            }
+        }
         
-        // Don't load the URL here - we'll load it when the bubble is expanded
+        // Set WebView background to white for better visibility
+        webViewContainer.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
+        
+        // Load a blank page initially to ensure WebView is properly initialized
+        webViewContainer.loadUrl("about:blank")
+        
         Log.d(TAG, "WebView initialized and ready to load URL: $url")
     } catch (e: Exception) {
         Log.e(TAG, "Error setting up WebView", e)
@@ -242,15 +293,40 @@ class BubbleView @JvmOverloads constructor(
                 webViewContainer.visibility = View.VISIBLE
                 tabsContainer.visibility = View.GONE
                 
-                // Set the dimensions for the expanded container
+                // Set the dimensions for the expanded container to take maximum space
                 val layoutParams = expandedContainer.layoutParams
-                layoutParams.width = resources.displayMetrics.widthPixels * 3 / 4
-                layoutParams.height = resources.displayMetrics.heightPixels / 2
+                layoutParams.width = resources.displayMetrics.widthPixels * 9 / 10  // 90% of screen width
+                layoutParams.height = resources.displayMetrics.heightPixels * 7 / 10 // 70% of screen height
                 expandedContainer.layoutParams = layoutParams
                 
-                // Load the URL if needed
-                if (webViewContainer.url != url) {
-                    webViewContainer.loadUrl(url)
+                // Force layout update
+                expandedContainer.requestLayout()
+                
+                // Always load the URL to ensure content is displayed
+                try {
+                    Log.d(TAG, "Loading URL in WebView: $url")
+                    // Format and validate URL
+                    val loadUrl = formatUrl(url)
+                    Log.d(TAG, "Formatted URL for loading: $loadUrl")
+                    
+                    // Ensure WebView is properly initialized before loading URL
+                    webViewContainer.post {
+                        try {
+                            // Clear any previous page state
+                            webViewContainer.clearHistory()
+                            webViewContainer.clearCache(false)
+                            
+                            // Load the URL
+                            webViewContainer.loadUrl(loadUrl)
+                            
+                            // Log success
+                            Log.d(TAG, "Successfully initiated URL loading: $loadUrl")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error loading URL in WebView post handler", e)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error loading URL in WebView", e)
                 }
                 
                 Log.d(TAG, "Expanded bubble with WebView visible, loading URL: $url")
@@ -381,6 +457,26 @@ class BubbleView @JvmOverloads constructor(
     //         Log.e(TAG, "Error updating bubble from state", e)
     //     }
     // }    
+    
+    /**
+     * Format and validate URL to ensure it loads correctly
+     */
+    private fun formatUrl(inputUrl: String): String {
+        return when {
+            // If it's already a valid URL with scheme, use it as is
+            inputUrl.startsWith("http://") || inputUrl.startsWith("https://") -> inputUrl
+            
+            // If it's a special URL like about:blank, use it as is
+            inputUrl.startsWith("about:") || inputUrl.startsWith("file:") || 
+            inputUrl.startsWith("javascript:") || inputUrl.startsWith("data:") -> inputUrl
+            
+            // If it looks like a domain (contains dots), add https://
+            inputUrl.contains(".") -> "https://$inputUrl"
+            
+            // If it's a search term, use a search engine
+            else -> "https://www.google.com/search?q=${android.net.Uri.encode(inputUrl)}"
+        }
+    }
     
     /**
      * Save the current bubble position in preferences
@@ -514,7 +610,13 @@ class BubbleView @JvmOverloads constructor(
 
     fun updateBubblesList(bubbles: List<Bubble>) {
         if (isMainBubble) {
+            Log.d(TAG, "Updating bubbles list in main bubble: ${bubbles.size} bubbles")
             tabsAdapter?.submitList(bubbles)
+            
+            // If we have bubbles, make sure the tabs container is visible
+            if (bubbles.isNotEmpty()) {
+                tabsContainer.visibility = View.VISIBLE
+            }
         }
     }
 
@@ -538,7 +640,27 @@ class BubbleView @JvmOverloads constructor(
     fun updateProgress(progress: Int) {
         if (progress in 0..100) {
             progressBar.progress = progress
-            progressBar.visibility = if (progress in 1..99) View.VISIBLE else View.GONE
+            
+            // Always show progress bar when loading (1-99%)
+            if (progress in 1..99) {
+                progressBar.visibility = View.VISIBLE
+                
+                // Change color based on progress
+                val color = when {
+                    progress < 30 -> ContextCompat.getColor(context, R.color.colorAccent)
+                    progress < 70 -> ContextCompat.getColor(context, R.color.colorPrimary)
+                    else -> ContextCompat.getColor(context, android.R.color.holo_green_light)
+                }
+                progressBar.progressDrawable?.setColorFilter(color, PorterDuff.Mode.SRC_IN)
+                
+                // Log progress for debugging
+                if (progress % 20 == 0) {
+                    Log.d(TAG, "Loading progress: $progress%")
+                }
+            } else {
+                // Hide when complete or not started
+                progressBar.visibility = View.GONE
+            }
         }
     }
 

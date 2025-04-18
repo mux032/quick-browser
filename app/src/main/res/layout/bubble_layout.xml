@@ -37,10 +37,11 @@
     <!-- Expanded Bubble Content -->
     <FrameLayout
         android:id="@+id/expanded_container"
-        android:layout_width="300dp"
-        android:layout_height="400dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:background="@android:color/white"
-        android:elevation="8dp"
+        android:elevation="12dp"
+        android:layout_margin="8dp"
         android:visibility="gone">
 
         <!-- Main Content Area -->
@@ -56,6 +57,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@android:color/white"
+                android:hardwareAccelerated="true"
+                android:scrollbars="vertical"
+                android:scrollbarStyle="insideOverlay"
                 android:visibility="gone" />
 
             <!-- Tab list for main bubble -->
