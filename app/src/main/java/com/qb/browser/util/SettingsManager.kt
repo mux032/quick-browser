@@ -352,4 +352,12 @@ class SettingsManager private constructor(context: Context) {
         val y = prefs.getInt(KEY_MAIN_BUBBLE_Y, -1)
         return Pair(x, y)
     }
+
+    fun setLastBubblePosition(x: Int, y: Int) {
+        // Implementation to save the position
+        val editor = prefs.edit()
+        editor.putInt(KEY_MAIN_BUBBLE_X, x)
+        editor.putInt(KEY_MAIN_BUBBLE_Y, y)
+        editor.apply()
+    }
 }

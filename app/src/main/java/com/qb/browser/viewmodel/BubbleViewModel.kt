@@ -1,81 +1,59 @@
 package com.qb.browser.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.qb.browser.settings.SettingsManager
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.qb.browser.db.SettingsDao
+import com.qb.browser.model.Bubble
+import com.qb.browser.model.Settings
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-/**
- * ViewModel for managing bubble settings
- */
-class BubbleViewModel(application: Application) : AndroidViewModel(application) {
-    
-    private val settingsManager = SettingsManager.getInstance(application)
-    
-    // Data class to represent bubble settings
-    data class BubbleSettings(
-        val size: String = "medium",
-        val animationSpeed: String = "medium",
-        val savePositions: Boolean = true,
-        val blockAds: Boolean = true,
-        val defaultColor: String = "#2196F3",
-        val javascriptEnabled: Boolean = true,
-        val darkTheme: Boolean = false
-    )
-    
-    private val _settings = MutableLiveData<BubbleSettings>()
-    
-    /**
-     * Get current bubble settings as LiveData
-     */
-    fun getSettings(): LiveData<BubbleSettings> {
-        if (_settings.value == null) {
-            // Load settings from SettingsManager
-            val settings = BubbleSettings(
-                size = settingsManager.getBubbleSize(),
-                animationSpeed = settingsManager.getAnimationSpeed(),
-                savePositions = settingsManager.isBubblePositionSavingEnabled(),
-                blockAds = settingsManager.isAdBlockEnabled(),
-                defaultColor = settingsManager.getDefaultBubbleColor(),
-                javascriptEnabled = settingsManager.isJavaScriptEnabled(),
-                darkTheme = settingsManager.isDarkThemeEnabled()
-            )
-            _settings.value = settings
+
+class BubbleViewModel(private val settingsDao: SettingsDao) : ViewModel() {
+
+    private val _bubbles = MutableStateFlow<List<Bubble>>(emptyList())
+    val bubbles: StateFlow<List<Bubble>> = _bubbles
+
+    private val _settings = MutableLiveData<Settings?>()
+    val settings: LiveData<Settings?> = _settings
+
+    fun loadSettings() {
+        viewModelScope.launch { _settings.postValue(settingsDao.getSettings()) }
+    }
+
+    fun saveSettings(settings: Settings) {
+        viewModelScope.launch { settingsDao.insertSettings(settings) }
+    }
+
+    fun addBubble(bubble: Bubble) {
+        Log.e("BubbleViewModel", "Adding bubble: $bubble")
+        viewModelScope.launch {
+            val currentList = _bubbles.value.toMutableList()
+            currentList.add(bubble)
+            _bubbles.value = currentList
         }
-        return _settings
-    }
-    
-    /**
-     * Save bubble settings
-     */
-    fun saveSettings(settings: BubbleSettings) {
-        // Update settings in manager
-        settingsManager.setBubbleSize(settings.size)
-        settingsManager.setAnimationSpeed(settings.animationSpeed)
-        settingsManager.setBubblePositionSaving(settings.savePositions)
-        settingsManager.setAdBlockEnabled(settings.blockAds)
-        settingsManager.setDefaultBubbleColor(settings.defaultColor)
-        settingsManager.setJavaScriptEnabled(settings.javascriptEnabled)
-        settingsManager.setDarkThemeEnabled(settings.darkTheme)
-        
-        // Update LiveData
-        _settings.value = settings
-    }
-    
-    /**
-     * Clear all saved bubble positions
-     */
-    fun clearBubblePositions() {
-        settingsManager.clearSavedBubblePositions()
     }
 
-    /**
-     * Get the title of a bubble by its ID
-     */
-    fun getTitle(bubbleId: String): LiveData<String> {
-        val title = MutableLiveData<String>()
-        title.value = "Untitled" // Default title, replace with actual logic if needed
-        return title
+    fun removeBubble(bubbleId: String) {
+        viewModelScope.launch {
+            val currentList = _bubbles.value.toMutableList()
+            currentList.removeAll { it.id == bubbleId }
+            _bubbles.value = currentList
+        }
+    }
+
+    fun updateBubble(bubble: Bubble) {
+        viewModelScope.launch {
+            val currentList = _bubbles.value.toMutableList()
+            val index = currentList.indexOfFirst { it.id == bubble.id }
+            if (index != -1) {
+                currentList[index] = bubble
+                _bubbles.value = currentList
+            }
+        }
     }
 }

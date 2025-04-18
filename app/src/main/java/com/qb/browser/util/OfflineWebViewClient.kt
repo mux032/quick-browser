@@ -57,7 +57,7 @@ class OfflineWebViewClient(
             
             if (file.exists()) {
                 // Determine content type from extension
-                val extension = file.extension.toLowerCase()
+                val extension = file.extension.lowercase()
                 val mimeType = contentTypes[extension] ?: "application/octet-stream"
                 
                 // Create input stream from file

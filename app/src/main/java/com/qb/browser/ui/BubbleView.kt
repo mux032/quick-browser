@@ -28,6 +28,8 @@ import kotlin.math.hypot
 import kotlin.math.max
 import com.qb.browser.model.Bubble
 import com.qb.browser.ui.adapter.TabsAdapter
+import com.qb.browser.Constants
+import android.util.Log
 
 /**
  * Enhanced floating bubble view with animations and multi-bubble management
@@ -44,9 +46,9 @@ class BubbleView @JvmOverloads constructor(
     private val bubbleIcon: ImageView
     private val progressBar: ProgressBar
     private val expandedContainer: View
-    private lateinit var contentContainer: FrameLayout
-    private lateinit var tabsContainer: View
-    private lateinit var webViewContainer: WebView
+    private var contentContainer: FrameLayout
+    private var tabsContainer: View
+    private var webViewContainer: WebView
     private var tabsAdapter: TabsAdapter? = null
 
     private var initialX = 0f
@@ -65,6 +67,10 @@ class BubbleView @JvmOverloads constructor(
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val settingsManager = SettingsManager.getInstance(context)
     private val bubbleAnimator = BubbleAnimator(context)
+
+    companion object {
+        private const val TAG = "BubbleView"
+    }
     
     init {
         // Use application context with theme for inflation
@@ -92,15 +98,15 @@ class BubbleView @JvmOverloads constructor(
                 context,
                 onTabSelected = { bubbleId ->
                     val intent = Intent(context, BubbleService::class.java).apply {
-                        action = BubbleService.ACTION_OPEN_BUBBLE
-                        putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId as String)
+                        action = Constants.ACTION_CREATE_BUBBLE
+                        putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
                     }
                     context.startService(intent)
                 },
                 onTabClosed = { bubbleId ->
                     val intent = Intent(context, BubbleService::class.java).apply {
-                        action = BubbleService.ACTION_CLOSE_BUBBLE
-                        putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId as String)
+                        action = Constants.ACTION_CLOSE_BUBBLE
+                        putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
                     }
                     context.startService(intent)
                 }
@@ -139,7 +145,7 @@ class BubbleView @JvmOverloads constructor(
         findViewById<View>(R.id.btn_new_tab)?.setOnClickListener {
             if (isMainBubble) {
                 val intent = Intent(context, BubbleService::class.java).apply {
-                    action = BubbleService.ACTION_START_BUBBLE
+                    action = Constants.ACTION_CREATE_BUBBLE
                 }
                 context.startService(intent)
             }
@@ -175,6 +181,7 @@ class BubbleView @JvmOverloads constructor(
     }
 
     private fun setupWebView() {
+    try {
         webViewContainer.settings.apply {
             javaScriptEnabled = settingsManager.isJavaScriptEnabled()
             domStorageEnabled = true
@@ -184,23 +191,24 @@ class BubbleView @JvmOverloads constructor(
             displayZoomControls = false
         }
 
-        webViewContainer.webViewClient = WebViewClientEx(context) { newUrl ->
-            // Handle URL updates
-        }
+        webViewContainer.webChromeClient =
+                object : WebChromeClient() {
+                    override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                        updateProgress(newProgress)
+                    }
 
-        webViewContainer.webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                updateProgress(newProgress)
-            }
-            
-            override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
-                icon?.let { updateFavicon(it) }
-            }
-        }
+                    override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
+                        icon?.let { updateFavicon(it) }
+                    }
+                }
 
         // Load the URL
+        Log.e(TAG, "Loading URL: $url")
         webViewContainer.loadUrl(url)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error setting up WebView", e)
     }
+}
 
     /**
      * Toggle bubble expanded state with animation
@@ -254,76 +262,97 @@ class BubbleView @JvmOverloads constructor(
      * Open the web page in a full WebView activity
      */
     private fun openFullWebView() {
-        val intent = Intent(context, WebViewActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            putExtra(WebViewActivity.EXTRA_URL, url)
-            putExtra(WebViewActivity.EXTRA_BUBBLE_ID, bubbleId as String)
-        }
-        context.startActivity(intent)
-        
-        // Collapse the expanded view
-        if (isBubbleExpanded) {
-            toggleBubbleExpanded()
+        try {
+            val intent = Intent(context, WebViewActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(WebViewActivity.EXTRA_URL, url)
+                putExtra(WebViewActivity.EXTRA_BUBBLE_ID, bubbleId)
+            }
+            context.startActivity(intent)
+            if (isBubbleExpanded) toggleBubbleExpanded()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open full WebView", e)
         }
     }
+    
     
     /**
      * Open the web page in read mode
      */
     private fun openReadMode() {
-        val intent = Intent(context, ReadModeActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            putExtra(ReadModeActivity.EXTRA_URL, url)
-            putExtra(ReadModeActivity.EXTRA_BUBBLE_ID, bubbleId as String)
+        try {
+            val intent = Intent(context, ReadModeActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(ReadModeActivity.EXTRA_URL, url)
+                putExtra(ReadModeActivity.EXTRA_BUBBLE_ID, bubbleId)
+            }
+            context.startActivity(intent)
+            
+            // Collapse the expanded view
+            if (isBubbleExpanded) {
+                toggleBubbleExpanded()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open read mode", e)
         }
-        context.startActivity(intent)
-        
-        // Collapse the expanded view
-        if (isBubbleExpanded) {
-            toggleBubbleExpanded()
-        }
-    }
+}
     
     /**
      * Save the web page for offline access
      */
     private fun saveForOffline() {
-        // Toggle the save button appearance
-        val saveButton = findViewById<ImageView>(R.id.btn_save_offline)
-        saveButton.setColorFilter(
-            ContextCompat.getColor(context, R.color.colorAccent), 
-            PorterDuff.Mode.SRC_IN
-        )
-        
-        // Pulse animation for feedback
-        bubbleAnimator.animatePulse(saveButton, 2)
-        
-        // Send intent to service to save the page
-        val intent = Intent(context, BubbleService::class.java).apply {
-            action = "com.qb.browser.SAVE_OFFLINE"
-            putExtra(BubbleService.EXTRA_URL, url)
-            putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId as String)
-        }
-        context.startService(intent)
-        
-        // Show feedback to user
-        val messageView = findViewById<TextView>(R.id.save_message)
-        messageView.text = context.getString(R.string.saving_page_offline)
-        messageView.visibility = View.VISIBLE
-        
-        // Hide message after delay
-        postDelayed({
-            messageView.text = context.getString(R.string.page_saved_offline)
+        try {
+            // Toggle the save button appearance
+            val saveButton = findViewById<ImageView>(R.id.btn_save_offline)
+            saveButton.setColorFilter(
+                ContextCompat.getColor(context, R.color.colorAccent), 
+                PorterDuff.Mode.SRC_IN
+            )
             
-            // Hide the message after additional delay
+            // Pulse animation for feedback
+            bubbleAnimator.animatePulse(saveButton, 2)
+            
+            // Send intent to service to save the page
+            val intent = Intent(context, BubbleService::class.java).apply {
+                action = "com.qb.browser.SAVE_OFFLINE"
+                putExtra(BubbleService.EXTRA_URL, url)
+                putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
+            }
+            context.startService(intent)
+            
+            // Show feedback to user
+            val messageView = findViewById<TextView>(R.id.save_message)
+            messageView.text = context.getString(R.string.saving_page_offline)
+            messageView.visibility = View.VISIBLE
+            
+            // Hide message after delay
             postDelayed({
-                messageView.visibility = View.GONE
-            }, 2000)
-            
-            // Reset save button appearance
-            saveButton.clearColorFilter()
-        }, 3000)
+                messageView.text = context.getString(R.string.page_saved_offline)
+                
+                // Hide the message after additional delay
+                postDelayed({
+                    messageView.visibility = View.GONE
+                }, 2000)
+                
+                // Reset save button appearance
+                saveButton.clearColorFilter()
+            }, 3000)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save for offline", e)
+        }
     }
+    
+    // fun updateFromState(bubble: Bubble) {
+    //     try {
+    //         if (bubble.url != webViewContainer.url) {
+    //             webViewContainer.loadUrl(bubble.url)
+    //         }
+    //         if (bubble.isActive) setActive() else setInactive()
+    //         updateFavicon(bubble.favicon)
+    //     } catch (e: Exception) {
+    //         Log.e(TAG, "Error updating bubble from state", e)
+    //     }
+    // }    
     
     /**
      * Save the current bubble position in preferences
@@ -418,14 +447,15 @@ class BubbleView @JvmOverloads constructor(
                     saveBubblePosition()
                 }
                 if (isDragging) {
-                    val params = layoutParams as WindowManager.LayoutParams
+                    val params = layoutParams
                     if (isMainBubble && !isExpanded) {
                         // Save position for main bubble when minimized
                         val intent = Intent(context, BubbleService::class.java).apply {
-                            action = BubbleService.ACTION_SAVE_POSITION
+                            action = Constants.ACTION_SAVE_POSITION
                             putExtra(BubbleService.EXTRA_X, params.x)
                             putExtra(BubbleService.EXTRA_Y, params.y)
                         }
+                        bubbleAnimator.animateBounce(this, true)
                         context.startService(intent)
                     }
                 }

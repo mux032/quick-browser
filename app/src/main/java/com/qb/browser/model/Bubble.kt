@@ -36,6 +36,7 @@
      val id: String,
      val url: String,
      val title: String = "",
+     val tabs: List<WebPage> = emptyList(),
      val favicon: Bitmap? = null,
      val lastAccessed: Long = System.currentTimeMillis()
  ) : Parcelable {

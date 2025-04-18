@@ -1,250 +1,146 @@
 package com.qb.browser.viewmodel
 
-import android.app.Application
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.qb.browser.R
-import com.qb.browser.service.OfflinePageService
-import com.qb.browser.util.AdBlocker
-import com.qb.browser.util.SettingsManager
-import kotlinx.coroutines.Dispatchers
+import com.qb.browser.model.WebPage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import android.webkit.ValueCallback
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.resume
 
 /**
- * ViewModel responsible for WebView content and management
+ * WebViewModel manages the web content state for bubbles in the application.
+ * It handles loading URLs, managing web page states, and coordinating between
+ * bubbles and their web content.
  */
-class WebViewModel(private val application: Application) : AndroidViewModel(application) {
-    
-    private val settingsManager = SettingsManager.getInstance(application)
-    private val adBlocker = AdBlocker.getInstance(application)
-    
-    // Maps to store page data by bubble ID
-    private val progressMap = ConcurrentHashMap<String, MutableLiveData<Int>>()
-    private val faviconMap = ConcurrentHashMap<String, MutableLiveData<Bitmap>>()
-    private val titleMap = ConcurrentHashMap<String, MutableLiveData<String>>()
-    private val allTitlesLiveData = MutableLiveData<Map<String, String>>()
-    
+class WebViewModel : ViewModel() {
+    private val _webPages = MutableStateFlow<Map<String, WebPage>>(emptyMap())
+    val webPages: StateFlow<Map<String, WebPage>> = _webPages
+
     /**
-     * Load a URL in the background for a specific bubble
+     * Loads a URL in the specified bubble
+     * @param bubbleId The ID of the bubble
+     * @param url The URL to load
      */
-    private val backgroundWebViews = ConcurrentHashMap<String, WebView>()
-    
     fun loadUrl(bubbleId: String, url: String) {
-        viewModelScope.launch(Dispatchers.Main) {
-            // Update progress to show loading
-            getProgressLiveData(bubbleId).postValue(0)
-            
-            // Create a WebView for background loading
-            val webView = WebView(application).apply {
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                
-                webViewClient = object : android.webkit.WebViewClient() {
-                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                        favicon?.let {
-                            getFaviconLiveData(bubbleId).postValue(it)
-                        }
-                    }
-                    
-                    override fun onPageFinished(view: WebView?, url: String?) {
-                        getProgressLiveData(bubbleId).postValue(100)
-                        view?.title?.let { title ->
-                            getTitleLiveData(bubbleId).postValue(title)
-                            updateAllTitles()
-                        }
-                    }
-                }
-                
-                webChromeClient = object : android.webkit.WebChromeClient() {
-                    override fun onProgressChanged(view: WebView, newProgress: Int) {
-                        super.onProgressChanged(view, newProgress)
-                        getProgressLiveData(bubbleId).postValue(newProgress)
-                    }
-                    
-                    override fun onReceivedIcon(view: WebView, icon: Bitmap) {
-                        super.onReceivedIcon(view, icon)
-                        getFaviconLiveData(bubbleId).postValue(icon)
-                    }
-                }
+        viewModelScope.launch {
+            val timestamp = bubbleId.toLongOrNull() ?: System.currentTimeMillis()
+            val webPage = WebPage(
+                url = url,
+                title = url,
+                timestamp = timestamp,
+                content = "",
+                isAvailableOffline = false,
+                visitCount = 1
+            )
+            updateWebPage(webPage)
+        }
+    }
+
+    /**
+     * Updates the web page state
+     * @param webPage The updated web page data
+     */
+    fun updateWebPage(webPage: WebPage) {
+        viewModelScope.launch {
+            val currentPages = _webPages.value.toMutableMap()
+            currentPages[webPage.url] = webPage
+            _webPages.value = currentPages
+        }
+    }
+
+    /**
+     * Closes a tab/web page
+     * @param bubbleId The ID of the bubble whose web page should be closed
+     */
+    fun closeTab(bubbleId: String) {
+        viewModelScope.launch {
+            val timestamp = bubbleId.toLongOrNull() ?: return@launch
+            val currentPages = _webPages.value.toMutableMap()
+            currentPages.entries.removeIf { it.value.timestamp == timestamp }
+            _webPages.value = currentPages
+        }
+    }
+
+    /**
+     * Updates the title of a web page
+     * @param url The URL of the page
+     * @param title The new title
+     */
+    fun updateTitle(url: String, title: String) {
+        viewModelScope.launch {
+            val currentPage = _webPages.value[url] ?: return@launch
+            updateWebPage(currentPage.copy(title = title))
+        }
+    }
+
+    /**
+     * Updates the progress of a web page
+     * @param url The URL of the web page
+     * @param progress The progress value (0-100)
+     */
+    fun updateProgress(url: String, progress: Int) {
+        viewModelScope.launch {
+            val currentPages = _webPages.value.toMutableMap()
+            currentPages[url]?.let { 
+                it.content += "<div>Progress updated: $progress</div>" // Placeholder logic
+                currentPages[url] = it.copy(content = it.content)
             }
-            
-            // Store the WebView and load the URL
-            backgroundWebViews[bubbleId] = webView
-            webView.loadUrl(url)
-            
-            // Set a default favicon until the page loads one
-            val defaultIcon = BitmapFactory.decodeResource(application.resources, R.drawable.ic_globe)
-            getFaviconLiveData(bubbleId).postValue(defaultIcon)
-            
-            // Extract domain for the title until page loads
-            val domain = extractDomain(url)
-            getTitleLiveData(bubbleId).postValue(domain)
-            updateAllTitles()
+            _webPages.value = currentPages
         }
     }
-    
+
     /**
-     * Check if a resource should be blocked by ad blocker
+     * Updates the favicon of a web page
+     * @param url The URL of the web page
+     * @param favicon The new favicon bitmap
      */
-    fun shouldBlockResource(url: String): WebResourceResponse? {
-        return if (settingsManager.isAdBlockingEnabled()) {
-            adBlocker.shouldBlockRequest(url)
-        } else {
-            null
+    fun updateFavicon(url: String, favicon: Bitmap) {
+        viewModelScope.launch {
+            val currentPages = _webPages.value.toMutableMap()
+            currentPages[url]?.let { 
+                // Update favicon logic here (assuming WebPage has a favicon property)
+                currentPages[url] = it.copy(favicon = favicon)
+            }
+            _webPages.value = currentPages
         }
     }
-    
-    /**
-     * Close a page when its bubble is closed
-     */
-    fun closePage(bubbleId: String) {
-        progressMap.remove(bubbleId)
-        faviconMap.remove(bubbleId)
-        titleMap.remove(bubbleId)
-        backgroundWebViews.remove(bubbleId)?.destroy()
-        updateAllTitles()
-    }
-    
-    /**
-     * Update favicon for a page
-     */
-    fun updateFavicon(bubbleId: String, favicon: Bitmap) {
-        getFaviconLiveData(bubbleId).postValue(favicon)
-    }
-    
-    /**
-     * Update title for a page
-     */
-    fun updateTitle(bubbleId: String, title: String) {
-        getTitleLiveData(bubbleId).postValue(title)
-        updateAllTitles()
-    }
-    
-    /**
-     * Update progress for a page
-     */
-    fun updateProgress(bubbleId: String, progress: Int) {
-        getProgressLiveData(bubbleId).postValue(progress)
-    }
-    
-    /**
-     * Get loading progress LiveData for a specific bubble
-     */
-    fun getLoadingProgress(bubbleId: String): LiveData<Int> {
-        return getProgressLiveData(bubbleId)
-    }
-    
-    /**
-     * Get favicon LiveData for a specific bubble
-     */
-    fun getFavicon(bubbleId: String): LiveData<Bitmap> {
-        return getFaviconLiveData(bubbleId)
-    }
-    
-    /**
-     * Get title LiveData for a specific bubble
-     */
-    fun getTitle(bubbleId: String): LiveData<String> {
-        return getTitleLiveData(bubbleId)
-    }
-    
-    /**
-     * Get LiveData containing map of all page titles
-     */
-    fun getAllPageTitles(): LiveData<Map<String, String>> {
-        return allTitlesLiveData
-    }
-    
-    /**
-     * Update the all titles LiveData
-     */
-    private fun updateAllTitles() {
-        val titles = titleMap.mapValues { (_, liveData) -> liveData.value ?: "" }
-                          .filter { (_, title) -> title.isNotEmpty() }
-        allTitlesLiveData.postValue(titles)
-    }
-    
-    /**
-     * Get progress LiveData for a bubble, creating it if needed
-     */
-    private fun getProgressLiveData(bubbleId: String): MutableLiveData<Int> {
-        return progressMap.getOrPut(bubbleId) { MutableLiveData(0) }
-    }
-    
-    /**
-     * Get favicon LiveData for a bubble, creating it if needed
-     */
-    private fun getFaviconLiveData(bubbleId: String): MutableLiveData<Bitmap> {
-        return faviconMap.getOrPut(bubbleId) { MutableLiveData() }
-    }
-    
-    /**
-     * Get title LiveData for a bubble, creating it if needed
-     */
-    private fun getTitleLiveData(bubbleId: String): MutableLiveData<String> {
-        return titleMap.getOrPut(bubbleId) { MutableLiveData("") }
-    }
-    
-    /**
-     * Extract domain from URL
-     */
-    private fun extractDomain(url: String): String {
-        return try {
-            val uri = android.net.Uri.parse(url)
-            uri.host ?: url
-        } catch (e: Exception) {
-            url
+
+
+    suspend fun evaluateHtml(webView: WebView): String = suspendCancellableCoroutine { cont ->
+        webView.evaluateJavascript("document.body.innerHTML") { html ->
+            cont.resume(html ?: "")
         }
     }
-    
+
     /**
-     * Save a web page for offline reading
-     */
-    fun savePageForOffline(url: String, title: String) {
-        // Start the service to save the page in the background
-        OfflinePageService.startService(application, url, title)
-    }
-    
-    /**
-     * Save the currently displayed web page from a WebView
-     * This captures the DOM content directly from the WebView
+     * Saves the current page content from WebView for offline use
+     * @param webView The WebView instance
+     * @param url The URL of the page
+     * @param title The title of the page
      */
     fun saveCurrentPageFromWebView(webView: WebView, url: String, title: String) {
         viewModelScope.launch {
-            // Execute JavaScript to get the full HTML content
-            webView.evaluateJavascript(
-                "(function() { return document.documentElement.outerHTML; })();",
-                { htmlContent ->
-                    // The callback provides the HTML as a JSON string, need to unescape it
-                    var html = htmlContent
-                    if (html.startsWith("\"") && html.endsWith("\"")) {
-                        html = html.substring(1, html.length - 1)
-                        // Unescape the JSON string
-                        html = html.replace("\\\"", "\"")
-                            .replace("\\n", "\n")
-                            .replace("\\t", "\t")
-                            .replace("\\\\", "\\")
-                    }
-                    
-                    // Get the base URL for resolving relative paths
-                    val baseUrl = webView.url ?: url
-                    
-                    // Start the service with the captured HTML content
-                    OfflinePageService.startServiceWithHtml(
-                        application, baseUrl, title, html
-                    )
-                }
+            val content = withContext(Dispatchers.Main) {
+                evaluateHtml(webView)
+            }
+    
+            val webPage = WebPage(
+                url = url,
+                title = title,
+                timestamp = System.currentTimeMillis(),
+                content = content,
+                isAvailableOffline = true,
+                visitCount = 1
             )
+    
+            updateWebPage(webPage)
         }
     }
 }

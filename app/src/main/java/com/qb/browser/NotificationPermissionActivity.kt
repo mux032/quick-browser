@@ -65,7 +65,7 @@ class NotificationPermissionActivity : Activity() {
     private fun finishAndStartService() {
         // Try to start/restart the bubble service
         val serviceIntent = Intent(this, BubbleService::class.java).apply {
-            action = BubbleService.ACTION_START_BUBBLE
+            action = Constants.ACTION_CREATE_BUBBLE
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
