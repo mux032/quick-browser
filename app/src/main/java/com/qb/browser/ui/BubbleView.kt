@@ -18,18 +18,27 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.qb.browser.R
 import com.qb.browser.service.BubbleService
 import com.qb.browser.util.SettingsManager
+import com.qb.browser.viewmodel.WebViewModel
 import java.lang.Math.min
 import kotlin.math.hypot
 import kotlin.math.max
 import com.qb.browser.model.Bubble
+import com.qb.browser.model.WebPage
 import com.qb.browser.ui.adapter.TabsAdapter
 import com.qb.browser.Constants
 import android.util.Log
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 /**
  * Enhanced floating bubble view with animations and multi-bubble management
@@ -58,7 +67,6 @@ class BubbleView @JvmOverloads constructor(
     private var isDragging = false
     private var isBubbleExpanded = false
     private var onCloseListener: (() -> Unit)? = null
-    private var isMainBubble = false
     private var isActive = false
     private var isShowingAllBubbles = false
     private var isExpanded = false
@@ -67,6 +75,7 @@ class BubbleView @JvmOverloads constructor(
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val settingsManager = SettingsManager.getInstance(context)
     private val bubbleAnimator = BubbleAnimator(context)
+    private var webViewModel: WebViewModel? = null
 
     companion object {
         private const val TAG = "BubbleView"
@@ -89,59 +98,77 @@ class BubbleView @JvmOverloads constructor(
         // Set up progress indicator
         progressBar.progress = 0
         
-        // Determine if this is main bubble
-        isMainBubble = bubbleId == "main_bubble"
-        
-        // Initialize tabs adapter for main bubble
-        if (isMainBubble) {
-            tabsAdapter = TabsAdapter(
-                context,
-                onTabSelected = { bubbleId ->
-                    // When a tab is selected, activate that bubble
-                    val intent = Intent(context, BubbleService::class.java).apply {
-                        action = Constants.ACTION_ACTIVATE_BUBBLE
-                        putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
-                    }
-                    context.startService(intent)
+        // Initialize WebViewModel when attached to window
+        post {
+            // Find the ViewModelStoreOwner (usually an Activity or Fragment)
+            val lifecycleOwner = findViewTreeLifecycleOwner()
+            val viewModelStoreOwner = findViewTreeViewModelStoreOwner()
+            
+            if (lifecycleOwner != null && viewModelStoreOwner != null) {
+                try {
+                    // Get the WebViewModel using ViewModelStoreOwner
+                    webViewModel = ViewModelProvider(viewModelStoreOwner)[WebViewModel::class.java]
                     
-                    // Collapse the main bubble
-                    if (isBubbleExpanded) {
-                        toggleBubbleExpanded()
+                    // Observe web pages for favicon changes using LifecycleOwner
+                    lifecycleOwner.lifecycleScope.launch {
+                        webViewModel?.webPages?.collectLatest { pages ->
+                            // Check if there's a page with our URL and update favicon if available
+                            pages[url]?.let { webPage ->
+                                webPage.favicon?.let { favicon ->
+                                    Log.d(TAG, "Updating bubble icon with favicon for URL: $url")
+                                    updateBubbleIcon(favicon)
+                                }
+                            }
+                        }
                     }
-                    
-                    Log.d(TAG, "Selected bubble with ID: $bubbleId")
-                },
-                onTabClosed = { bubbleId ->
-                    // When a tab is closed, close that bubble
-                    val intent = Intent(context, BubbleService::class.java).apply {
-                        action = Constants.ACTION_CLOSE_BUBBLE
-                        putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
-                    }
-                    context.startService(intent)
-                    
-                    Log.d(TAG, "Closed bubble with ID: $bubbleId")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error initializing WebViewModel", e)
                 }
-            )
+            } else if (lifecycleOwner != null) {
+                // Fallback: Try to use the application context if it implements ViewModelStoreOwner
+                val application = context.applicationContext
+                if (application is ViewModelStoreOwner) {
+                    try {
+                        Log.d(TAG, "Using application context as ViewModelStoreOwner")
+                        webViewModel = ViewModelProvider(application)[WebViewModel::class.java]
+                        
+                        // Observe web pages for favicon changes
+                        lifecycleOwner.lifecycleScope.launch {
+                            webViewModel?.webPages?.collectLatest { pages ->
+                                pages[url]?.let { webPage ->
+                                    webPage.favicon?.let { favicon ->
+                                        Log.d(TAG, "Updating bubble icon with favicon for URL: $url")
+                                        updateBubbleIcon(favicon)
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error initializing WebViewModel with application context", e)
+                    }
+                } else {
+                    Log.e(TAG, "Could not find ViewModelStoreOwner and application is not a ViewModelStoreOwner")
+                    // Create a standalone instance of WebViewModel as a last resort
+                    createStandaloneWebViewModel()
+                }
+            } else {
+                Log.e(TAG, "Could not find LifecycleOwner")
+                // Create a standalone instance of WebViewModel as a last resort
+                createStandaloneWebViewModel()
+            }
         }
 
         // Set up click listeners
         setOnClickListener {
-            if (isMainBubble) {
-                val intent = Intent(context, BubbleService::class.java).apply {
-                    action = BubbleService.ACTION_TOGGLE_BUBBLES
-                }
-                context.startService(intent)
-            } else {
-                // Directly toggle the expanded state for regular bubbles
-                toggleBubbleExpanded()
-                
-                // Also notify the service that this bubble is active
-                val intent = Intent(context, BubbleService::class.java).apply {
-                    action = BubbleService.ACTION_ACTIVATE_BUBBLE
-                    putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
-                }
-                context.startService(intent)
+            // Directly toggle the expanded state for all bubbles
+            toggleBubbleExpanded()
+            
+            // Also notify the service that this bubble is active
+            val intent = Intent(context, BubbleService::class.java).apply {
+                action = BubbleService.ACTION_ACTIVATE_BUBBLE
+                putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
             }
+            context.startService(intent)
         }
         
         findViewById<View>(R.id.btn_close).setOnClickListener {
@@ -160,118 +187,186 @@ class BubbleView @JvmOverloads constructor(
             saveForOffline()
         }
         
-        findViewById<View>(R.id.btn_new_tab)?.setOnClickListener {
-            if (isMainBubble) {
-                val intent = Intent(context, BubbleService::class.java).apply {
-                    action = Constants.ACTION_CREATE_BUBBLE
-                }
-                context.startService(intent)
-            }
-        }
+        // Hide new tab button as we don't need it anymore
+        findViewById<View>(R.id.btn_new_tab)?.visibility = View.GONE
         
         // Set up content based on bubble type
         setupContent()
     }
 
     private fun setupContent() {
-        if (isMainBubble) {
-            // Show tabs container for main bubble
-            tabsContainer.visibility = View.VISIBLE
-            webViewContainer.visibility = View.GONE
-            
-            // Set up RecyclerView
-            val recyclerView = findViewById<RecyclerView>(R.id.tabs_recycler_view)
-            recyclerView.layoutManager = LinearLayoutManager(context)
-            recyclerView.adapter = tabsAdapter
-            
-            // Hide browser-specific buttons
-            findViewById<View>(R.id.btn_read_mode).visibility = View.GONE
-            findViewById<View>(R.id.btn_save_offline).visibility = View.GONE
-            findViewById<View>(R.id.btn_open_full).visibility = View.GONE
-            
-            // Show the new tab button for main bubble
-            findViewById<View>(R.id.btn_new_tab)?.visibility = View.VISIBLE
-        } else {
-            // Show WebView for regular bubbles
-            webViewContainer.visibility = View.VISIBLE
-            tabsContainer.visibility = View.GONE
-            
-            // Hide the new tab button for regular bubbles
-            findViewById<View>(R.id.btn_new_tab)?.visibility = View.GONE
-            
-            // Set up WebView
-            setupWebView()
-        }
+        // Show WebView for all bubbles
+        webViewContainer.visibility = View.VISIBLE
+        tabsContainer.visibility = View.GONE
+        
+        // Hide the new tab button
+        findViewById<View>(R.id.btn_new_tab)?.visibility = View.GONE
+        
+        // Set up WebView
+        setupWebView()
     }
 
     private fun setupWebView() {
-    try {
-        webViewContainer.settings.apply {
-            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
-            domStorageEnabled = true
-            loadWithOverviewMode = true
-            useWideViewPort = true
-            builtInZoomControls = true
-            displayZoomControls = false
-            setSupportZoom(true)
-            setGeolocationEnabled(true)
-            loadsImagesAutomatically = true
-            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            allowContentAccess = true
-            allowFileAccess = true
-            cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-            databaseEnabled = true
-        }
+        try {
+            Log.d(TAG, "Setting up WebView for bubble: $bubbleId with URL: $url")
+        
+            webViewContainer.settings.apply {
+                javaScriptEnabled = settingsManager.isJavaScriptEnabled()
+                domStorageEnabled = true
+                loadWithOverviewMode = true
+                useWideViewPort = true
+                builtInZoomControls = true
+                displayZoomControls = false
+                setSupportZoom(true)
+                setGeolocationEnabled(true)
+                loadsImagesAutomatically = true
+                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                allowContentAccess = true
+                allowFileAccess = true
+                cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+                databaseEnabled = true
+                javaScriptCanOpenWindowsAutomatically = true
+                setSupportMultipleWindows(true)
+            }
 
-        webViewContainer.webChromeClient =
-                object : WebChromeClient() {
-                    override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                        updateProgress(newProgress)
-                    }
+            webViewContainer.webChromeClient =
+                    object : WebChromeClient() {
+                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                            updateProgress(newProgress)
+                        }
 
-                    override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
-                        icon?.let { updateFavicon(it) }
-                    }
-                    
-                    override fun onReceivedTitle(view: WebView?, title: String?) {
-                        title?.let {
-                            Log.d(TAG, "Received page title: $it")
-                            // Update bubble title if needed
+                        override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
+                            icon?.let { 
+                                // Update local favicon
+                                updateFavicon(it)
+                                
+                                // Also update in WebViewModel to persist the favicon
+                                webViewModel?.let { viewModel ->
+                                    try {
+                                        viewModel.updateFavicon(url, it)
+                                        Log.d(TAG, "Updated favicon in WebViewModel for URL: $url")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error updating favicon in WebViewModel", e)
+                                    }
+                                } ?: run {
+                                    // If WebViewModel is null, try to create it
+                                    try {
+                                        Log.d(TAG, "WebViewModel is null, creating new instance")
+                                        webViewModel = WebViewModel()
+                                        webViewModel?.updateFavicon(url, it)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error creating WebViewModel on the fly", e)
+                                    }
+                                }
+                                
+                                Log.d(TAG, "Received favicon for bubble: $bubbleId")
+                            }
+                        }
+                        
+                        override fun onReceivedTitle(view: WebView?, title: String?) {
+                            title?.let {
+                                Log.d(TAG, "Received page title for bubble $bubbleId: $it")
+                                // Update title in WebViewModel
+                                webViewModel?.let { viewModel ->
+                                    try {
+                                        viewModel.updateTitle(url, it)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error updating title in WebViewModel", e)
+                                    }
+                                } ?: run {
+                                    // If WebViewModel is null, try to create it
+                                    try {
+                                        Log.d(TAG, "WebViewModel is null, creating new instance")
+                                        webViewModel = WebViewModel()
+                                        webViewModel?.updateTitle(url, it)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error creating WebViewModel on the fly", e)
+                                    }
+                                }
+                            }
                         }
                     }
+                
+            // Add WebViewClient to handle page loading and errors
+            webViewContainer.webViewClient = object : android.webkit.WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    Log.d(TAG, "WebView page loading started for bubble $bubbleId: $url")
+                    progressBar.visibility = View.VISIBLE
                 }
                 
-        // Add WebViewClient to handle page loading and errors
-        webViewContainer.webViewClient = object : android.webkit.WebViewClient() {
-            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                super.onPageStarted(view, url, favicon)
-                Log.d(TAG, "WebView page loading started: $url")
-                progressBar.visibility = View.VISIBLE
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    Log.d(TAG, "WebView page loading finished for bubble $bubbleId: $url")
+                    progressBar.visibility = View.GONE
+                }
+                
+                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                    url?.let {
+                        Log.d(TAG, "Loading URL in WebView: $it")
+                        view?.loadUrl(it)
+                    }
+                    return true
+                }
+                
+                override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
+                    super.onReceivedError(view, errorCode, description, failingUrl)
+                    Log.e(TAG, "WebView error for bubble $bubbleId: $errorCode - $description for URL: $failingUrl")
+                }
+            }
+        
+            // Set WebView background to white for better visibility
+            webViewContainer.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
+            
+            // Load the actual URL immediately
+            if (url.isNotEmpty()) {
+                val formattedUrl = formatUrl(url)
+                if (formattedUrl.isNotEmpty()) {
+                    Log.d(TAG, "Loading URL directly in WebView for bubble $bubbleId: $formattedUrl")
+                    webViewContainer.loadUrl(formattedUrl)
+                } else {
+                    Log.d(TAG, "Invalid URL format for bubble $bubbleId: $url")
+                    webViewContainer.loadUrl("about:blank")
+                }
+            } else {
+                // Load a blank page for empty URL
+                Log.d(TAG, "No URL provided for bubble $bubbleId")
+                webViewContainer.loadUrl("about:blank")
             }
             
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                Log.d(TAG, "WebView page loading finished: $url")
-                progressBar.visibility = View.GONE
-            }
-            
-            override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
-                super.onReceivedError(view, errorCode, description, failingUrl)
-                Log.e(TAG, "WebView error: $errorCode - $description for URL: $failingUrl")
+            Log.d(TAG, "WebView initialized for bubble: $bubbleId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting up WebView for bubble $bubbleId", e)
+        }
+    }
+
+    /**
+     * Reload the webpage if needed
+     */
+    private fun reloadWebPageIfNeeded() {
+        if (url.isNotEmpty()) {
+            try {
+                // Check if WebView has loaded the URL
+                if (webViewContainer.url == null || webViewContainer.url == "about:blank") {
+                    // Format and validate URL
+                    val loadUrl = formatUrl(url)
+                    if (loadUrl.isNotEmpty()) {
+                        Log.d(TAG, "Reloading URL for bubble $bubbleId: $loadUrl")
+                        
+                        // Load the URL
+                        webViewContainer.loadUrl(loadUrl)
+                        Log.d(TAG, "Successfully reloaded URL for bubble $bubbleId: $loadUrl")
+                    } else {
+                        Log.d(TAG, "Invalid URL format for bubble $bubbleId: $url")
+                    }
+                } else {
+                    Log.d(TAG, "WebView already has content for bubble $bubbleId: ${webViewContainer.url}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error reloading URL for bubble $bubbleId", e)
             }
         }
-        
-        // Set WebView background to white for better visibility
-        webViewContainer.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
-        
-        // Load a blank page initially to ensure WebView is properly initialized
-        webViewContainer.loadUrl("about:blank")
-        
-        Log.d(TAG, "WebView initialized and ready to load URL: $url")
-    } catch (e: Exception) {
-        Log.e(TAG, "Error setting up WebView", e)
     }
-}
 
     /**
      * Toggle bubble expanded state with animation
@@ -287,50 +382,42 @@ class BubbleView @JvmOverloads constructor(
             // Bounce the bubble
             bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), true)
             
-            // For non-main bubbles, ensure WebView is visible and load the webpage
-            if (!isMainBubble) {
+            // Make sure WebView is visible
+            webViewContainer.visibility = View.VISIBLE
+            tabsContainer.visibility = View.GONE
+            
+            // Set the dimensions for the expanded container to take maximum space
+            val layoutParams = expandedContainer.layoutParams
+            layoutParams.width = resources.displayMetrics.widthPixels * 9 / 10  // 90% of screen width
+            layoutParams.height = resources.displayMetrics.heightPixels * 7 / 10 // 70% of screen height
+            expandedContainer.layoutParams = layoutParams
+            
+            // Force layout update
+            expandedContainer.requestLayout()
+            
+            // Make sure the WebView is visible and loaded
+            try {
+                Log.d(TAG, "Making WebView visible for bubble $bubbleId with URL: $url")
+                
                 // Make sure WebView is visible
                 webViewContainer.visibility = View.VISIBLE
-                tabsContainer.visibility = View.GONE
                 
-                // Set the dimensions for the expanded container to take maximum space
-                val layoutParams = expandedContainer.layoutParams
-                layoutParams.width = resources.displayMetrics.widthPixels * 9 / 10  // 90% of screen width
-                layoutParams.height = resources.displayMetrics.heightPixels * 7 / 10 // 70% of screen height
-                expandedContainer.layoutParams = layoutParams
-                
-                // Force layout update
-                expandedContainer.requestLayout()
-                
-                // Always load the URL to ensure content is displayed
-                try {
-                    Log.d(TAG, "Loading URL in WebView: $url")
-                    // Format and validate URL
-                    val loadUrl = formatUrl(url)
-                    Log.d(TAG, "Formatted URL for loading: $loadUrl")
-                    
-                    // Ensure WebView is properly initialized before loading URL
-                    webViewContainer.post {
-                        try {
-                            // Clear any previous page state
-                            webViewContainer.clearHistory()
-                            webViewContainer.clearCache(false)
-                            
-                            // Load the URL
-                            webViewContainer.loadUrl(loadUrl)
-                            
-                            // Log success
-                            Log.d(TAG, "Successfully initiated URL loading: $loadUrl")
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error loading URL in WebView post handler", e)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error loading URL in WebView", e)
+                // Always reload the webpage when expanding to ensure content is displayed
+                val formattedUrl = formatUrl(url)
+                if (formattedUrl.isNotEmpty()) {
+                    Log.d(TAG, "Loading URL in expanded bubble: $formattedUrl")
+                    webViewContainer.loadUrl(formattedUrl)
+                } else {
+                    Log.d(TAG, "Invalid URL format in expanded bubble: $url")
+                    webViewContainer.loadUrl("about:blank")
                 }
                 
-                Log.d(TAG, "Expanded bubble with WebView visible, loading URL: $url")
+                Log.d(TAG, "WebView is now visible for bubble $bubbleId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling WebView visibility for bubble $bubbleId", e)
             }
+            
+            Log.d(TAG, "Expanded bubble with WebView visible, loading URL: $url")
         } else {
             // Hide expanded container with animation
             bubbleAnimator.animateCollapse(expandedContainer)
@@ -473,8 +560,8 @@ class BubbleView @JvmOverloads constructor(
             // If it looks like a domain (contains dots), add https://
             inputUrl.contains(".") -> "https://$inputUrl"
             
-            // If it's a search term, use a search engine
-            else -> "https://www.google.com/search?q=${android.net.Uri.encode(inputUrl)}"
+            // If it's not a valid URL, return empty string
+            else -> ""
         }
     }
     
@@ -537,22 +624,9 @@ class BubbleView @JvmOverloads constructor(
                 }
                 
                 if (isDragging) {
-                    if (isMainBubble) {
-                        // Main bubble can only move vertically when near edges
-                        val isNearLeftEdge = layoutParams.x < screenWidth / 4
-                        val isNearRightEdge = layoutParams.x > (screenWidth * 3 / 4)
-                        
-                        if (isNearLeftEdge) {
-                            layoutParams.x = 0
-                        } else if (isNearRightEdge) {
-                            layoutParams.x = screenWidth - width
-                        } else {
-                            layoutParams.x = max(0, min(screenWidth - width, (initialX + dx).toInt()))
-                        }
-                    } else {
-                        // Regular bubbles can move freely
-                        layoutParams.x = max(0, min(screenWidth - width, (initialX + dx).toInt()))
-                    }
+                    // Regular bubbles can move freely
+                    layoutParams.x = max(0, min(screenWidth - width, (initialX + dx).toInt()))
+                
                     layoutParams.y = max(0, min(screenHeight - height, (initialY + dy).toInt()))
                     windowManager.updateViewLayout(this, layoutParams)
                     return true
@@ -563,25 +637,8 @@ class BubbleView @JvmOverloads constructor(
                 if (!isDragging) {
                     performClick()
                 } else {
-                    if (isMainBubble) {
-                        // Force main bubble to snap to either left or right edge
-                        layoutParams.x = if (layoutParams.x < screenWidth / 2) 0 else screenWidth - width
-                    }
                     windowManager.updateViewLayout(this, layoutParams)
                     saveBubblePosition()
-                }
-                if (isDragging) {
-                    val params = layoutParams
-                    if (isMainBubble && !isExpanded) {
-                        // Save position for main bubble when minimized
-                        val intent = Intent(context, BubbleService::class.java).apply {
-                            action = Constants.ACTION_SAVE_POSITION
-                            putExtra(BubbleService.EXTRA_X, params.x)
-                            putExtra(BubbleService.EXTRA_Y, params.y)
-                        }
-                        bubbleAnimator.animateBounce(this, true)
-                        context.startService(intent)
-                    }
                 }
                 return true
             }
@@ -609,15 +666,8 @@ class BubbleView @JvmOverloads constructor(
     }
 
     fun updateBubblesList(bubbles: List<Bubble>) {
-        if (isMainBubble) {
-            Log.d(TAG, "Updating bubbles list in main bubble: ${bubbles.size} bubbles")
-            tabsAdapter?.submitList(bubbles)
-            
-            // If we have bubbles, make sure the tabs container is visible
-            if (bubbles.isNotEmpty()) {
-                tabsContainer.visibility = View.VISIBLE
-            }
-        }
+        // We no longer use the main bubble concept
+        Log.d(TAG, "Bubble list update received: ${bubbles.size} bubbles")
     }
 
     /**
@@ -631,7 +681,53 @@ class BubbleView @JvmOverloads constructor(
      * Update the favicon of the bubble
      */
     fun updateFavicon(favicon: Bitmap) {
-        bubbleIcon.setImageBitmap(favicon)
+        updateBubbleIcon(favicon)
+    }
+    
+    /**
+     * Update the bubble icon with a favicon
+     */
+    private fun updateBubbleIcon(favicon: Bitmap) {
+        try {
+            // Run on UI thread to update the ImageView
+            post {
+                bubbleIcon.setImageBitmap(favicon)
+                Log.d(TAG, "Bubble icon updated with favicon for bubble: $bubbleId")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating bubble icon", e)
+            // Fallback to default icon if there's an error
+            post {
+                bubbleIcon.setImageResource(R.drawable.ic_globe)
+            }
+        }
+    }
+    
+    /**
+     * Create a standalone instance of WebViewModel when we can't get it from ViewModelProvider
+     */
+    private fun createStandaloneWebViewModel() {
+        try {
+            Log.d(TAG, "Creating standalone WebViewModel instance")
+            webViewModel = WebViewModel()
+            
+            // Set up a handler to check for favicon updates periodically
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            handler.post(object : Runnable {
+                override fun run() {
+                    // Check if the WebView has a favicon
+                    if (webViewContainer.favicon != null) {
+                        webViewContainer.favicon?.let { favicon ->
+                            updateBubbleIcon(favicon)
+                        }
+                    }
+                    // Schedule the next check
+                    handler.postDelayed(this, 2000) // Check every 2 seconds
+                }
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating standalone WebViewModel", e)
+        }
     }
 
     /**
@@ -679,7 +775,16 @@ class BubbleView @JvmOverloads constructor(
     private fun showWebView() {
         webViewContainer.visibility = View.VISIBLE
         tabsContainer.visibility = View.GONE
-        webViewContainer.loadUrl(url)
+        
+        // Format and validate URL before loading
+        val formattedUrl = formatUrl(url)
+        if (formattedUrl.isNotEmpty()) {
+            Log.d(TAG, "Loading URL in showWebView: $formattedUrl")
+            webViewContainer.loadUrl(formattedUrl)
+        } else {
+            Log.d(TAG, "Invalid URL format in showWebView: $url")
+            webViewContainer.loadUrl("about:blank")
+        }
     }
 
     fun setExpanded(expanded: Boolean) {

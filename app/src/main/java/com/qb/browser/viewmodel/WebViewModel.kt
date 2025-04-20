@@ -2,6 +2,7 @@ package com.qb.browser.viewmodel
 
 import android.webkit.WebView
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.qb.browser.model.WebPage
@@ -30,16 +31,25 @@ class WebViewModel : ViewModel() {
      */
     fun loadUrl(bubbleId: String, url: String) {
         viewModelScope.launch {
-            val timestamp = bubbleId.toLongOrNull() ?: System.currentTimeMillis()
-            val webPage = WebPage(
-                url = url,
-                title = url,
-                timestamp = timestamp,
-                content = "",
-                isAvailableOffline = false,
-                visitCount = 1
-            )
-            updateWebPage(webPage)
+            try {
+                Log.d("WebViewModel", "Loading URL for bubble $bubbleId: $url")
+                
+                val timestamp = System.currentTimeMillis()
+                val webPage = WebPage(
+                    url = url,
+                    title = url,
+                    timestamp = timestamp,
+                    content = "",
+                    isAvailableOffline = false,
+                    visitCount = 1
+                )
+                
+                updateWebPage(webPage)
+                
+                Log.d("WebViewModel", "Successfully loaded URL for bubble $bubbleId: $url")
+            } catch (e: Exception) {
+                Log.e("WebViewModel", "Error loading URL for bubble $bubbleId: $url", e)
+            }
         }
     }
 
@@ -103,12 +113,31 @@ class WebViewModel : ViewModel() {
      */
     fun updateFavicon(url: String, favicon: Bitmap) {
         viewModelScope.launch {
-            val currentPages = _webPages.value.toMutableMap()
-            currentPages[url]?.let { 
-                // Update favicon logic here (assuming WebPage has a favicon property)
-                currentPages[url] = it.copy(favicon = favicon)
+            try {
+                Log.d("WebViewModel", "Updating favicon for URL: $url")
+                val currentPages = _webPages.value.toMutableMap()
+                currentPages[url]?.let { 
+                    // Update the favicon in the WebPage object
+                    currentPages[url] = it.copy(favicon = favicon)
+                    Log.d("WebViewModel", "Favicon updated successfully for URL: $url")
+                } ?: run {
+                    // If the page doesn't exist yet, create it with the favicon
+                    val webPage = WebPage(
+                        url = url,
+                        title = url,
+                        timestamp = System.currentTimeMillis(),
+                        content = "",
+                        isAvailableOffline = false,
+                        visitCount = 1,
+                        favicon = favicon
+                    )
+                    currentPages[url] = webPage
+                    Log.d("WebViewModel", "Created new page with favicon for URL: $url")
+                }
+                _webPages.value = currentPages
+            } catch (e: Exception) {
+                Log.e("WebViewModel", "Error updating favicon for URL: $url", e)
             }
-            _webPages.value = currentPages
         }
     }
 

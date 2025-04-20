@@ -31,43 +31,48 @@ class BubbleManager(
 
     fun createOrUpdateBubbleWithNewUrl(url: String) {
         lifecycleScope.launch {
-            Log.d(TAG, "createOrUpdateBubbleWithNewUrl | URL: $url")
-            val currentBubbles = _bubbles.value.toMutableMap()
+            Log.d(TAG, "Creating new bubble for URL: $url")
             
-            // Generate a unique ID for the new bubble
-            val bubbleId = "bubble_${System.currentTimeMillis()}"
-            
-            val timestamp = System.currentTimeMillis()
-            val newWebPage = WebPage(
-                url = url,
-                title = url,
-                timestamp = timestamp,
-                content = "",
-                isAvailableOffline = false,
-                visitCount = 1
-            )
-
-            // Create new bubble with unique ID
-            val newBubble = Bubble(
-                id = bubbleId,
-                url = url,
-                title = url,
-                tabs = listOf(newWebPage)
-            )
-            
-            // Add to current bubbles map
-            currentBubbles[bubbleId] = newBubble
-            
-            // Update ViewModel
-            bubbleViewModel.addBubble(newBubble)
-            
-            // Update state
-            _bubbles.value = currentBubbles
-            
-            // Load URL in WebView
-            webViewModel.loadUrl(bubbleId, url)
-            
-            Log.d(TAG, "Created new bubble with ID: $bubbleId for URL: $url")
+            try {
+                val currentBubbles = _bubbles.value.toMutableMap()
+                
+                // Generate a unique ID for the new bubble
+                val bubbleId = "bubble_${System.currentTimeMillis()}"
+                
+                val timestamp = System.currentTimeMillis()
+                val newWebPage = WebPage(
+                    url = url,
+                    title = url,
+                    timestamp = timestamp,
+                    content = "",
+                    isAvailableOffline = false,
+                    visitCount = 1
+                )
+    
+                // Create new bubble with unique ID
+                val newBubble = Bubble(
+                    id = bubbleId,
+                    url = url,
+                    title = url,
+                    tabs = listOf(newWebPage)
+                )
+                
+                // Add to current bubbles map
+                currentBubbles[bubbleId] = newBubble
+                
+                // Update ViewModel
+                bubbleViewModel.addBubble(newBubble)
+                
+                // Update state
+                _bubbles.value = currentBubbles
+                
+                // Load URL in WebView
+                webViewModel.loadUrl(bubbleId, url)
+                
+                Log.d(TAG, "Successfully created new bubble with ID: $bubbleId for URL: $url")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating bubble for URL: $url", e)
+            }
         }
     }
 

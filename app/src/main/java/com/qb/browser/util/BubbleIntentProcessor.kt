@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.LifecycleCoroutineScope
+import java.util.regex.Pattern
 import com.qb.browser.Constants
 import com.qb.browser.db.WebPageDao
 import com.qb.browser.manager.BubbleManager
@@ -49,9 +50,14 @@ class BubbleIntentProcessor(
     private fun handleCreateBubble(intent: Intent) {
         val sharedUrl = intent.getStringExtra(Constants.EXTRA_URL)
         Log.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: ${sharedUrl}")
+        
         if (sharedUrl != null && isValidUrl(sharedUrl)) {
-            Log.e(TAG, "Creating buuble, Received intent: ${intent.action}, data: ${intent.extras}")
+            Log.e(TAG, "Creating bubble with URL: $sharedUrl")
+            
+            // Create a new bubble with the shared URL
             bubbleManager.createOrUpdateBubbleWithNewUrl(sharedUrl)
+        } else {
+            Log.e(TAG, "No valid URL provided.")
         }
     }
     
@@ -141,11 +147,30 @@ class BubbleIntentProcessor(
     private fun handleSharedContent(intent: Intent) {
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         Log.d(TAG, "handleSharedContent | Received shared text: $sharedText")
-        if (sharedText != null && isValidUrl(sharedText)) {
+        
+        if (sharedText != null) {
+            // Create a new bubble with the extracted URL
+            Log.d(TAG, "Creating bubble with extracted URL: $sharedText")
             bubbleManager.createOrUpdateBubbleWithNewUrl(sharedText)
-            Log.d(TAG, "Opened shared URL in bubble: $sharedText")
+            
         } else {
-            Log.w(TAG, "Invalid or missing shared text for handleSharedContent")
+            Log.w(TAG, "Missing shared text for handleSharedContent")
+        }
+    }
+    
+    /**
+     * Extracts a URL from text that might contain other content
+     */
+    private fun extractUrl(text: String): String? {
+        // Simple URL extraction using regex
+        val urlPattern = "(https?://(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|https?://(?:www\\.|(?!www))[a-zA-Z0-9]+\\.[^\\s]{2,}|www\\.[a-zA-Z0-9]+\\.[^\\s]{2,})"
+        val pattern = Pattern.compile(urlPattern)
+        val matcher = pattern.matcher(text)
+        
+        return if (matcher.find()) {
+            matcher.group()
+        } else {
+            null
         }
     }
 

@@ -1,13 +1,16 @@
 package com.qb.browser.manager
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.lifecycle.LifecycleCoroutineScope
+import com.qb.browser.Constants
 import com.qb.browser.model.Bubble
+import com.qb.browser.service.BubbleService
 import com.qb.browser.ui.BubbleView
 import com.qb.browser.viewmodel.BubbleViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -98,7 +101,7 @@ class BubbleDisplayManager(
      */
     private fun addBubbleView(bubble: Bubble) {
         try {
-            Log.d(TAG, "Adding bubble view: ${bubble.id}")
+            Log.d(TAG, "Adding bubble view: ${bubble.id} with URL: ${bubble.url}")
             
             // Create bubble view
             val bubbleView = BubbleView(
@@ -109,7 +112,15 @@ class BubbleDisplayManager(
             
             // Set close listener
             bubbleView.setOnCloseListener {
+                // Remove the bubble view
                 removeBubbleView(bubble.id)
+                
+                // Also notify the BubbleViewModel to remove the bubble
+                val intent = Intent(context, BubbleService::class.java).apply {
+                    action = Constants.ACTION_CLOSE_BUBBLE
+                    putExtra(BubbleService.EXTRA_BUBBLE_ID, bubble.id)
+                }
+                context.startService(intent)
             }
             
             // Create layout params
