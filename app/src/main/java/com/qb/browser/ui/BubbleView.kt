@@ -6,17 +6,20 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
 import android.util.AttributeSet
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
@@ -25,21 +28,27 @@ import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.qb.browser.Constants
+import com.qb.browser.QBApplication
 import com.qb.browser.R
+import com.qb.browser.model.Bubble
+import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
-import com.qb.browser.util.SettingsManager
+import com.qb.browser.settings.SettingsManager
+import com.qb.browser.ui.ReadModeActivity
+import com.qb.browser.ui.WebViewActivity
+import com.qb.browser.ui.adapter.TabsAdapter
+import com.qb.browser.util.AdBlocker
+import com.qb.browser.util.ContentExtractor
 import com.qb.browser.viewmodel.WebViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.lang.Math.min
 import kotlin.math.hypot
 import kotlin.math.max
-import com.qb.browser.model.Bubble
-import com.qb.browser.model.WebPage
-import com.qb.browser.ui.adapter.TabsAdapter
-import com.qb.browser.Constants
-import com.qb.browser.QBApplication
-import android.util.Log
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 /**
  * Enhanced floating bubble view that displays web content in a draggable, expandable bubble.
@@ -461,6 +470,36 @@ class BubbleView @JvmOverloads constructor(
                 return handleUrlLoading(view, request?.url?.toString())
             }
             
+            // Ad blocking implementation
+            override fun shouldInterceptRequest(view: WebView?, request: android.webkit.WebResourceRequest?): WebResourceResponse? {
+                if (settingsManager.isAdBlockEnabled()) {
+                    val url = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
+                    val adBlocker = AdBlocker.getInstance(context)
+                    val blockResponse = adBlocker.shouldBlockRequest(url)
+                    if (blockResponse != null) {
+                        Log.d(TAG, "Blocked ad request: $url")
+                        return blockResponse
+                    }
+                }
+                return super.shouldInterceptRequest(view, request)
+            }
+            
+            // For older Android versions
+            @Suppress("DEPRECATION")
+            override fun shouldInterceptRequest(view: WebView?, url: String?): WebResourceResponse? {
+                if (settingsManager.isAdBlockEnabled()) {
+                    if (url != null) {
+                        val adBlocker = AdBlocker.getInstance(context)
+                        val blockResponse = adBlocker.shouldBlockRequest(url)
+                        if (blockResponse != null) {
+                            Log.d(TAG, "Blocked ad request: $url")
+                            return blockResponse
+                        }
+                    }
+                }
+                return super.shouldInterceptRequest(view, url)
+            }
+            
             // Common URL handling logic
             private fun handleUrlLoading(view: WebView?, url: String?): Boolean {
                 url?.let {
@@ -774,20 +813,130 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Open the web page in read mode
+     * Open the web page in read mode directly in the bubble's WebView
      */
     private fun openReadMode() {
         try {
-            launchActivity(ReadModeActivity::class.java,
-                ReadModeActivity.EXTRA_URL to url,
-                ReadModeActivity.EXTRA_BUBBLE_ID to bubbleId
-            )
+            // Show loading indicator
+            progressBar.visibility = View.VISIBLE
+            progressBar.isIndeterminate = true
             
-            // Collapse if expanded
-            if (isBubbleExpanded) toggleBubbleExpanded()
+            // Create content extractor
+            val contentExtractor = ContentExtractor(context)
+            
+            // Use a coroutine scope directly instead of relying on lifecycleOwner
+            val coroutineScope = CoroutineScope(Dispatchers.Main)
+            
+            coroutineScope.launch {
+                try {
+                    // Extract readable content in the background
+                    val readableContent = withContext(Dispatchers.IO) {
+                        contentExtractor.extractReadableContent(url)
+                    }
+                    
+                    // Create styled HTML
+                    val isNightMode = settingsManager.isDarkThemeEnabled()
+                    val styledHtml = createStyledHtml(readableContent, isNightMode)
+                    
+                    // Load the content in the WebView on the main thread
+                    withContext(Dispatchers.Main) {
+                        // Make sure the bubble is expanded to show the content
+                        if (!isBubbleExpanded) {
+                            toggleBubbleExpanded()
+                        }
+                        
+                        // Load the content
+                        webViewContainer.loadDataWithBaseURL(url, styledHtml, "text/html", "UTF-8", null)
+                        
+                        // Hide loading indicator
+                        progressBar.visibility = View.GONE
+                        progressBar.isIndeterminate = false
+                        
+                        // Make sure WebView is visible
+                        webViewContainer.alpha = 1f
+                        
+                        Log.d(TAG, "Reader mode content loaded successfully")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error extracting content for read mode", e)
+                    withContext(Dispatchers.Main) {
+                        progressBar.visibility = View.GONE
+                        progressBar.isIndeterminate = false
+                        Toast.makeText(context, "Failed to load reader mode", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to open read mode", e)
+            progressBar.visibility = View.GONE
+            progressBar.isIndeterminate = false
         }
+    }
+    
+    /**
+     * Create styled HTML for reader mode
+     */
+    private fun createStyledHtml(content: ContentExtractor.ReadableContent, isNightMode: Boolean): String {
+        val backgroundColor = if (isNightMode) "#121212" else "#FAFAFA"
+        val textColor = if (isNightMode) "#E0E0E0" else "#212121"
+        val linkColor = if (isNightMode) "#90CAF9" else "#1976D2"
+        
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {
+                        font-family: 'Segoe UI', Arial, sans-serif;
+                        line-height: 1.6;
+                        color: $textColor;
+                        background-color: $backgroundColor;
+                        padding: 16px;
+                        margin: 0;
+                    }
+                    h1 {
+                        font-size: 1.4em;
+                        margin-bottom: 8px;
+                    }
+                    .byline {
+                        font-size: 0.9em;
+                        color: ${if (isNightMode) "#AAAAAA" else "#757575"};
+                        margin-bottom: 24px;
+                    }
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                        margin: 16px 0;
+                    }
+                    p {
+                        margin-bottom: 16px;
+                    }
+                    a {
+                        color: $linkColor;
+                        text-decoration: none;
+                    }
+                    blockquote {
+                        border-left: 4px solid ${if (isNightMode) "#616161" else "#BDBDBD"};
+                        padding-left: 16px;
+                        margin-left: 0;
+                        font-style: italic;
+                    }
+                    pre, code {
+                        background-color: ${if (isNightMode) "#1E1E1E" else "#F5F5F5"};
+                        padding: 16px;
+                        border-radius: 4px;
+                        overflow: auto;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>${content.title}</h1>
+                ${if (content.byline.isNotEmpty()) "<div class=\"byline\">${content.byline}</div>" else ""}
+                ${content.content}
+            </body>
+            </html>
+        """.trimIndent()
     }
     
     /**

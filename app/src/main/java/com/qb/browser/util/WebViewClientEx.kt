@@ -7,6 +7,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.qb.browser.settings.SettingsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,6 +22,7 @@ class WebViewClientEx(
 ) : WebViewClient() {
     
     private val adBlocker = AdBlocker.getInstance(context)
+    private val settingsManager = SettingsManager.getInstance(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     
     override fun shouldInterceptRequest(
@@ -29,10 +31,15 @@ class WebViewClientEx(
     ): WebResourceResponse? {
         val url = request.url.toString()
         
-        // Check if this resource should be blocked
-        // Use the shouldBlockRequest method from AdBlocker
-        val blockResponse = adBlocker.shouldBlockRequest(url)
-        return blockResponse ?: super.shouldInterceptRequest(view, request)
+        // Only block ads if enabled in settings
+        if (settingsManager.isAdBlockEnabled()) {
+            // Check if this resource should be blocked
+            val blockResponse = adBlocker.shouldBlockRequest(url)
+            return blockResponse ?: super.shouldInterceptRequest(view, request)
+        }
+        
+        // If ad blocking is disabled, don't block anything
+        return super.shouldInterceptRequest(view, request)
     }
     
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
