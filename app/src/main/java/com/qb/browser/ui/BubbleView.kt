@@ -219,7 +219,7 @@ class BubbleView @JvmOverloads constructor(
     private fun notifyBubbleActivated() {
         val intent = Intent(context, BubbleService::class.java).apply {
             action = BubbleService.ACTION_ACTIVATE_BUBBLE
-            putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
+            putExtra(Constants.EXTRA_BUBBLE_ID, bubbleId)
         }
         context.startService(intent)
     }
@@ -243,17 +243,37 @@ class BubbleView @JvmOverloads constructor(
         try {
             Log.d(TAG, "Setting up WebView for bubble: $bubbleId with URL: $url")
             
+            // Set WebView background to white for better visibility
+            webViewContainer.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
+            
             // Configure WebView settings
             configureWebViewSettings()
             
             // Set up WebView clients
             setupWebViewClients()
             
-            // Set WebView background to white for better visibility
-            webViewContainer.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
+            // Make WebView ready to load content in the background
+            // It should be VISIBLE but with alpha=0 to ensure it renders properly
+            webViewContainer.visibility = View.VISIBLE
+            webViewContainer.alpha = 0f
             
-            // Load the URL
-            loadInitialUrl()
+            // Ensure WebView has layout params
+            val layoutParams = webViewContainer.layoutParams
+            if (layoutParams != null) {
+                layoutParams.width = FrameLayout.LayoutParams.MATCH_PARENT
+                layoutParams.height = FrameLayout.LayoutParams.MATCH_PARENT
+                webViewContainer.layoutParams = layoutParams
+            }
+            
+            // Force layout to ensure WebView is properly sized
+            webViewContainer.requestLayout()
+            
+            // Load the URL in the background
+            // Use post to ensure WebView is fully initialized
+            post {
+                loadInitialUrl()
+                Log.d(TAG, "URL loading initiated for bubble: $bubbleId")
+            }
             
             Log.d(TAG, "WebView initialized for bubble: $bubbleId")
         } catch (e: Exception) {
@@ -282,7 +302,21 @@ class BubbleView @JvmOverloads constructor(
             databaseEnabled = true
             javaScriptCanOpenWindowsAutomatically = true
             setSupportMultipleWindows(true)
+            
+            // Additional settings to ensure content loads properly
+            blockNetworkImage = false
+            blockNetworkLoads = false
+            mediaPlaybackRequiresUserGesture = false
+            
+            // Set default text encoding
+            defaultTextEncodingName = "UTF-8"
+            
+            // Enable hardware acceleration
+            setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
         }
+        
+        // Enable hardware acceleration on the WebView
+        webViewContainer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
     }
     
     /**
@@ -378,25 +412,107 @@ class BubbleView @JvmOverloads constructor(
                 super.onPageStarted(view, url, favicon)
                 Log.d(TAG, "WebView page loading started for bubble $bubbleId: $url")
                 progressBar.visibility = View.VISIBLE
+                
+                // Ensure the WebView is in a good state for rendering
+                view?.invalidate()
             }
             
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 Log.d(TAG, "WebView page loading finished for bubble $bubbleId: $url")
                 progressBar.visibility = View.GONE
+                
+                // Force a redraw to ensure content is visible
+                view?.invalidate()
+                
+                // If this is the initial URL, make sure it's properly loaded
+                if (url != null && url == formatUrl(this@BubbleView.url)) {
+                    Log.d(TAG, "Initial URL loaded successfully: $url")
+                    
+                    // If the bubble is expanded, make sure the WebView is fully visible
+                    if (isBubbleExpanded) {
+                        webViewContainer.alpha = 1f
+                    }
+                }
             }
             
+            // For older Android versions
+            @Suppress("DEPRECATION")
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                return handleUrlLoading(view, url)
+            }
+            
+            // For newer Android versions
+            override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
+                return handleUrlLoading(view, request?.url?.toString())
+            }
+            
+            // Common URL handling logic
+            private fun handleUrlLoading(view: WebView?, url: String?): Boolean {
                 url?.let {
                     Log.d(TAG, "Loading URL in WebView: $it")
-                    view?.loadUrl(it)
+                    // Only override special URLs, let WebView handle normal URLs
+                    if (it.startsWith("tel:") || it.startsWith("mailto:") || it.startsWith("sms:") || 
+                        it.startsWith("intent:") || it.startsWith("market:")) {
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(it)))
+                            return true
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error handling special URL: $it", e)
+                        }
+                    }
                 }
-                return true
+                // Return false to let WebView handle normal URLs
+                return false
             }
             
+            // Handle HTTP errors
+            @Suppress("DEPRECATION")
             override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
                 super.onReceivedError(view, errorCode, description, failingUrl)
                 Log.e(TAG, "WebView error for bubble $bubbleId: $errorCode - $description for URL: $failingUrl")
+                
+                // Only handle errors for the main page, not resources
+                if (failingUrl == view?.url) {
+                    handleWebViewError(view, errorCode, description, failingUrl)
+                }
+            }
+            
+            // Handle newer API errors
+            override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
+                super.onReceivedError(view, request, error)
+                
+                val errorCode = error?.errorCode ?: -1
+                val description = error?.description?.toString() ?: "Unknown error"
+                val failingUrl = request?.url?.toString()
+                
+                Log.e(TAG, "WebView error (new API) for bubble $bubbleId: $errorCode - $description for URL: $failingUrl")
+                
+                // Only handle errors for the main page, not resources
+                if (request?.isForMainFrame == true) {
+                    handleWebViewError(view, errorCode, description, failingUrl)
+                }
+            }
+            
+            // Common error handling logic
+            private fun handleWebViewError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
+                // For connection errors, try to reload after a delay
+                if (errorCode == android.webkit.WebViewClient.ERROR_CONNECT || 
+                    errorCode == android.webkit.WebViewClient.ERROR_TIMEOUT ||
+                    errorCode == android.webkit.WebViewClient.ERROR_HOST_LOOKUP) {
+                    
+                    postDelayed({
+                        Log.d(TAG, "Attempting to reload after error: $failingUrl")
+                        view?.reload()
+                    }, 2000) // 2 second delay before retry
+                }
+            }
+            
+            // Handle SSL errors - accept all for simplicity
+            override fun onReceivedSslError(view: WebView?, handler: android.webkit.SslErrorHandler?, error: android.net.http.SslError?) {
+                Log.d(TAG, "SSL Error received for bubble $bubbleId: ${error?.toString()}")
+                // Accept SSL certificate for simplicity
+                handler?.proceed()
             }
         }
     }
@@ -408,8 +524,39 @@ class BubbleView @JvmOverloads constructor(
         if (url.isNotEmpty()) {
             val formattedUrl = formatUrl(url)
             if (formattedUrl.isNotEmpty()) {
-                Log.d(TAG, "Loading URL directly in WebView for bubble $bubbleId: $formattedUrl")
-                webViewContainer.loadUrl(formattedUrl)
+                try {
+                    Log.d(TAG, "Loading URL directly in WebView for bubble $bubbleId: $formattedUrl")
+                    
+                    // Clear any existing page
+                    webViewContainer.clearHistory()
+                    webViewContainer.clearCache(true)
+                    
+                    // Make sure WebView is in a good state for loading
+                    webViewContainer.stopLoading()
+                    
+                    // Load the URL with additional headers to ensure proper loading
+                    val headers = HashMap<String, String>()
+                    headers["User-Agent"] = webViewContainer.settings.userAgentString
+                    headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+                    headers["Accept-Language"] = "en-US,en;q=0.5"
+                    
+                    // Load the URL with headers
+                    webViewContainer.loadUrl(formattedUrl, headers)
+                    
+                    // Log success
+                    Log.d(TAG, "URL load initiated for bubble $bubbleId")
+                    
+                    // Set a fallback timer to reload if needed
+                    postDelayed({
+                        if (webViewContainer.url == null || webViewContainer.url == "about:blank") {
+                            Log.d(TAG, "Fallback: Reloading URL for bubble $bubbleId: $formattedUrl")
+                            webViewContainer.loadUrl(formattedUrl, headers)
+                        }
+                    }, 1000) // 1 second fallback
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error loading URL for bubble $bubbleId", e)
+                    webViewContainer.loadUrl("about:blank")
+                }
             } else {
                 Log.d(TAG, "Invalid URL format for bubble $bubbleId: $url")
                 webViewContainer.loadUrl("about:blank")
@@ -475,12 +622,13 @@ class BubbleView @JvmOverloads constructor(
         
         // Configure container visibility
         webViewContainer.visibility = View.VISIBLE
+        webViewContainer.alpha = 1f
         tabsContainer.visibility = View.GONE
         
         // Set the dimensions for the expanded container
         resizeExpandedContainer()
         
-        // Load content in WebView
+        // Make WebView visible and ensure content is loaded
         loadContentInExpandedWebView()
     }
     
@@ -498,21 +646,50 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Load content in the WebView when bubble is expanded
+     * Make WebView visible when bubble is expanded
      */
     private fun loadContentInExpandedWebView() {
         try {
             Log.d(TAG, "Making WebView visible for bubble $bubbleId with URL: $url")
             
-            // Always reload the webpage when expanding to ensure content is displayed
-            val formattedUrl = formatUrl(url)
-            if (formattedUrl.isNotEmpty()) {
-                Log.d(TAG, "Loading URL in expanded bubble: $formattedUrl")
-                webViewContainer.loadUrl(formattedUrl)
+            // Make WebView fully visible with animation
+            webViewContainer.visibility = View.VISIBLE
+            webViewContainer.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start()
+            
+            // Check if the page is loaded
+            val currentUrl = webViewContainer.url
+            Log.d(TAG, "Current WebView URL: $currentUrl")
+            
+            // If the page hasn't loaded yet or is blank, reload it
+            if (currentUrl == null || currentUrl == "about:blank" || currentUrl.isEmpty()) {
+                val formattedUrl = formatUrl(url)
+                if (formattedUrl.isNotEmpty()) {
+                    Log.d(TAG, "Loading URL in expanded bubble (fallback): $formattedUrl")
+                    
+                    // Load with headers for better compatibility
+                    val headers = HashMap<String, String>()
+                    headers["User-Agent"] = webViewContainer.settings.userAgentString
+                    headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+                    headers["Accept-Language"] = "en-US,en;q=0.5"
+                    
+                    // Stop any current loading and load the URL
+                    webViewContainer.stopLoading()
+                    webViewContainer.loadUrl(formattedUrl, headers)
+                    
+                    // Log the reload attempt
+                    Log.d(TAG, "Reloaded URL in expanded bubble: $formattedUrl")
+                }
             } else {
-                Log.d(TAG, "Invalid URL format in expanded bubble: $url")
-                webViewContainer.loadUrl("about:blank")
+                // If the page is already loaded, make sure it's visible
+                webViewContainer.invalidate()
+                Log.d(TAG, "WebView already has content loaded: $currentUrl")
             }
+            
+            // Force layout update to ensure content is visible
+            webViewContainer.requestLayout()
             
             Log.d(TAG, "WebView is now visible for bubble $bubbleId")
         } catch (e: Exception) {
@@ -529,6 +706,13 @@ class BubbleView @JvmOverloads constructor(
         
         // Slight shrink animation on collapse
         bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), false)
+        
+        // Keep WebView loaded but invisible
+        webViewContainer.visibility = View.INVISIBLE
+        webViewContainer.alpha = 0f
+        
+        // Don't destroy WebView content - just hide it
+        // This ensures the content stays loaded in the background
     }
 
     /**
@@ -644,8 +828,8 @@ class BubbleView @JvmOverloads constructor(
     private fun sendSaveOfflineIntent() {
         val intent = Intent(context, BubbleService::class.java).apply {
             action = "com.qb.browser.SAVE_OFFLINE"
-            putExtra(BubbleService.EXTRA_URL, url)
-            putExtra(BubbleService.EXTRA_BUBBLE_ID, bubbleId)
+            putExtra(Constants.EXTRA_URL, url)
+            putExtra(Constants.EXTRA_BUBBLE_ID, bubbleId)
         }
         context.startService(intent)
     }

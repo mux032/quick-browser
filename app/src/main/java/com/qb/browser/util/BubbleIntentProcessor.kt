@@ -71,7 +71,7 @@ class BubbleIntentProcessor(
     }
 
     private fun handleCloseBubble(intent: Intent) {
-        val bubbleId = intent.getStringExtra(BubbleService.EXTRA_BUBBLE_ID)
+        val bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
         if (bubbleId != null) {
             bubbleManager.removeBubble(bubbleId)
         }
@@ -79,7 +79,7 @@ class BubbleIntentProcessor(
     }
 
     private fun handleActivateBubble(intent: Intent) {
-        val bubbleId = intent.getStringExtra(BubbleService.EXTRA_BUBBLE_ID)
+        val bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
         if (bubbleId != null) {
             val currentBubbles = bubbleManager.bubbles.value
             val bubble = currentBubbles[bubbleId]

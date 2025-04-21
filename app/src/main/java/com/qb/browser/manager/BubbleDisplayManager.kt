@@ -118,7 +118,7 @@ class BubbleDisplayManager(
                 // Also notify the BubbleViewModel to remove the bubble
                 val intent = Intent(context, BubbleService::class.java).apply {
                     action = Constants.ACTION_CLOSE_BUBBLE
-                    putExtra(BubbleService.EXTRA_BUBBLE_ID, bubble.id)
+                    putExtra(Constants.EXTRA_BUBBLE_ID, bubble.id)
                 }
                 context.startService(intent)
             }

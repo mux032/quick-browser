@@ -51,10 +51,6 @@ class BubbleService : LifecycleService() {
         const val EXTRA_X = "extra_x"
         const val EXTRA_Y = "extra_y"
 
-        // Intent extras
-        const val EXTRA_URL = Constants.EXTRA_URL
-        const val EXTRA_BUBBLE_ID = Constants.EXTRA_BUBBLE_ID
-
         fun isRunning(): Boolean = isServiceRunning
     }
 
