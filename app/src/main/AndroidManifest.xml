@@ -65,16 +65,26 @@
             android:label="@string/settings"
             android:theme="@style/Theme.QBrowser" />
 
-        <activity
+        <!-- <activity
             android:name=".ui.HistoryActivity"
             android:label="@string/history"
-            android:theme="@style/Theme.QBrowser" />
+            android:theme="@style/Theme.QBrowser" /> -->
 
         <service
             android:name=".service.BubbleService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync">
+            
+            <intent-filter>
+                <action android:name="com.qb.browser.action.CREATE_BUBBLE" />
+                <action android:name="com.qb.browser.action.CLOSE_BUBBLE" />
+                <action android:name="com.qb.browser.action.TOGGLE_BUBBLES" />
+                <action android:name="com.qb.browser.action.OPEN_URL" />
+                <action android:name="com.qb.browser.action.ACTIVATE_BUBBLE" />
+            </intent-filter>
+        </service>
+        
             
         <activity
             android:name=".ui.OfflinePageActivity"

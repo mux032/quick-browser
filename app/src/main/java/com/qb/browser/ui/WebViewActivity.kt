@@ -16,6 +16,7 @@ import com.qb.browser.util.OfflinePageManager
 import com.qb.browser.util.OfflineWebViewClient
 import com.qb.browser.util.WebViewClientEx
 import com.qb.browser.viewmodel.WebViewModel
+import com.qb.browser.Constants
 
 class WebViewActivity : AppCompatActivity() {
     
@@ -74,14 +75,17 @@ class WebViewActivity : AppCompatActivity() {
             }
         } else {
             // Get URL from intent for online mode
-            url = intent.getStringExtra(EXTRA_URL) ?: "https://www.google.com"
-            bubbleId = intent.getStringExtra(EXTRA_BUBBLE_ID)
-            
-            // Set up WebView for online mode
-            setupWebView()
+            val url = intent.getStringExtra(Constants.EXTRA_URL)
             
             // Load the URL
-            webView.loadUrl(url)
+            if (url != null) {
+                bubbleId = intent.getStringExtra(EXTRA_BUBBLE_ID)
+            
+                // Set up WebView for online mode
+                setupWebView()
+
+                webView.loadUrl(url)
+            }
         }
     }
     

@@ -11,12 +11,12 @@ import androidx.lifecycle.ViewModelProvider
 import com.qb.browser.R
 import com.qb.browser.model.Settings
 import com.qb.browser.viewmodel.BubbleViewModel
-import com.qb.browser.settings.SettingsManager  // Add this import
+import com.qb.browser.settings.SettingsManager
 
 class SettingsActivity : AppCompatActivity() {
     
     private lateinit var bubbleViewModel: BubbleViewModel
-    private lateinit var settings: BubbleViewModel.BubbleSettings  // Changed from Settings to BubbleViewModel.BubbleSettings
+    private lateinit var settings: Settings
     private lateinit var settingsManager: SettingsManager
     
     // UI Components
@@ -83,7 +83,8 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun loadSettings() {
-        bubbleViewModel.getSettings().observe(this) { savedSettings ->
+        bubbleViewModel.loadSettings()
+        bubbleViewModel.settings.observe(this) { savedSettings ->
             if (savedSettings != null) {
                 settings = savedSettings
                 
@@ -93,7 +94,7 @@ class SettingsActivity : AppCompatActivity() {
                 switchNightMode.isChecked = settings.darkTheme
                 
                 // Convert string sizes to progress values
-                val sizeValue = when(settings.size) {
+                val sizeValue = when (settings.size) {
                     "small" -> 0.5f
                     "medium" -> 0.75f
                     "large" -> 1.0f
@@ -102,7 +103,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 seekBarBubbleSize.progress = ((sizeValue - 0.5f) * 100).toInt()
                 
-                val speedValue = when(settings.animationSpeed) {
+                val speedValue = when (settings.animationSpeed) {
                     "slow" -> 0.5f
                     "medium" -> 0.75f
                     "fast" -> 1.0f
@@ -117,7 +118,7 @@ class SettingsActivity : AppCompatActivity() {
                 applyNightMode(settings.darkTheme)
             } else {
                 // Create default settings if none exist
-                settings = BubbleViewModel.BubbleSettings()
+                settings = Settings()
                 bubbleViewModel.saveSettings(settings)
             }
         }
@@ -132,7 +133,7 @@ class SettingsActivity : AppCompatActivity() {
         javascriptEnabled: Boolean = settings.javascriptEnabled,
         darkTheme: Boolean = settings.darkTheme
     ) {
-        val updatedSettings = BubbleViewModel.BubbleSettings(
+        val updatedSettings = Settings(
             size = size,
             animationSpeed = animationSpeed,
             savePositions = savePositions,

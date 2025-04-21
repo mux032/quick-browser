@@ -156,7 +156,7 @@ class PythonExtractor(private val context: Context) {
             val jsonLine = lines.last { it.trim().startsWith("{") && it.trim().endsWith("}") }
             
             // Simple JSON parsing to extract values
-            val resultMap = mutableMapOf<String, String>()
+            // val resultMap = mutableMapOf<String, String>()
             
             // Check if extraction was successful
             val successPattern = """"success":\s*(\w+)""".toRegex()

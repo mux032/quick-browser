@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.qb.browser.model.Settings
 import com.qb.browser.model.WebPage
 
@@ -11,6 +12,7 @@ import com.qb.browser.model.WebPage
  * Room database for the QB app
  */
 @Database(entities = [WebPage::class, Settings::class], version = 1, exportSchema = false)
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     
     abstract fun webPageDao(): WebPageDao

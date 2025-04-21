@@ -1,5 +1,7 @@
 #folders
+.idea/
 .gradle/
 .DS_Store
 android-sdk/
 app/build/
+app_flow_bubble_view.svg
