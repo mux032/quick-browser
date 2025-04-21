@@ -54,6 +54,9 @@ class BubbleIntentProcessor(
         if (sharedUrl != null && isValidUrl(sharedUrl)) {
             Log.e(TAG, "Creating bubble with URL: $sharedUrl")
             
+            // Save to history
+            saveToHistory(sharedUrl)
+            
             // Create a new bubble with the shared URL
             bubbleManager.createOrUpdateBubbleWithNewUrl(sharedUrl)
         } else {
@@ -61,9 +64,47 @@ class BubbleIntentProcessor(
         }
     }
     
+    /**
+     * Saves a URL to the browsing history
+     */
+    private fun saveToHistory(url: String) {
+        lifecycleScope.launch {
+            try {
+                // Check if the page already exists in history
+                val existingPage = webPageDao.getPageByUrl(url)
+                
+                if (existingPage != null) {
+                    // Update existing page timestamp and increment visit count
+                    val updatedPage = existingPage.copy(
+                        timestamp = System.currentTimeMillis(),
+                        visitCount = existingPage.visitCount + 1
+                    )
+                    webPageDao.updatePage(updatedPage)
+                    webPageDao.incrementVisitCount(url)
+                    Log.d(TAG, "Updated existing page in history: $url")
+                } else {
+                    // Create new history entry
+                    val newPage = WebPage(
+                        url = url,
+                        title = url, // Will be updated later when page loads
+                        timestamp = System.currentTimeMillis(),
+                        visitCount = 1
+                    )
+                    webPageDao.insertPage(newPage)
+                    Log.d(TAG, "Added new page to history: $url")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving to history", e)
+            }
+        }
+    }
+    
     private fun handleOpenUrl(intent: Intent) {
         val url = intent.getStringExtra(Constants.EXTRA_URL)
         if (url != null && isValidUrl(url)) {
+            // Save to history
+            saveToHistory(url)
+            
             bubbleManager.createOrUpdateBubbleWithNewUrl(url)
         } else {
             Log.w(TAG, "Invalid or missing URL for handleOpenUrl")
@@ -149,6 +190,9 @@ class BubbleIntentProcessor(
         Log.d(TAG, "handleSharedContent | Received shared text: $sharedText")
         
         if (sharedText != null) {
+            // Save to history
+            saveToHistory(sharedText)
+            
             // Create a new bubble with the extracted URL
             Log.d(TAG, "Creating bubble with extracted URL: $sharedText")
             bubbleManager.createOrUpdateBubbleWithNewUrl(sharedText)
@@ -181,7 +225,12 @@ class BubbleIntentProcessor(
     private fun handleViewAction(intent: Intent) {
         val data = intent.data
         if (data != null && isValidUrl(data.toString())) {
-            bubbleManager.createOrUpdateBubbleWithNewUrl(data.toString())
+            val url = data.toString()
+            
+            // Save to history
+            saveToHistory(url)
+            
+            bubbleManager.createOrUpdateBubbleWithNewUrl(url)
         }
     }
 
