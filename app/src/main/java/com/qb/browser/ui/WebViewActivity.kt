@@ -1,6 +1,7 @@
 package com.qb.browser.ui
 
 import android.graphics.Bitmap
+import android.util.Log
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
@@ -17,6 +18,7 @@ import com.qb.browser.util.OfflineWebViewClient
 import com.qb.browser.util.WebViewClientEx
 import com.qb.browser.viewmodel.WebViewModel
 import com.qb.browser.Constants
+import com.qb.browser.QBApplication
 
 class WebViewActivity : AppCompatActivity() {
     
@@ -124,6 +126,14 @@ class WebViewActivity : AppCompatActivity() {
             override fun onReceivedTitle(view: WebView?, title: String?) {
                 title?.let {
                     supportActionBar?.title = it
+                    
+                    // Update title in WebViewModel
+                    try {
+                        webViewModel.updateTitle(url, it)
+                        Log.d("WebViewActivity", "Updated page title: $it for URL: $url")
+                    } catch (e: Exception) {
+                        Log.e("WebViewActivity", "Error updating title", e)
+                    }
                 }
             }
             

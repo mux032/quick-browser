@@ -36,6 +36,7 @@ class BubbleService : LifecycleService() {
     private lateinit var intentProcessor: BubbleIntentProcessor
     private lateinit var webPageDao: WebPageDao
 
+
     companion object {
         private const val TAG = "BubbleService"
         @Volatile private var isServiceRunning = false
@@ -63,6 +64,9 @@ class BubbleService : LifecycleService() {
 
             // Initialize managers
             val app = application as QBApplication
+            // Set reference to this service in the application
+            app.bubbleService = this
+            
             bubbleManager =
                     BubbleManager(
                             context = this,
@@ -117,6 +121,17 @@ class BubbleService : LifecycleService() {
         bubbleDisplayManager.cleanup()
         bubbleManager.cleanup()
         serviceJob.cancel()
+        
+        // Remove reference from application
+        try {
+            val app = application as QBApplication
+            if (app.bubbleService === this) {
+                app.bubbleService = null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clearing service reference", e)
+        }
+        
         Log.d(TAG, "BubbleService onDestroy()")
     }
 }

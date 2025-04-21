@@ -62,7 +62,7 @@ class AdBlockUpdateService : Service() {
     private fun scheduleUpdates() {
         serviceScope.launch {
             while (true) {
-                if (settingsManager.isAdBlockingEnabled()) {
+                if (settingsManager.isAdBlockEnabled()) {
                     updateFilters()
                 }
                 delay(UPDATE_INTERVAL)

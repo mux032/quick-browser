@@ -185,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         
         recyclerView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-            addItemDecoration(DividerItemDecoration(this@MainActivity, DividerItemDecoration.VERTICAL))
+            // Removed divider decoration to eliminate horizontal lines
             adapter = this@MainActivity.historyAdapter
         }
     }
@@ -216,7 +216,8 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.menu_settings -> {
                 try {
-                    val intent = Intent(this, Class.forName("com.qb.browser.ui.SettingsActivity"))
+                    // Use the direct class reference instead of Class.forName
+                    val intent = Intent(this, SettingsActivity::class.java)
                     startActivity(intent)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error opening settings", e)
@@ -366,7 +367,15 @@ class MainActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val page = items[position]
             
-            holder.titleTextView.text = page.title.ifEmpty { getString(R.string.untitled_page) }
+            // Use a proper title or fallback to "Untitled Page"
+            // Don't show URL as title
+            val displayTitle = when {
+                page.title.isEmpty() -> getString(R.string.untitled_page)
+                page.title == page.url -> getString(R.string.untitled_page)
+                else -> page.title
+            }
+            
+            holder.titleTextView.text = displayTitle
             holder.urlTextView.text = page.url
             holder.dateTextView.text = dateFormat.format(Date(page.timestamp))
             

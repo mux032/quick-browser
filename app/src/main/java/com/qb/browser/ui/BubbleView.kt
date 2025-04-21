@@ -36,6 +36,7 @@ import com.qb.browser.model.Bubble
 import com.qb.browser.model.WebPage
 import com.qb.browser.ui.adapter.TabsAdapter
 import com.qb.browser.Constants
+import com.qb.browser.QBApplication
 import android.util.Log
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -400,6 +401,19 @@ class BubbleView @JvmOverloads constructor(
             } catch (e: Exception) {
                 Log.e(TAG, "Error creating WebViewModel on the fly", e)
             }
+        }
+        
+        // Update title in history database
+        try {
+            // Use WebViewModel to update the title
+            webViewModel?.updateTitle(url, title)
+            Log.d(TAG, "Updated page title in WebViewModel: $title")
+            
+            // Also update in the database if we have access to it
+            val app = context.applicationContext as? QBApplication
+            app?.webViewModel?.updateTitle(url, title)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating title in history database", e)
         }
     }
     
