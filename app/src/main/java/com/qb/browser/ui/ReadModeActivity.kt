@@ -131,13 +131,20 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
             stopTextToSpeech()
         }
         
+        // Validate URL format
+        val validatedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            "https://$url"
+        } else {
+            url
+        }
+        
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Extract content with improved algorithm
-                val readableContent = contentExtractor.extractReadableContent(url)
+                val readableContent = contentExtractor.extractReadableContent(validatedUrl)
                 
                 // Save the current URL and extracted text for TTS
-                currentUrl = url
+                currentUrl = validatedUrl
                 extractedText = readableContent.title + "\n\n" + 
                                 (if (readableContent.byline.isNotEmpty()) readableContent.byline + "\n\n" else "") + 
                                 stripHtml(readableContent.content)
@@ -154,7 +161,7 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
                     )
                     
                     // Load the content
-                    webView.loadDataWithBaseURL(url, htmlContent, "text/html", "UTF-8", null)
+                    webView.loadDataWithBaseURL(validatedUrl, htmlContent, "text/html", "UTF-8", null)
                     progressBar.visibility = View.GONE
                     webView.visibility = View.VISIBLE
                 }

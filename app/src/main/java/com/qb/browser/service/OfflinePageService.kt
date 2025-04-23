@@ -17,7 +17,7 @@ import androidx.core.app.NotificationCompat
 import com.qb.browser.R
 import com.qb.browser.ui.OfflinePageActivity
 import com.qb.browser.util.OfflinePageManager
-import com.qb.browser.NotificationPermissionActivity
+import com.qb.browser.ui.NotificationPermissionActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

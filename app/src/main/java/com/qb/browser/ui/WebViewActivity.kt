@@ -92,13 +92,23 @@ class WebViewActivity : AppCompatActivity() {
     }
     
     private fun setupWebView() {
+        // Get settings manager instance
+        val settingsManager = com.qb.browser.util.SettingsManager.getInstance(this)
+        
         webView.settings.apply {
-            javaScriptEnabled = false  // Disabled by default for privacy
+            javaScriptEnabled = settingsManager.isJavaScriptEnabled()  // Use user's JavaScript setting
             domStorageEnabled = true
             loadWithOverviewMode = true
             useWideViewPort = true
             builtInZoomControls = true
             displayZoomControls = false
+            
+            // Improve caching for better performance
+            cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+            databaseEnabled = true
+            
+            // Set reasonable timeouts
+            setGeolocationEnabled(false)  // Disable geolocation by default for privacy
         }
         
         // Set custom WebViewClient with ad blocking
@@ -157,9 +167,13 @@ class WebViewActivity : AppCompatActivity() {
             return
         }
         
+        // Get settings manager instance
+        val settingsManager = com.qb.browser.util.SettingsManager.getInstance(this)
+        
         // Configure WebView settings for offline use
         webView.settings.apply {
-            javaScriptEnabled = true  // Enable JS for better experience with offline content
+            // Use user's JavaScript setting, but recommend enabling it for offline content
+            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
             domStorageEnabled = true
             loadWithOverviewMode = true
             useWideViewPort = true
@@ -167,6 +181,15 @@ class WebViewActivity : AppCompatActivity() {
             displayZoomControls = false
             cacheMode = android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK
             allowFileAccess = true // Needed for file:// URLs
+        }
+        
+        // If JavaScript is disabled, show a recommendation to enable it for better offline experience
+        if (!settingsManager.isJavaScriptEnabled()) {
+            android.widget.Toast.makeText(
+                this,
+                "Enabling JavaScript in Settings may improve offline page rendering",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
         }
         
         // Get the file URI

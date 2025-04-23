@@ -57,6 +57,13 @@ class AdBlocker private constructor(private val context: Context) {
      */
     fun shouldBlockRequest(url: String): WebResourceResponse? {
         try {
+            // Quick check for common non-ad resources to improve performance
+            if (url.endsWith(".css") || url.endsWith(".png") || url.endsWith(".jpg") || 
+                url.endsWith(".jpeg") || url.endsWith(".gif") || url.endsWith(".svg") ||
+                url.endsWith(".woff") || url.endsWith(".woff2") || url.endsWith(".ttf")) {
+                return null
+            }
+            
             val hostname = URL(url).host ?: return null
             
             // Check domain whitelist/blacklist first
@@ -67,6 +74,13 @@ class AdBlocker private constructor(private val context: Context) {
             // Use cached result if available
             cachedResults[hostname]?.let {
                 return if (it) EMPTY_RESPONSE else null
+            }
+            
+            // Check for common ad patterns in URL
+            if (url.contains("/ads/") || url.contains("/ad/") || url.contains("/analytics/") ||
+                url.contains("/tracker/") || url.contains("/pixel/") || url.contains("/banner/")) {
+                cachedResults[hostname] = true
+                return EMPTY_RESPONSE
             }
             
             val shouldBlock = adServerHosts.contains(hostname)

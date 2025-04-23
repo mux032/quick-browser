@@ -32,9 +32,7 @@
  * - Custom classes like `BubbleService`, `SettingsManager`, `SettingsActivity`, and
  * `HistoryActivity`.
  */
-package com.qb.browser
-
-// import com.qb.browser.ui.HistoryActivity
+package com.qb.browser.ui
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -61,9 +59,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.qb.browser.Constants
+import com.qb.browser.R
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
-import com.qb.browser.ui.SettingsActivity
 import com.qb.browser.viewmodel.HistoryViewModel
 import java.text.SimpleDateFormat
 import java.util.Date

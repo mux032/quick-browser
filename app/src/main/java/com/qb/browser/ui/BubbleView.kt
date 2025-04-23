@@ -34,7 +34,7 @@ import com.qb.browser.R
 import com.qb.browser.model.Bubble
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
-import com.qb.browser.settings.SettingsManager
+import com.qb.browser.util.SettingsManager
 import com.qb.browser.ui.ReadModeActivity
 import com.qb.browser.ui.WebViewActivity
 import com.qb.browser.ui.adapter.TabsAdapter

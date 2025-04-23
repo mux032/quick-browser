@@ -24,7 +24,7 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
@@ -98,7 +98,7 @@
             android:foregroundServiceType="dataSync" />
 
         <activity
-            android:name=".NotificationPermissionActivity"
+            android:name=".ui.NotificationPermissionActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:exported="false" />
 
