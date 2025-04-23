@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.qb.browser.model.WebPage
+import com.qb.browser.util.ErrorHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -48,7 +49,11 @@ class WebViewModel : ViewModel() {
                 
                 Log.d("WebViewModel", "Successfully loaded URL for bubble $bubbleId: $url")
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error loading URL for bubble $bubbleId: $url", e)
+                ErrorHandler.logError(
+                    tag = "WebViewModel",
+                    message = "Error loading URL for bubble $bubbleId: $url",
+                    throwable = e
+                )
             }
         }
     }

@@ -31,8 +31,8 @@ class BubbleIntentProcessor(
     }
     
     fun processIntent(intent: Intent) {
-        try {
-            Log.e(TAG, "processIntent | Received intent: ${intent.action}, data: ${intent.extras}")
+        runCatching {
+            Log.d(TAG, "processIntent | Received intent: ${intent.action}, data: ${intent.extras}")
             when (intent.action) {
                 Constants.ACTION_CREATE_BUBBLE -> handleCreateBubble(intent)
                 Constants.ACTION_OPEN_URL -> handleOpenUrl(intent)
@@ -45,8 +45,8 @@ class BubbleIntentProcessor(
                 Intent.ACTION_VIEW -> handleViewAction(intent)
                 else -> Log.w(TAG, "Unsupported intent action: ${intent.action}")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error processing intent", e)
+        }.onError(tag = TAG) { 
+            "Error processing intent: ${it.message}" 
         }
     }
 

@@ -22,6 +22,8 @@ import com.qb.browser.Constants
 import com.qb.browser.util.ContentExtractor
 import com.qb.browser.util.SettingsManager
 import com.qb.browser.util.TextToSpeechManager
+import com.qb.browser.util.ErrorHandler
+import com.qb.browser.util.withErrorHandlingAndFallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -135,26 +137,38 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
             url
         }
         
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // Extract content with improved algorithm
-                val readableContent = contentExtractor.extractReadableContent(validatedUrl)
-                
+        lifecycleScope.launch {
+            // Using the withErrorHandlingAndFallback extension function
+            val result = withErrorHandlingAndFallback(
+                tag = "ReadModeActivity",
+                errorMessage = "Failed to load content from $validatedUrl",
+                fallback = null,
+                context = this@ReadModeActivity,
+                view = webView,
+                showError = true
+            ) {
+                // This code runs with error handling
+                withContext(Dispatchers.IO) {
+                    contentExtractor.extractReadableContent(validatedUrl)
+                }
+            }
+            
+            if (result != null) {
                 // Save the current URL and extracted text for TTS
                 currentUrl = validatedUrl
-                extractedText = readableContent.title + "\n\n" + 
-                                (if (readableContent.byline.isNotEmpty()) readableContent.byline + "\n\n" else "") + 
-                                stripHtml(readableContent.content)
+                extractedText = result.title + "\n\n" + 
+                                (if (result.byline.isNotEmpty()) result.byline + "\n\n" else "") + 
+                                stripHtml(result.content)
                 
                 withContext(Dispatchers.Main) {
                     // Update the page title
-                    supportActionBar?.title = readableContent.title
+                    supportActionBar?.title = result.title
                     
                     // Create HTML with proper styling based on current theme
                     val htmlContent = createStyledHtml(
-                        readableContent.title,
-                        readableContent.content, 
-                        readableContent.byline
+                        result.title,
+                        result.content, 
+                        result.byline
                     )
                     
                     // Load the content
@@ -162,9 +176,9 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
                     progressBar.visibility = View.GONE
                     webView.visibility = View.VISIBLE
                 }
-            } catch (e: Exception) {
+            } else {
                 withContext(Dispatchers.Main) {
-                    showError("Failed to load content: ${e.message}")
+                    showError("Failed to load content from $validatedUrl")
                 }
             }
         }

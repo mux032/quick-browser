@@ -12,6 +12,7 @@ import com.qb.browser.Constants
 import com.qb.browser.model.Bubble
 import com.qb.browser.service.BubbleService
 import com.qb.browser.ui.BubbleView
+import com.qb.browser.util.ErrorHandler
 import com.qb.browser.viewmodel.BubbleViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -100,45 +101,49 @@ class BubbleDisplayManager(
      * Adds a new bubble view to the window.
      */
     private fun addBubbleView(bubble: Bubble) {
-        try {
-            Log.d(TAG, "Adding bubble view: ${bubble.id} with URL: ${bubble.url}")
-            
-            // Create bubble view
-            val bubbleView = BubbleView(
-                context = context,
-                bubbleId = bubble.id,
-                url = bubble.url
-            )
-            
-            // Set close listener
-            bubbleView.setOnCloseListener {
-                // Remove the bubble view
-                removeBubbleView(bubble.id)
+        ErrorHandler.handleExceptions(
+            tag = TAG,
+            errorMessage = "Error adding bubble view for ${bubble.id}",
+            showError = true,
+            context = context,
+            block = {
+                Log.d(TAG, "Adding bubble view: ${bubble.id} with URL: ${bubble.url}")
                 
-                // Also notify the BubbleViewModel to remove the bubble
-                val intent = Intent(context, BubbleService::class.java).apply {
-                    action = Constants.ACTION_CLOSE_BUBBLE
-                    putExtra(Constants.EXTRA_BUBBLE_ID, bubble.id)
+                // Create bubble view
+                val bubbleView = BubbleView(
+                    context = context,
+                    bubbleId = bubble.id,
+                    url = bubble.url
+                )
+                
+                // Set close listener
+                bubbleView.setOnCloseListener {
+                    // Remove the bubble view
+                    removeBubbleView(bubble.id)
+                    
+                    // Also notify the BubbleViewModel to remove the bubble
+                    val intent = Intent(context, BubbleService::class.java).apply {
+                        action = Constants.ACTION_CLOSE_BUBBLE
+                        putExtra(Constants.EXTRA_BUBBLE_ID, bubble.id)
+                    }
+                    context.startService(intent)
                 }
-                context.startService(intent)
+                
+                // Create layout params
+                val layoutParams = createLayoutParams()
+                
+                // Add view to window manager
+                windowManager.addView(bubbleView, layoutParams)
+                
+                // Store reference to bubble view
+                bubbleViews[bubble.id] = bubbleView
+                
+                // Load saved position if available
+                bubbleView.loadSavedPosition()
+                
+                Log.d(TAG, "Bubble view added successfully: ${bubble.id}")
             }
-            
-            // Create layout params
-            val layoutParams = createLayoutParams()
-            
-            // Add view to window manager
-            windowManager.addView(bubbleView, layoutParams)
-            
-            // Store reference to bubble view
-            bubbleViews[bubble.id] = bubbleView
-            
-            // Load saved position if available
-            bubbleView.loadSavedPosition()
-            
-            Log.d(TAG, "Bubble view added successfully: ${bubble.id}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error adding bubble view", e)
-        }
+        )
     }
 
     /**

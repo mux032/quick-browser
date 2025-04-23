@@ -45,39 +45,39 @@ class ContentExtractor(private val context: Context) {
     /**
      * Extract readable content from a URL
      */
-    suspend fun extractReadableContent(url: String): ReadableContent = withContext(Dispatchers.IO) {
-        try {
+    suspend fun extractReadableContent(url: String): ReadableContent = 
+        withErrorHandlingAndFallback(
+            tag = TAG,
+            errorMessage = "Error extracting content from $url",
+            fallback = ReadableContent(
+                title = "Could not extract content",
+                content = "Failed to extract content from the page. Please try again or view the original page.",
+                byline = "",
+                siteName = ""
+            )
+        ) {
             // First try with Python's trafilatura for best results
             val pythonResult = pythonExtractor.extractContent(url)
             
             if (pythonResult.success && pythonResult.content.isNotEmpty()) {
-                return@withContext ReadableContent(
+                ReadableContent(
                     title = pythonResult.title,
                     content = pythonResult.content,
                     byline = pythonResult.author,
                     siteName = pythonResult.hostname,
                     date = pythonResult.date
                 )
+            } else {
+                // Fall back to JSoup extraction
+                Log.d(TAG, "Python extraction failed, falling back to JSoup")
+                val document = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                    .timeout(10000)
+                    .get()
+                
+                extractWithJsoup(document, url)
             }
-            
-            // Fall back to JSoup extraction
-            Log.d(TAG, "Python extraction failed, falling back to JSoup")
-            val document = Jsoup.connect(url)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                .timeout(10000)
-                .get()
-            
-            extractWithJsoup(document, url)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error extracting content: ${e.message}", e)
-            ReadableContent(
-                title = "Could not extract content",
-                content = "Failed to extract content from the page. Please try again or view the original page.",
-                byline = "",
-                siteName = ""
-            )
         }
-    }
     
     /**
      * Extract content using JSoup as a fallback method
@@ -102,8 +102,9 @@ class ContentExtractor(private val context: Context) {
             contentElement.html()
         } else {
             // Fallback to basic article extraction
-            document.select("p").filter { it.text().length > MIN_CONTENT_LENGTH }
-                .joinToString("\n") { "<p>${it.html()}</p>" }
+            document.select("p")
+                .filter { element -> element.text().length > MIN_CONTENT_LENGTH }
+                .joinToString("\n") { element -> "<p>${element.html()}</p>" }
         }
         
         // Extract hostname for site name
@@ -252,9 +253,9 @@ class ContentExtractor(private val context: Context) {
             val images = contentElement.select("img")
             if (images.isNotEmpty()) {
                 // Try to find a reasonably sized image
-                val largeImage = images.firstOrNull { 
-                    val width = it.attr("width").toIntOrNull() ?: 0
-                    val height = it.attr("height").toIntOrNull() ?: 0
+                val largeImage = images.firstOrNull { img -> 
+                    val width = img.attr("width").toIntOrNull() ?: 0
+                    val height = img.attr("height").toIntOrNull() ?: 0
                     width >= 300 && height >= 200
                 }
                 
@@ -333,7 +334,7 @@ class ContentExtractor(private val context: Context) {
             score += paragraphs.size * 3
             
             // Give extra points for longer paragraphs
-            val longParagraphs = paragraphs.count { it.text().length > MIN_CONTENT_LENGTH }
+            val longParagraphs = paragraphs.count { paragraph -> paragraph.text().length > MIN_CONTENT_LENGTH }
             score += longParagraphs * 5
             
             // Score for headings
