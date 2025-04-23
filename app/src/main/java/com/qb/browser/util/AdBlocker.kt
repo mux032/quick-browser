@@ -20,6 +20,9 @@ class AdBlocker private constructor(private val context: Context) {
     private val whitelistedDomains = HashSet<String>()
     private val blacklistedDomains = HashSet<String>()
     
+    // Class tag for logging
+    private val TAG = "AdBlocker"
+    
     init {
         // Load ad blocking rules from preferences or default list
         loadRules()
@@ -56,26 +59,40 @@ class AdBlocker private constructor(private val context: Context) {
      * Check if a request should be blocked
      */
     fun shouldBlockRequest(url: String): WebResourceResponse? {
-        try {
-            val hostname = URL(url).host ?: return null
+        return runCatching {
+            // Quick check for common non-ad resources to improve performance
+            if (url.endsWith(".css") || url.endsWith(".png") || url.endsWith(".jpg") || 
+                url.endsWith(".jpeg") || url.endsWith(".gif") || url.endsWith(".svg") ||
+                url.endsWith(".woff") || url.endsWith(".woff2") || url.endsWith(".ttf")) {
+                return@runCatching null
+            }
+            
+            val hostname = URL(url).host ?: return@runCatching null
             
             // Check domain whitelist/blacklist first
             val domain = extractDomain(url)
-            if (isWhitelisted(domain)) return null
-            if (isBlacklisted(domain)) return EMPTY_RESPONSE
+            if (isWhitelisted(domain)) return@runCatching null
+            if (isBlacklisted(domain)) return@runCatching EMPTY_RESPONSE
             
             // Use cached result if available
             cachedResults[hostname]?.let {
-                return if (it) EMPTY_RESPONSE else null
+                return@runCatching if (it) EMPTY_RESPONSE else null
+            }
+            
+            // Check for common ad patterns in URL
+            if (url.contains("/ads/") || url.contains("/ad/") || url.contains("/analytics/") ||
+                url.contains("/tracker/") || url.contains("/pixel/") || url.contains("/banner/")) {
+                cachedResults[hostname] = true
+                return@runCatching EMPTY_RESPONSE
             }
             
             val shouldBlock = adServerHosts.contains(hostname)
             cachedResults[hostname] = shouldBlock
             
-            return if (shouldBlock) EMPTY_RESPONSE else null
-        } catch (e: Exception) {
-            return null
-        }
+            if (shouldBlock) EMPTY_RESPONSE else null
+        }.onFailure { e ->
+            ErrorHandler.logError(TAG, "Error checking if URL should be blocked: $url", e)
+        }.getOrNull()
     }
     
     /**
@@ -165,29 +182,31 @@ class AdBlocker private constructor(private val context: Context) {
     /**
      * Update ad blocking rules from a URL
      */
-    suspend fun updateRulesFromUrl(url: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun updateRulesFromUrl(url: String): Boolean = 
         try {
-            val connection = URL(url).openConnection()
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
-            
-            val inputStream = connection.getInputStream()
-            val rulesText = inputStream.bufferedReader().use { it.readText() }
-            val hosts = parseHosts(rulesText)
-            
-            if (hosts.isNotEmpty()) {
-                adServerHosts.clear()
-                adServerHosts.addAll(hosts)
-                saveRules()
-                cachedResults.clear()
-                return@withContext true
+            withContext(Dispatchers.IO) {
+                val connection = URL(url).openConnection()
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+                
+                val inputStream = connection.getInputStream()
+                val rulesText = inputStream.bufferedReader().use { it.readText() }
+                val hosts = parseHosts(rulesText)
+                
+                if (hosts.isNotEmpty()) {
+                    adServerHosts.clear()
+                    adServerHosts.addAll(hosts)
+                    saveRules()
+                    cachedResults.clear()
+                    true
+                } else {
+                    false
+                }
             }
-            
-            return@withContext false
         } catch (e: Exception) {
-            return@withContext false
+            ErrorHandler.logError(TAG, "Failed to update ad blocking rules from $url", e)
+            false
         }
-    }
     
     /**
      * Parse hosts from a text file
@@ -212,13 +231,11 @@ class AdBlocker private constructor(private val context: Context) {
      * Extract domain from URL
      */
     private fun extractDomain(url: String): String {
-        return try {
+        return runCatching {
             val uri = URL(url)
             val host = uri.host
             if (host.startsWith("www.")) host.substring(4) else host
-        } catch (e: Exception) {
-            url
-        }
+        }.getOrDefault(url)
     }
     
     /**

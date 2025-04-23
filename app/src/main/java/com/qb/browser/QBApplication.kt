@@ -3,6 +3,7 @@ package com.qb.browser
 import android.app.Application
 import com.qb.browser.db.AppDatabase
 import com.qb.browser.db.SettingsDao
+import com.qb.browser.service.BubbleService
 import com.qb.browser.viewmodel.BubbleViewModel
 import com.qb.browser.viewmodel.WebViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -17,6 +18,9 @@ class QBApplication : Application() {
     // Optional: global ViewModels (avoid using if navigation-scoped is preferred)
     lateinit var bubbleViewModel: BubbleViewModel
     lateinit var webViewModel: WebViewModel
+    
+    // Reference to the BubbleService
+    var bubbleService: BubbleService? = null
 
     override fun onCreate() {
         super.onCreate()

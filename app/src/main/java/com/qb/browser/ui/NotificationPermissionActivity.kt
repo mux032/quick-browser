@@ -1,4 +1,4 @@
-package com.qb.browser
+package com.qb.browser.ui
 
 import android.Manifest
 import android.app.Activity
@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.qb.browser.Constants
 import com.qb.browser.service.BubbleService
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)

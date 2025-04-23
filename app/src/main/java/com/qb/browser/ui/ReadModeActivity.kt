@@ -18,9 +18,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.qb.browser.R
+import com.qb.browser.Constants
 import com.qb.browser.util.ContentExtractor
 import com.qb.browser.util.SettingsManager
 import com.qb.browser.util.TextToSpeechManager
+import com.qb.browser.util.ErrorHandler
+import com.qb.browser.util.withErrorHandlingAndFallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,17 +43,13 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
     
     private var currentUrl: String = ""
     private var bubbleId: String = ""
-    private var currentFontSize = 16
+    private var currentFontSize = Constants.DEFAULT_FONT_SIZE
     private var currentTheme = SettingsManager.THEME_LIGHT
     private var isTtsSpeaking = false
     private var extractedText: String = ""
     
     companion object {
-        const val EXTRA_URL = "extra_url"
-        const val EXTRA_BUBBLE_ID = "extra_bubble_id"
-        const val MIN_FONT_SIZE = 12
-        const val MAX_FONT_SIZE = 24
-        const val DEFAULT_FONT_SIZE = 16
+        // Using centralized constants from Constants.kt
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,8 +71,8 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         
         // Get extras from intent
-        currentUrl = intent.getStringExtra(EXTRA_URL) ?: ""
-        bubbleId = intent.getStringExtra(EXTRA_BUBBLE_ID) ?: ""
+        currentUrl = intent.getStringExtra(Constants.EXTRA_URL) ?: ""
+        bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID) ?: ""
         
         // Load user preferences
         currentTheme = settingsManager.getCurrentTheme()
@@ -101,7 +100,7 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
             displayZoomControls = false
             useWideViewPort = true
             loadWithOverviewMode = true
-            textZoom = (currentFontSize * 100) / DEFAULT_FONT_SIZE // Convert font size to percentage
+            textZoom = (currentFontSize * 100) / Constants.DEFAULT_FONT_SIZE // Convert font size to percentage
         }
         
         webView.webViewClient = object : WebViewClient() {
@@ -131,36 +130,55 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
             stopTextToSpeech()
         }
         
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // Extract content with improved algorithm
-                val readableContent = contentExtractor.extractReadableContent(url)
-                
+        // Validate URL format
+        val validatedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            "https://$url"
+        } else {
+            url
+        }
+        
+        lifecycleScope.launch {
+            // Using the withErrorHandlingAndFallback extension function
+            val result = withErrorHandlingAndFallback(
+                tag = "ReadModeActivity",
+                errorMessage = "Failed to load content from $validatedUrl",
+                fallback = null,
+                context = this@ReadModeActivity,
+                view = webView,
+                showError = true
+            ) {
+                // This code runs with error handling
+                withContext(Dispatchers.IO) {
+                    contentExtractor.extractReadableContent(validatedUrl)
+                }
+            }
+            
+            if (result != null) {
                 // Save the current URL and extracted text for TTS
-                currentUrl = url
-                extractedText = readableContent.title + "\n\n" + 
-                                (if (readableContent.byline.isNotEmpty()) readableContent.byline + "\n\n" else "") + 
-                                stripHtml(readableContent.content)
+                currentUrl = validatedUrl
+                extractedText = result.title + "\n\n" + 
+                                (if (result.byline.isNotEmpty()) result.byline + "\n\n" else "") + 
+                                stripHtml(result.content)
                 
                 withContext(Dispatchers.Main) {
                     // Update the page title
-                    supportActionBar?.title = readableContent.title
+                    supportActionBar?.title = result.title
                     
                     // Create HTML with proper styling based on current theme
                     val htmlContent = createStyledHtml(
-                        readableContent.title,
-                        readableContent.content, 
-                        readableContent.byline
+                        result.title,
+                        result.content, 
+                        result.byline
                     )
                     
                     // Load the content
-                    webView.loadDataWithBaseURL(url, htmlContent, "text/html", "UTF-8", null)
+                    webView.loadDataWithBaseURL(validatedUrl, htmlContent, "text/html", "UTF-8", null)
                     progressBar.visibility = View.GONE
                     webView.visibility = View.VISIBLE
                 }
-            } catch (e: Exception) {
+            } else {
                 withContext(Dispatchers.Main) {
-                    showError("Failed to load content: ${e.message}")
+                    showError("Failed to load content from $validatedUrl")
                 }
             }
         }
@@ -322,13 +340,13 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
     
     private fun changeFontSize(delta: Int) {
         // Update font size within bounds
-        currentFontSize = currentFontSize.plus(delta).coerceIn(MIN_FONT_SIZE, MAX_FONT_SIZE)
+        currentFontSize = currentFontSize.plus(delta).coerceIn(Constants.MIN_FONT_SIZE, Constants.MAX_FONT_SIZE)
         
         // Save the new font size
         settingsManager.setTextSize(currentFontSize)
         
         // Apply to WebView
-        webView.settings.textZoom = (currentFontSize * 100) / DEFAULT_FONT_SIZE
+        webView.settings.textZoom = (currentFontSize * 100) / Constants.DEFAULT_FONT_SIZE
     }
     
     private fun cycleTheme() {

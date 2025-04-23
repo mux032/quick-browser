@@ -9,6 +9,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import java.io.IOException
 import java.net.URL
+import com.qb.browser.util.ErrorHandler
 
 /**
  * Utility for extracting readable content from web pages
@@ -25,6 +26,7 @@ class ReadabilityExtractor(private val context: Context) {
     )
     
     companion object {
+        private const val TAG = "ReadabilityExtractor"
         private const val TIMEOUT_MS = 10000
         private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.110 Mobile Safari/537.36"
     }
@@ -32,30 +34,30 @@ class ReadabilityExtractor(private val context: Context) {
     /**
      * Extract readable content from a URL
      */
-    suspend fun extractFromUrl(url: String): ReadableContent? = withContext(Dispatchers.IO) {
-        try {
+    suspend fun extractFromUrl(url: String): ReadableContent? = 
+        withErrorHandling(
+            tag = TAG,
+            errorMessage = "Failed to extract content from URL: $url"
+        ) {
             val doc = Jsoup.connect(url)
                 .userAgent(USER_AGENT)
                 .timeout(TIMEOUT_MS)
                 .get()
             
             extractFromDocument(doc, url)
-        } catch (e: IOException) {
-            null
         }
-    }
     
     /**
      * Extract readable content from HTML string
      */
-    suspend fun extractFromHtml(html: String, baseUrl: String): ReadableContent? = withContext(Dispatchers.IO) {
-        try {
+    suspend fun extractFromHtml(html: String, baseUrl: String): ReadableContent? = 
+        withErrorHandling(
+            tag = TAG,
+            errorMessage = "Failed to extract content from HTML"
+        ) {
             val doc = Jsoup.parse(html, baseUrl)
             extractFromDocument(doc, baseUrl)
-        } catch (e: Exception) {
-            null
         }
-    }
     
     /**
      * Extract content from a Jsoup Document

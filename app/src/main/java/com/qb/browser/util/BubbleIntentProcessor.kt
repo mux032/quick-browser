@@ -11,7 +11,10 @@ import com.qb.browser.db.WebPageDao
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.jsoup.Jsoup
 
 /**
  * BubbleIntentProcessor handles the processing of intents received by the BubbleService. It
@@ -26,10 +29,10 @@ class BubbleIntentProcessor(
     companion object {
         private const val TAG = "BubbleIntentProcessor"
     }
-
+    
     fun processIntent(intent: Intent) {
-        try {
-            Log.e(TAG, "processIntent | Received intent: ${intent.action}, data: ${intent.extras}")
+        runCatching {
+            Log.d(TAG, "processIntent | Received intent: ${intent.action}, data: ${intent.extras}")
             when (intent.action) {
                 Constants.ACTION_CREATE_BUBBLE -> handleCreateBubble(intent)
                 Constants.ACTION_OPEN_URL -> handleOpenUrl(intent)
@@ -42,8 +45,8 @@ class BubbleIntentProcessor(
                 Intent.ACTION_VIEW -> handleViewAction(intent)
                 else -> Log.w(TAG, "Unsupported intent action: ${intent.action}")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error processing intent", e)
+        }.onError(tag = TAG) { 
+            "Error processing intent: ${it.message}" 
         }
     }
 
@@ -54,6 +57,9 @@ class BubbleIntentProcessor(
         if (sharedUrl != null && isValidUrl(sharedUrl)) {
             Log.e(TAG, "Creating bubble with URL: $sharedUrl")
             
+            // Save to history
+            saveToHistory(sharedUrl)
+            
             // Create a new bubble with the shared URL
             bubbleManager.createOrUpdateBubbleWithNewUrl(sharedUrl)
         } else {
@@ -61,9 +67,57 @@ class BubbleIntentProcessor(
         }
     }
     
+    /**
+     * Saves a URL to the browsing history
+     */
+    private fun saveToHistory(url: String) {
+        lifecycleScope.launch {
+            try {
+                // Check if the page already exists in history
+                val existingPage = webPageDao.getPageByUrl(url)
+                
+                if (existingPage != null) {
+                    // Update existing page timestamp and increment visit count
+                    val updatedPage = existingPage.copy(
+                        timestamp = System.currentTimeMillis(),
+                        visitCount = existingPage.visitCount + 1
+                    )
+                    webPageDao.updatePage(updatedPage)
+                    webPageDao.incrementVisitCount(url)
+                    Log.d(TAG, "Updated existing page in history: $url")
+                } else {
+                    // Try to get the title from HTML asynchronously
+                    val htmlTitle = try {
+                        extractTitleFromHtmlAsync(url)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error extracting HTML title asynchronously", e)
+                        null
+                    }
+                    
+                    // Create new history entry with the best available title
+                    val title = htmlTitle ?: extractTitleFromUrl(url)
+                    
+                    val newPage = WebPage(
+                        url = url,
+                        title = title,
+                        timestamp = System.currentTimeMillis(),
+                        visitCount = 1
+                    )
+                    webPageDao.insertPage(newPage)
+                    Log.d(TAG, "Added new page to history with title '$title': $url")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving to history", e)
+            }
+        }
+    }
+    
     private fun handleOpenUrl(intent: Intent) {
         val url = intent.getStringExtra(Constants.EXTRA_URL)
         if (url != null && isValidUrl(url)) {
+            // Save to history
+            saveToHistory(url)
+            
             bubbleManager.createOrUpdateBubbleWithNewUrl(url)
         } else {
             Log.w(TAG, "Invalid or missing URL for handleOpenUrl")
@@ -113,19 +167,40 @@ class BubbleIntentProcessor(
         if (url != null && isValidUrl(url)) {
             // Save to DB for offline availability
             lifecycleScope.launch {
-                val existingPage = webPageDao.getPageByUrl(url)
-                val pageToSave =
-                        existingPage?.copy(isAvailableOffline = true)
-                                ?: WebPage(
-                                        url = url,
-                                        title = url,
-                                        timestamp = System.currentTimeMillis(),
-                                        content = "", // Can be filled with offline HTML content
-                                        isAvailableOffline = true,
-                                        visitCount = 1
-                                )
-                webPageDao.insertPage(pageToSave)
-                Log.d(TAG, "Page saved for offline: $url")
+                try {
+                    val existingPage = webPageDao.getPageByUrl(url)
+                    
+                    if (existingPage != null) {
+                        // Use existing page but mark as available offline
+                        val pageToSave = existingPage.copy(isAvailableOffline = true)
+                        webPageDao.insertPage(pageToSave)
+                        Log.d(TAG, "Existing page marked for offline: $url")
+                    } else {
+                        // Try to get the title from HTML asynchronously
+                        val htmlTitle = try {
+                            extractTitleFromHtmlAsync(url)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error extracting HTML title for offline page", e)
+                            null
+                        }
+                        
+                        // Create new page with the best available title
+                        val title = htmlTitle ?: extractTitleFromUrl(url)
+                        
+                        val pageToSave = WebPage(
+                            url = url,
+                            title = title,
+                            timestamp = System.currentTimeMillis(),
+                            content = "", // Can be filled with offline HTML content
+                            isAvailableOffline = true,
+                            visitCount = 1
+                        )
+                        webPageDao.insertPage(pageToSave)
+                        Log.d(TAG, "New page saved for offline with title '$title': $url")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error saving page for offline access", e)
+                }
             }
         } else {
             Log.w(TAG, "Invalid URL or null passed to handleSaveOffline")
@@ -149,6 +224,9 @@ class BubbleIntentProcessor(
         Log.d(TAG, "handleSharedContent | Received shared text: $sharedText")
         
         if (sharedText != null) {
+            // Save to history
+            saveToHistory(sharedText)
+            
             // Create a new bubble with the extracted URL
             Log.d(TAG, "Creating bubble with extracted URL: $sharedText")
             bubbleManager.createOrUpdateBubbleWithNewUrl(sharedText)
@@ -181,7 +259,12 @@ class BubbleIntentProcessor(
     private fun handleViewAction(intent: Intent) {
         val data = intent.data
         if (data != null && isValidUrl(data.toString())) {
-            bubbleManager.createOrUpdateBubbleWithNewUrl(data.toString())
+            val url = data.toString()
+            
+            // Save to history
+            saveToHistory(url)
+            
+            bubbleManager.createOrUpdateBubbleWithNewUrl(url)
         }
     }
 
@@ -203,5 +286,127 @@ class BubbleIntentProcessor(
                lowerUrl.startsWith("https://") || 
                lowerUrl.startsWith("www.") ||
                lowerUrl.contains(".")
+    }
+    
+    /**
+     * Extracts a user-friendly title from a URL.
+     * @param url The URL to extract a title from.
+     * @return A user-friendly title based on the URL.
+     */
+    private fun extractTitleFromUrl(url: String): String {
+        try {
+            // First try to fetch the actual title from the HTML (synchronously)
+            val htmlTitle = try {
+                // This is a blocking call, but it's okay for this context
+                // In a real app, you might want to use a more sophisticated approach
+                val connection = org.jsoup.Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                    .timeout(3000) // Short timeout to avoid blocking too long
+                    .followRedirects(true)
+                val document = connection.get()
+                document.title()
+            } catch (e: Exception) {
+                Log.d(TAG, "Failed to fetch HTML title, falling back to URL parsing: ${e.message}")
+                null
+            }
+            
+            // If we successfully got a title from HTML, use it
+            if (!htmlTitle.isNullOrBlank()) {
+                Log.d(TAG, "Using HTML title: $htmlTitle")
+                return htmlTitle
+            }
+            
+            // Otherwise fall back to extracting from URL
+            Log.d(TAG, "Falling back to URL-based title extraction")
+            
+            // Remove protocol (http://, https://, etc.)
+            var title = url.replace(Regex("^(https?://|www\\.)"), "")
+            
+            // Remove trailing slashes
+            title = title.replace(Regex("/+$"), "")
+            
+            // Remove query parameters and fragments
+            title = title.split("?")[0].split("#")[0]
+            
+            // Split by path segments and take the domain
+            val parts = title.split("/")
+            if (parts.isNotEmpty()) {
+                // Use domain as base
+                title = parts[0]
+                
+                // If there's a specific page path, add it for context
+                if (parts.size > 1 && parts.last().isNotEmpty()) {
+                    // Replace hyphens and underscores with spaces
+                    val pageName = parts.last()
+                        .replace("-", " ")
+                        .replace("_", " ")
+                        .split(".")
+                        .first() // Remove file extension if present
+                    
+                    // Capitalize first letter of each word
+                    val formattedPageName = pageName.split(" ")
+                        .filter { it.isNotEmpty() }
+                        .joinToString(" ") { word ->
+                            word.replaceFirstChar { 
+                                if (it.isLowerCase()) it.titlecase() else it.toString() 
+                            }
+                        }
+                    
+                    if (formattedPageName.isNotEmpty()) {
+                        title = "$formattedPageName - $title"
+                    }
+                }
+            }
+            
+            return title
+        } catch (e: Exception) {
+            Log.e(TAG, "Error extracting title from URL: $url", e)
+            return "Web Page" // Fallback title
+        }
+    }
+    
+    /**
+     * Asynchronously extracts the title from a webpage's HTML.
+     * This method should be called from a coroutine context.
+     * 
+     * @param url The URL to extract the title from
+     * @return The title from the HTML or null if it couldn't be extracted
+     */
+    suspend fun extractTitleFromHtmlAsync(url: String): String? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching HTML title for URL: $url")
+            val connection = org.jsoup.Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .timeout(5000)
+                .followRedirects(true)
+            
+            val document = connection.get()
+            val title = document.title()
+            
+            if (title.isNotBlank()) {
+                Log.d(TAG, "Successfully extracted HTML title: $title")
+                return@withContext title
+            } else {
+                // Try to find the first h1 tag if title is empty
+                val h1Title = document.select("h1").firstOrNull()?.text()
+                if (!h1Title.isNullOrBlank()) {
+                    Log.d(TAG, "Using h1 as title: $h1Title")
+                    return@withContext h1Title
+                }
+                
+                // If still no title, try meta tags
+                val metaTitle = document.select("meta[property=og:title], meta[name=twitter:title]").firstOrNull()?.attr("content")
+                if (!metaTitle.isNullOrBlank()) {
+                    Log.d(TAG, "Using meta title: $metaTitle")
+                    return@withContext metaTitle
+                }
+            }
+            
+            Log.d(TAG, "No title found in HTML")
+            return@withContext null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error extracting title from HTML: ${e.message}", e)
+            return@withContext null
+        }
     }
 }

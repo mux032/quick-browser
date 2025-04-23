@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.qb.browser.model.WebPage
+import com.qb.browser.util.ErrorHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -48,7 +49,11 @@ class WebViewModel : ViewModel() {
                 
                 Log.d("WebViewModel", "Successfully loaded URL for bubble $bubbleId: $url")
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error loading URL for bubble $bubbleId: $url", e)
+                ErrorHandler.logError(
+                    tag = "WebViewModel",
+                    message = "Error loading URL for bubble $bubbleId: $url",
+                    throwable = e
+                )
             }
         }
     }
@@ -84,9 +89,43 @@ class WebViewModel : ViewModel() {
      * @param title The new title
      */
     fun updateTitle(url: String, title: String) {
+        // Don't update if title is empty or same as URL (which means no real title was extracted)
+        if (title.isEmpty() || title == url) {
+            Log.d("WebViewModel", "Skipping title update for $url - title is empty or same as URL")
+            return
+        }
+        
         viewModelScope.launch {
-            val currentPage = _webPages.value[url] ?: return@launch
-            updateWebPage(currentPage.copy(title = title))
+            try {
+                val currentPages = _webPages.value.toMutableMap()
+                val currentPage = currentPages[url]
+                
+                if (currentPage != null) {
+                    // Only update if the current title is the URL or empty
+                    if (currentPage.title == url || currentPage.title.isEmpty()) {
+                        Log.d("WebViewModel", "Updating title for $url from '${currentPage.title}' to '$title'")
+                        currentPages[url] = currentPage.copy(title = title)
+                        _webPages.value = currentPages
+                    } else {
+                        Log.d("WebViewModel", "Skipping title update - page already has a title: ${currentPage.title}")
+                    }
+                } else {
+                    // If the page doesn't exist yet, create it with the title
+                    Log.d("WebViewModel", "Creating new page with title: $title for URL: $url")
+                    val webPage = WebPage(
+                        url = url,
+                        title = title,
+                        timestamp = System.currentTimeMillis(),
+                        content = "",
+                        isAvailableOffline = false,
+                        visitCount = 1
+                    )
+                    currentPages[url] = webPage
+                    _webPages.value = currentPages
+                }
+            } catch (e: Exception) {
+                Log.e("WebViewModel", "Error updating title for URL: $url", e)
+            }
         }
     }
 

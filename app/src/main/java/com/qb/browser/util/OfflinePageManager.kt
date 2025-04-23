@@ -131,117 +131,118 @@ class OfflinePageManager(private val context: Context) {
         title: String,
         htmlContent: String,
         callback: SaveCallback? = null
-    ): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            // Generate a unique ID for this page
-            val pageId = generatePageId(url)
-            
-            // Create directory for this page
-            val pageDir = createPageDirectory(pageId)
-            
-            // Initialize save operation tracking
-            val saveOperation = SaveOperation(AtomicInteger(0), AtomicInteger(0))
-            saveOperations[pageId] = saveOperation
-            
-            callback?.onProgress(0, "Preparing to save page...")
-            
-            callback?.onProgress(10, "Processing HTML content...")
-            
-            // Parse HTML to find resources
-            val document = Jsoup.parse(htmlContent, url)
-            
-            // Download CSS, images, and other resources
-            val resourcesDir = File(pageDir, "resources")
-            if (!resourcesDir.exists()) {
-                resourcesDir.mkdirs()
-            }
-            
-            // Process different types of resources
-            val cssLinks: Elements = document.select("link[rel=stylesheet]")
-            val images: Elements = document.select("img[src]")
-            val scripts: Elements = document.select("script[src]")
-            val favicons: Elements = document.select("link[rel=icon], link[rel=shortcut icon]")
-            
-            // Calculate total resources
-            val totalResources = cssLinks.size + images.size + scripts.size + favicons.size
-            saveOperation.totalResources.set(totalResources)
-            
-            callback?.onProgress(15, "Downloading resources...")
-            
-            // Download and update CSS files
-            downloadAndReplaceResources(
-                document,
-                cssLinks,
-                "href",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            // Download and update images
-            downloadAndReplaceResources(
-                document,
-                images,
-                "src",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            // Download and update JavaScript
-            downloadAndReplaceResources(
-                document,
-                scripts,
-                "src",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            // Download and update favicons
-            downloadAndReplaceResources(
-                document,
-                favicons,
-                "href",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            callback?.onProgress(90, "Saving final HTML...")
-            
-            // Save modified HTML
-            val htmlFile = File(pageDir, "index.html")
-            htmlFile.writeText(document.outerHtml())
-            
-            // Save metadata
-            saveMetadata(
-                OfflinePage(
-                    id = pageId,
-                    url = url,
-                    title = title,
-                    timestamp = System.currentTimeMillis(),
-                    filePath = htmlFile.absolutePath
+    ): Result<String> = 
+        kotlin.runCatching {
+            withContext(Dispatchers.IO) {
+                // Generate a unique ID for this page
+                val pageId = generatePageId(url)
+                
+                // Create directory for this page
+                val pageDir = createPageDirectory(pageId)
+                
+                // Initialize save operation tracking
+                val saveOperation = SaveOperation(AtomicInteger(0), AtomicInteger(0))
+                saveOperations[pageId] = saveOperation
+                
+                callback?.onProgress(0, "Preparing to save page...")
+                
+                callback?.onProgress(10, "Processing HTML content...")
+                
+                // Parse HTML to find resources
+                val document = Jsoup.parse(htmlContent, url)
+                
+                // Download CSS, images, and other resources
+                val resourcesDir = File(pageDir, "resources")
+                if (!resourcesDir.exists()) {
+                    resourcesDir.mkdirs()
+                }
+                
+                // Process different types of resources
+                val cssLinks: Elements = document.select("link[rel=stylesheet]")
+                val images: Elements = document.select("img[src]")
+                val scripts: Elements = document.select("script[src]")
+                val favicons: Elements = document.select("link[rel=icon], link[rel=shortcut icon]")
+                
+                // Calculate total resources
+                val totalResources = cssLinks.size + images.size + scripts.size + favicons.size
+                saveOperation.totalResources.set(totalResources)
+                
+                callback?.onProgress(15, "Downloading resources...")
+                
+                // Download and update CSS files
+                downloadAndReplaceResources(
+                    document,
+                    cssLinks,
+                    "href",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
                 )
-            )
-            
-            callback?.onProgress(100, "Page saved successfully")
-            callback?.onComplete(pageId, htmlFile.absolutePath)
-            
-            // Clean up
-            saveOperations.remove(pageId)
-            
-            Result.success(pageId)
-        } catch (e: Exception) {
+                
+                // Download and update images
+                downloadAndReplaceResources(
+                    document,
+                    images,
+                    "src",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
+                )
+                
+                // Download and update JavaScript
+                downloadAndReplaceResources(
+                    document,
+                    scripts,
+                    "src",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
+                )
+                
+                // Download and update favicons
+                downloadAndReplaceResources(
+                    document,
+                    favicons,
+                    "href",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
+                )
+                
+                callback?.onProgress(90, "Saving final HTML...")
+                
+                // Save modified HTML
+                val htmlFile = File(pageDir, "index.html")
+                htmlFile.writeText(document.outerHtml())
+                
+                // Save metadata
+                saveMetadata(
+                    OfflinePage(
+                        id = pageId,
+                        url = url,
+                        title = title,
+                        timestamp = System.currentTimeMillis(),
+                        filePath = htmlFile.absolutePath
+                    )
+                )
+                
+                callback?.onProgress(100, "Page saved successfully")
+                callback?.onComplete(pageId, htmlFile.absolutePath)
+                
+                // Clean up
+                saveOperations.remove(pageId)
+                
+                pageId
+            }
+        }.onError(tag = TAG) { e ->
             Log.e(TAG, "Error saving page with HTML content: ${e.message}", e)
             callback?.onError("Failed to save page: ${e.message}")
-            Result.failure(e)
+            "Failed to save page: ${e.message}"
         }
-    }
 
     /**
      * Save a web page for offline reading
@@ -251,154 +252,155 @@ class OfflinePageManager(private val context: Context) {
         url: String, 
         title: String, 
         callback: SaveCallback? = null
-    ): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            // Generate a unique ID for this page
-            val pageId = generatePageId(url)
-            
-            // Create directory for this page
-            val pageDir = createPageDirectory(pageId)
-            
-            // Initialize save operation tracking
-            val saveOperation = SaveOperation(AtomicInteger(0), AtomicInteger(0))
-            saveOperations[pageId] = saveOperation
-            
-            callback?.onProgress(0, "Preparing to save page...")
-            
-            // Get HTML content
-            val htmlContent = withContext(Dispatchers.Main) {
-                webView.evaluateJavascript(
-                    "(function() { return document.documentElement.outerHTML; })();",
-                    null
-                )
+    ): Result<String> = 
+        kotlin.runCatching {
+            withContext(Dispatchers.IO) {
+                // Generate a unique ID for this page
+                val pageId = generatePageId(url)
                 
-                // Wait a bit for JavaScript to execute
-                kotlinx.coroutines.delay(500)
+                // Create directory for this page
+                val pageDir = createPageDirectory(pageId)
                 
-                // Create a callback to get the HTML content
-                var resultHtml = ""
-                webView.evaluateJavascript(
-                    "(function() { return document.documentElement.outerHTML; })();",
-                    { result -> 
-                        // Store the raw HTML result
-                        resultHtml = result
+                // Initialize save operation tracking
+                val saveOperation = SaveOperation(AtomicInteger(0), AtomicInteger(0))
+                saveOperations[pageId] = saveOperation
+                
+                callback?.onProgress(0, "Preparing to save page...")
+                
+                // Get HTML content
+                val htmlContent = withContext(Dispatchers.Main) {
+                    webView.evaluateJavascript(
+                        "(function() { return document.documentElement.outerHTML; })();",
+                        null
+                    )
+                    
+                    // Wait a bit for JavaScript to execute
+                    kotlinx.coroutines.delay(500)
+                    
+                    // Create a callback to get the HTML content
+                    var resultHtml = ""
+                    webView.evaluateJavascript(
+                        "(function() { return document.documentElement.outerHTML; })();",
+                        { result -> 
+                            // Store the raw HTML result
+                            resultHtml = result
+                        }
+                    )
+                    
+                    // Give time for the JavaScript callback to execute
+                    kotlinx.coroutines.delay(1000)
+                    
+                    // Remove quotes added by evaluateJavascript
+                    if (resultHtml.length >= 2) {
+                        resultHtml.substring(1, resultHtml.length - 1)
+                            .replace("\\\"", "\"")
+                            .replace("\\n", "\n")
+                            .replace("\\r", "\r")
+                            .replace("\\t", "\t")
+                            .replace("\\\\", "\\")
+                    } else {
+                        // Fallback if JavaScript execution failed
+                        "<html><body><p>Failed to extract content</p></body></html>"
                     }
-                )
-                
-                // Give time for the JavaScript callback to execute
-                kotlinx.coroutines.delay(1000)
-                
-                // Remove quotes added by evaluateJavascript
-                if (resultHtml.length >= 2) {
-                    resultHtml.substring(1, resultHtml.length - 1)
-                        .replace("\\\"", "\"")
-                        .replace("\\n", "\n")
-                        .replace("\\r", "\r")
-                        .replace("\\t", "\t")
-                        .replace("\\\\", "\\")
-                } else {
-                    // Fallback if JavaScript execution failed
-                    "<html><body><p>Failed to extract content</p></body></html>"
                 }
-            }
-            
-            callback?.onProgress(10, "Processing HTML content...")
-            
-            // Parse HTML to find resources
-            val document = Jsoup.parse(htmlContent.toString(), url)
-            
-            // Download CSS, images, and other resources
-            val resourcesDir = File(pageDir, "resources")
-            if (!resourcesDir.exists()) {
-                resourcesDir.mkdirs()
-            }
-            
-            // Process different types of resources
-            val cssLinks: Elements = document.select("link[rel=stylesheet]")
-            val images: Elements = document.select("img[src]")
-            val scripts: Elements = document.select("script[src]")
-            val favicons: Elements = document.select("link[rel=icon], link[rel=shortcut icon]")
-            
-            // Calculate total resources
-            val totalResources = cssLinks.size + images.size + scripts.size + favicons.size
-            saveOperation.totalResources.set(totalResources)
-            
-            callback?.onProgress(15, "Downloading resources...")
-            
-            // Download and update CSS files
-            downloadAndReplaceResources(
-                document,
-                cssLinks,
-                "href",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            // Download and update images
-            downloadAndReplaceResources(
-                document,
-                images,
-                "src",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            // Download and update JavaScript
-            downloadAndReplaceResources(
-                document,
-                scripts,
-                "src",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            // Download and update favicons
-            downloadAndReplaceResources(
-                document,
-                favicons,
-                "href",
-                resourcesDir,
-                pageId,
-                saveOperation,
-                callback
-            )
-            
-            callback?.onProgress(90, "Saving final HTML...")
-            
-            // Save modified HTML
-            val htmlFile = File(pageDir, "index.html")
-            htmlFile.writeText(document.outerHtml())
-            
-            // Save metadata
-            saveMetadata(
-                OfflinePage(
-                    id = pageId,
-                    url = url,
-                    title = title,
-                    timestamp = System.currentTimeMillis(),
-                    filePath = htmlFile.absolutePath
+                
+                callback?.onProgress(10, "Processing HTML content...")
+                
+                // Parse HTML to find resources
+                val document = Jsoup.parse(htmlContent.toString(), url)
+                
+                // Download CSS, images, and other resources
+                val resourcesDir = File(pageDir, "resources")
+                if (!resourcesDir.exists()) {
+                    resourcesDir.mkdirs()
+                }
+                
+                // Process different types of resources
+                val cssLinks: Elements = document.select("link[rel=stylesheet]")
+                val images: Elements = document.select("img[src]")
+                val scripts: Elements = document.select("script[src]")
+                val favicons: Elements = document.select("link[rel=icon], link[rel=shortcut icon]")
+                
+                // Calculate total resources
+                val totalResources = cssLinks.size + images.size + scripts.size + favicons.size
+                saveOperation.totalResources.set(totalResources)
+                
+                callback?.onProgress(15, "Downloading resources...")
+                
+                // Download and update CSS files
+                downloadAndReplaceResources(
+                    document,
+                    cssLinks,
+                    "href",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
                 )
-            )
-            
-            callback?.onProgress(100, "Page saved successfully")
-            callback?.onComplete(pageId, htmlFile.absolutePath)
-            
-            // Clean up
-            saveOperations.remove(pageId)
-            
-            Result.success(pageId)
-        } catch (e: Exception) {
+                
+                // Download and update images
+                downloadAndReplaceResources(
+                    document,
+                    images,
+                    "src",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
+                )
+                
+                // Download and update JavaScript
+                downloadAndReplaceResources(
+                    document,
+                    scripts,
+                    "src",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
+                )
+                
+                // Download and update favicons
+                downloadAndReplaceResources(
+                    document,
+                    favicons,
+                    "href",
+                    resourcesDir,
+                    pageId,
+                    saveOperation,
+                    callback
+                )
+                
+                callback?.onProgress(90, "Saving final HTML...")
+                
+                // Save modified HTML
+                val htmlFile = File(pageDir, "index.html")
+                htmlFile.writeText(document.outerHtml())
+                
+                // Save metadata
+                saveMetadata(
+                    OfflinePage(
+                        id = pageId,
+                        url = url,
+                        title = title,
+                        timestamp = System.currentTimeMillis(),
+                        filePath = htmlFile.absolutePath
+                    )
+                )
+                
+                callback?.onProgress(100, "Page saved successfully")
+                callback?.onComplete(pageId, htmlFile.absolutePath)
+                
+                // Clean up
+                saveOperations.remove(pageId)
+                
+                pageId
+            }
+        }.onError(tag = TAG) { e ->
             Log.e(TAG, "Error saving page: ${e.message}", e)
             callback?.onError("Failed to save page: ${e.message}")
-            Result.failure(e)
+            "Failed to save page: ${e.message}"
         }
-    }
     
     /**
      * Download and replace resources in the document
@@ -480,8 +482,12 @@ class OfflinePageManager(private val context: Context) {
     /**
      * Download a resource to a file
      */
-    private suspend fun downloadResource(url: String, outputFile: File): Boolean = withContext(Dispatchers.IO) {
-        try {
+    private suspend fun downloadResource(url: String, outputFile: File): Boolean = 
+        withErrorHandlingAndFallback(
+            tag = TAG,
+            errorMessage = "Error downloading resource $url",
+            fallback = false
+        ) {
             val connection = URL(url).openConnection()
             connection.connectTimeout = 10000
             connection.readTimeout = 30000
@@ -503,11 +509,7 @@ class OfflinePageManager(private val context: Context) {
             
             inputStream.close()
             true
-        } catch (e: Exception) {
-            Log.e(TAG, "Error downloading resource $url: ${e.message}", e)
-            false
         }
-    }
     
     /**
      * Save metadata for an offline page
@@ -670,8 +672,12 @@ class OfflinePageManager(private val context: Context) {
     /**
      * Delete an offline page
      */
-    suspend fun deletePage(pageId: String): Boolean = withContext(Dispatchers.IO) {
-        try {
+    suspend fun deletePage(pageId: String): Boolean = 
+        withErrorHandlingAndFallback(
+            tag = TAG,
+            errorMessage = "Error deleting page: $pageId",
+            fallback = false
+        ) {
             val pageDir = getPageDirectory(pageId)
             if (pageDir.exists() && pageDir.isDirectory) {
                 // Delete all files recursively
@@ -681,14 +687,11 @@ class OfflinePageManager(private val context: Context) {
                 val keysToRemove = resourceCache.keys.filter { it.startsWith("$pageId/") }
                 keysToRemove.forEach { resourceCache.remove(it) }
                 
-                return@withContext true
+                true
+            } else {
+                false
             }
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting page: ${e.message}", e)
-            false
         }
-    }
     
     /**
      * Clear the resource cache

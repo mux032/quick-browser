@@ -1,6 +1,7 @@
 package com.qb.browser.ui
 
 import android.graphics.Bitmap
+import android.util.Log
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
@@ -17,6 +18,7 @@ import com.qb.browser.util.OfflineWebViewClient
 import com.qb.browser.util.WebViewClientEx
 import com.qb.browser.viewmodel.WebViewModel
 import com.qb.browser.Constants
+import com.qb.browser.QBApplication
 
 class WebViewActivity : AppCompatActivity() {
     
@@ -28,11 +30,7 @@ class WebViewActivity : AppCompatActivity() {
     private var bubbleId: String? = null
     
     companion object {
-        const val EXTRA_URL = "extra_url"
-        const val EXTRA_BUBBLE_ID = "extra_bubble_id"
-        const val EXTRA_IS_OFFLINE = "is_offline"
-        const val EXTRA_PAGE_ID = "page_id"
-        const val EXTRA_PAGE_TITLE = "page_title"
+        // Using centralized constants from Constants.kt
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,12 +49,12 @@ class WebViewActivity : AppCompatActivity() {
         webViewModel = ViewModelProvider(this)[WebViewModel::class.java]
         
         // Check if we're loading an offline page
-        val isOffline = intent.getBooleanExtra(EXTRA_IS_OFFLINE, false)
+        val isOffline = intent.getBooleanExtra(Constants.EXTRA_IS_OFFLINE, false)
         
         if (isOffline) {
             // Handle offline page
-            val pageId = intent.getStringExtra(EXTRA_PAGE_ID)
-            val pageTitle = intent.getStringExtra(EXTRA_PAGE_TITLE)
+            val pageId = intent.getStringExtra(Constants.EXTRA_PAGE_ID)
+            val pageTitle = intent.getStringExtra(Constants.EXTRA_PAGE_TITLE)
             
             // Set title
             if (pageTitle != null) {
@@ -79,7 +77,7 @@ class WebViewActivity : AppCompatActivity() {
             
             // Load the URL
             if (url != null) {
-                bubbleId = intent.getStringExtra(EXTRA_BUBBLE_ID)
+                bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
             
                 // Set up WebView for online mode
                 setupWebView()
@@ -90,13 +88,23 @@ class WebViewActivity : AppCompatActivity() {
     }
     
     private fun setupWebView() {
+        // Get settings manager instance
+        val settingsManager = com.qb.browser.util.SettingsManager.getInstance(this)
+        
         webView.settings.apply {
-            javaScriptEnabled = false  // Disabled by default for privacy
+            javaScriptEnabled = settingsManager.isJavaScriptEnabled()  // Use user's JavaScript setting
             domStorageEnabled = true
             loadWithOverviewMode = true
             useWideViewPort = true
             builtInZoomControls = true
             displayZoomControls = false
+            
+            // Improve caching for better performance
+            cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+            databaseEnabled = true
+            
+            // Set reasonable timeouts
+            setGeolocationEnabled(false)  // Disable geolocation by default for privacy
         }
         
         // Set custom WebViewClient with ad blocking
@@ -124,6 +132,14 @@ class WebViewActivity : AppCompatActivity() {
             override fun onReceivedTitle(view: WebView?, title: String?) {
                 title?.let {
                     supportActionBar?.title = it
+                    
+                    // Update title in WebViewModel
+                    try {
+                        webViewModel.updateTitle(url, it)
+                        Log.d("WebViewActivity", "Updated page title: $it for URL: $url")
+                    } catch (e: Exception) {
+                        Log.e("WebViewActivity", "Error updating title", e)
+                    }
                 }
             }
             
@@ -147,9 +163,13 @@ class WebViewActivity : AppCompatActivity() {
             return
         }
         
+        // Get settings manager instance
+        val settingsManager = com.qb.browser.util.SettingsManager.getInstance(this)
+        
         // Configure WebView settings for offline use
         webView.settings.apply {
-            javaScriptEnabled = true  // Enable JS for better experience with offline content
+            // Use user's JavaScript setting, but recommend enabling it for offline content
+            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
             domStorageEnabled = true
             loadWithOverviewMode = true
             useWideViewPort = true
@@ -157,6 +177,15 @@ class WebViewActivity : AppCompatActivity() {
             displayZoomControls = false
             cacheMode = android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK
             allowFileAccess = true // Needed for file:// URLs
+        }
+        
+        // If JavaScript is disabled, show a recommendation to enable it for better offline experience
+        if (!settingsManager.isJavaScriptEnabled()) {
+            android.widget.Toast.makeText(
+                this,
+                "Enabling JavaScript in Settings may improve offline page rendering",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
         }
         
         // Get the file URI
@@ -202,7 +231,7 @@ class WebViewActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.web_view_menu, menu)
         
         // If this is an offline page, hide unnecessary menu items
-        isOfflinePage = intent.getBooleanExtra(EXTRA_IS_OFFLINE, false)
+        isOfflinePage = intent.getBooleanExtra(Constants.EXTRA_IS_OFFLINE, false)
         if (isOfflinePage) {
             menu.findItem(R.id.menu_save_offline)?.isVisible = false
             // If it's an offline page we already have a clean version,
@@ -250,8 +279,8 @@ class WebViewActivity : AppCompatActivity() {
     
     private fun openReadMode() {
         val intent = android.content.Intent(this, ReadModeActivity::class.java).apply {
-            putExtra(ReadModeActivity.EXTRA_URL, url)
-            bubbleId?.let { putExtra(ReadModeActivity.EXTRA_BUBBLE_ID, it) }
+            putExtra(Constants.EXTRA_URL, url)
+            bubbleId?.let { putExtra(Constants.EXTRA_BUBBLE_ID, it) }
         }
         startActivity(intent)
     }

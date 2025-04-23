@@ -164,12 +164,13 @@ class SettingsManager private constructor(context: Context) {
     /**
      * Bubble size settings
      */
-    fun getBubbleSize(): Int {
-        return preferences.getInt(KEY_BUBBLE_SIZE, DEFAULT_BUBBLE_SIZE)
+    fun getBubbleSize(): Float {
+        return preferences.getInt(KEY_BUBBLE_SIZE, DEFAULT_BUBBLE_SIZE).toFloat() / 100f
     }
     
-    fun setBubbleSize(size: Int) {
-        preferences.edit().putInt(KEY_BUBBLE_SIZE, size).apply()
+    fun setBubbleSize(size: Float) {
+        val sizeInt = (size * 100).toInt()
+        preferences.edit().putInt(KEY_BUBBLE_SIZE, sizeInt).apply()
     }
     
     /**
@@ -197,11 +198,11 @@ class SettingsManager private constructor(context: Context) {
     /**
      * Ad blocking settings
      */
-    fun isAdBlockingEnabled(): Boolean {
+    fun isAdBlockEnabled(): Boolean {
         return preferences.getBoolean(KEY_AD_BLOCKING, true)
     }
     
-    fun setAdBlockingEnabled(enabled: Boolean) {
+    fun setAdBlockEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_AD_BLOCKING, enabled).apply()
     }
     
@@ -230,11 +231,11 @@ class SettingsManager private constructor(context: Context) {
     /**
      * Encrypt saved pages settings
      */
-    fun isEncryptPagesEnabled(): Boolean {
+    fun isEncryptionEnabled(): Boolean {
         return preferences.getBoolean(KEY_ENCRYPT_PAGES, false)
     }
     
-    fun setEncryptPagesEnabled(enabled: Boolean) {
+    fun setEncryptionEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_ENCRYPT_PAGES, enabled).apply()
     }
     
@@ -290,6 +291,17 @@ class SettingsManager private constructor(context: Context) {
         preferences.edit().putFloat(KEY_TTS_PITCH, boundedPitch).apply()
     }
 
+    /**
+     * Animation speed settings
+     */
+    fun getAnimationSpeed(): Float {
+        return preferences.getFloat("animation_speed", 1.0f)
+    }
+    
+    fun setAnimationSpeed(speed: Float) {
+        preferences.edit().putFloat("animation_speed", speed).apply()
+    }
+    
     /**
      * Check if bubble animations are enabled
      */
@@ -359,5 +371,16 @@ class SettingsManager private constructor(context: Context) {
         editor.putInt(KEY_MAIN_BUBBLE_X, x)
         editor.putInt(KEY_MAIN_BUBBLE_Y, y)
         editor.apply()
+    }
+    
+    /**
+     * Bubble position (right or left side of screen)
+     */
+    fun isBubblePositionRight(): Boolean {
+        return preferences.getBoolean("bubble_position_right", false)
+    }
+    
+    fun setBubblePositionRight(isRight: Boolean) {
+        preferences.edit().putBoolean("bubble_position_right", isRight).apply()
     }
 }
