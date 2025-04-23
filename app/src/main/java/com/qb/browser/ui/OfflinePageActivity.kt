@@ -25,6 +25,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.qb.browser.R
 import com.qb.browser.model.OfflinePage
 import com.qb.browser.util.OfflinePageManager
+import com.qb.browser.Constants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -167,9 +168,9 @@ class OfflinePageActivity : AppCompatActivity() {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 
                 // Add necessary extras
-                putExtra(WebViewActivity.EXTRA_IS_OFFLINE, true)
-                putExtra(WebViewActivity.EXTRA_PAGE_ID, page.id)
-                putExtra(WebViewActivity.EXTRA_PAGE_TITLE, page.title)
+                putExtra(Constants.EXTRA_IS_OFFLINE, true)
+                putExtra(Constants.EXTRA_PAGE_ID, page.id)
+                putExtra(Constants.EXTRA_PAGE_TITLE, page.title)
             }
             startActivity(intent)
         } else {

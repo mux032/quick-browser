@@ -50,9 +50,11 @@
          id = parcel.readString() ?: "",
          url = parcel.readString() ?: "",
          title = parcel.readString() ?: "",
-         favicon = parcel.readParcelable(Bitmap::class.java.classLoader), lastAccessed = parcel.readLong()
+         tabs = parcel.createTypedArrayList(WebPage.CREATOR) ?: emptyList(),
+         favicon = parcel.readParcelable(Bitmap::class.java.classLoader),
+         lastAccessed = parcel.readLong()
      )
- 
+
      /**
       * Writes the Bubble object to a Parcel for serialization.
       *
@@ -63,6 +65,7 @@
          parcel.writeString(id)
          parcel.writeString(url)
          parcel.writeString(title)
+         parcel.writeTypedList(tabs)
          parcel.writeParcelable(favicon, flags)
          parcel.writeLong(lastAccessed)
      }

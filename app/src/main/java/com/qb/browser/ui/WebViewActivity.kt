@@ -30,11 +30,7 @@ class WebViewActivity : AppCompatActivity() {
     private var bubbleId: String? = null
     
     companion object {
-        const val EXTRA_URL = "extra_url"
-        const val EXTRA_BUBBLE_ID = "extra_bubble_id"
-        const val EXTRA_IS_OFFLINE = "is_offline"
-        const val EXTRA_PAGE_ID = "page_id"
-        const val EXTRA_PAGE_TITLE = "page_title"
+        // Using centralized constants from Constants.kt
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,12 +49,12 @@ class WebViewActivity : AppCompatActivity() {
         webViewModel = ViewModelProvider(this)[WebViewModel::class.java]
         
         // Check if we're loading an offline page
-        val isOffline = intent.getBooleanExtra(EXTRA_IS_OFFLINE, false)
+        val isOffline = intent.getBooleanExtra(Constants.EXTRA_IS_OFFLINE, false)
         
         if (isOffline) {
             // Handle offline page
-            val pageId = intent.getStringExtra(EXTRA_PAGE_ID)
-            val pageTitle = intent.getStringExtra(EXTRA_PAGE_TITLE)
+            val pageId = intent.getStringExtra(Constants.EXTRA_PAGE_ID)
+            val pageTitle = intent.getStringExtra(Constants.EXTRA_PAGE_TITLE)
             
             // Set title
             if (pageTitle != null) {
@@ -81,7 +77,7 @@ class WebViewActivity : AppCompatActivity() {
             
             // Load the URL
             if (url != null) {
-                bubbleId = intent.getStringExtra(EXTRA_BUBBLE_ID)
+                bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
             
                 // Set up WebView for online mode
                 setupWebView()
@@ -235,7 +231,7 @@ class WebViewActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.web_view_menu, menu)
         
         // If this is an offline page, hide unnecessary menu items
-        isOfflinePage = intent.getBooleanExtra(EXTRA_IS_OFFLINE, false)
+        isOfflinePage = intent.getBooleanExtra(Constants.EXTRA_IS_OFFLINE, false)
         if (isOfflinePage) {
             menu.findItem(R.id.menu_save_offline)?.isVisible = false
             // If it's an offline page we already have a clean version,
@@ -283,8 +279,8 @@ class WebViewActivity : AppCompatActivity() {
     
     private fun openReadMode() {
         val intent = android.content.Intent(this, ReadModeActivity::class.java).apply {
-            putExtra(ReadModeActivity.EXTRA_URL, url)
-            bubbleId?.let { putExtra(ReadModeActivity.EXTRA_BUBBLE_ID, it) }
+            putExtra(Constants.EXTRA_URL, url)
+            bubbleId?.let { putExtra(Constants.EXTRA_BUBBLE_ID, it) }
         }
         startActivity(intent)
     }

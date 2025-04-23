@@ -29,8 +29,7 @@
  * Dependencies:
  * - AndroidX libraries for lifecycle management and permissions.
  * - Kotlin Coroutines for asynchronous operations.
- * - Custom classes like `BubbleService`, `SettingsManager`, `SettingsActivity`, and
- * `HistoryActivity`.
+ * - Custom classes like `BubbleService`, `SettingsManager`, and `SettingsActivity`.
  */
 package com.qb.browser.ui
 

@@ -801,8 +801,8 @@ class BubbleView @JvmOverloads constructor(
     private fun openFullWebView() {
         try {
             launchActivity(WebViewActivity::class.java, 
-                WebViewActivity.EXTRA_URL to url,
-                WebViewActivity.EXTRA_BUBBLE_ID to bubbleId
+                Constants.EXTRA_URL to url,
+                Constants.EXTRA_BUBBLE_ID to bubbleId
             )
             
             // Collapse if expanded
