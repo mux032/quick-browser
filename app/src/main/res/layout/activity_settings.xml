@@ -52,22 +52,62 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <Switch
-                        android:id="@+id/switch_javascript"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
                         android:padding="8dp"
-                        android:text="@string/enable_javascript"
-                        android:textSize="16sp" />
+                        android:layout_marginBottom="8dp">
 
-                    <Switch
-                        android:id="@+id/switch_block_ads"
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_javascript"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/enable_javascript"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/enable_javascript"
+                            android:textSize="16sp" />
+
+                        <Switch
+                            android:id="@+id/switch_javascript"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:text="@string/block_ads_and_trackers"
-                        android:textSize="16sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_block_ads"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/block_ads_and_trackers"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/block_ads_and_trackers"
+                            android:textSize="16sp" />
+
+                        <Switch
+                            android:id="@+id/switch_block_ads"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -96,22 +136,105 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <Switch
-                        android:id="@+id/switch_night_mode"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
                         android:padding="8dp"
-                        android:text="@string/night_mode"
-                        android:textSize="16sp" />
+                        android:layout_marginBottom="8dp">
 
-                    <TextView
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_night_mode"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/night_mode"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/night_mode"
+                            android:textSize="16sp" />
+
+                        <Switch
+                            android:id="@+id/switch_night_mode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/theme_color_selector"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:text="@string/bubble_size"
-                        android:textSize="16sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:layout_marginBottom="8dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_color_palette"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/theme_color"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/theme_color"
+                            android:textSize="16sp" />
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/current_theme_color"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/current_theme_color_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_chevron_right"
+                            android:contentDescription="@string/choose_theme_color"
+                            app:tint="?attr/colorControlNormal" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_bubble_size"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/bubble_size"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/bubble_size"
+                            android:textSize="16sp" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -146,14 +269,28 @@
                             android:textAlignment="textEnd" />
                     </LinearLayout>
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:text="@string/animation_speed"
-                        android:textSize="16sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="8dp"
+                        android:layout_marginTop="8dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_animation_speed"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/animation_speed"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/animation_speed"
+                            android:textSize="16sp" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -180,13 +317,33 @@
                             android:textAlignment="textEnd" />
                     </LinearLayout>
 
-                    <Switch
-                        android:id="@+id/switch_position_right"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:text="@string/bubble_position_right"
-                        android:textSize="16sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_position"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/bubble_position_right"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/bubble_position_right"
+                            android:textSize="16sp" />
+
+                        <Switch
+                            android:id="@+id/switch_position_right"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -215,22 +372,62 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <Switch
-                        android:id="@+id/switch_save_history"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
                         android:padding="8dp"
-                        android:text="@string/save_browsing_history"
-                        android:textSize="16sp" />
+                        android:layout_marginBottom="8dp">
 
-                    <Switch
-                        android:id="@+id/switch_encrypt_data"
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_history"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/save_browsing_history"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/save_browsing_history"
+                            android:textSize="16sp" />
+
+                        <Switch
+                            android:id="@+id/switch_save_history"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:text="@string/encrypt_saved_pages"
-                        android:textSize="16sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_encryption"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@string/encrypt_saved_pages"
+                            app:tint="?attr/colorControlNormal" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/encrypt_saved_pages"
+                            android:textSize="16sp" />
+
+                        <Switch
+                            android:id="@+id/switch_encrypt_data"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

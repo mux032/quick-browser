@@ -3,13 +3,20 @@ package com.qb.browser.ui
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
+import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import com.qb.browser.R
+import com.qb.browser.ui.dialog.ThemeColorPickerDialog
+import com.qb.browser.ui.theme.ThemeColor
+import com.qb.browser.ui.theme.ThemeManager
 import com.qb.browser.util.SettingsManager
 
 /**
@@ -18,9 +25,9 @@ import com.qb.browser.util.SettingsManager
  * to avoid potential crashes
  */
 class SettingsActivity : AppCompatActivity() {
-    
+
     private lateinit var settingsManager: SettingsManager
-    
+
     // UI Components
     private lateinit var switchJavaScript: Switch
     private lateinit var switchBlockAds: Switch
@@ -33,39 +40,51 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var switchSaveHistory: Switch
     private lateinit var switchEncryptData: Switch
     private lateinit var switchPositionRight: Switch
-    
+
+    // Theme color selector components
+    private lateinit var themeColorSelector: LinearLayout
+    private lateinit var currentThemeColorView: CardView
+    private lateinit var currentThemeColorName: TextView
+
+    // Theme manager
+    private lateinit var themeManager: ThemeManager
+
     companion object {
         private const val TAG = "SettingsActivity"
     }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-        
+
         try {
             // Set up toolbar
             setSupportActionBar(findViewById(R.id.toolbar))
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             supportActionBar?.title = getString(R.string.settings)
-            
-            // Initialize SettingsManager
+
+            // Initialize SettingsManager and ThemeManager
             settingsManager = SettingsManager.getInstance(this)
-            
+            themeManager = ThemeManager.getInstance(this)
+
             // Initialize UI Components
             initializeViews()
-            
+
             // Load settings
             loadSettings()
-            
+
             // Setup listeners
             setupListeners()
+
+            // Apply current theme
+            themeManager.applyTheme(this)
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing settings activity", e)
             Toast.makeText(this, "Error loading settings", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
-    
+
     private fun initializeViews() {
         try {
             switchJavaScript = findViewById(R.id.switch_javascript)
@@ -79,37 +98,45 @@ class SettingsActivity : AppCompatActivity() {
             switchSaveHistory = findViewById(R.id.switch_save_history)
             switchEncryptData = findViewById(R.id.switch_encrypt_data)
             switchPositionRight = findViewById(R.id.switch_position_right)
+
+            // Theme color selector components
+            themeColorSelector = findViewById(R.id.theme_color_selector)
+            currentThemeColorView = findViewById(R.id.current_theme_color)
+            currentThemeColorName = findViewById(R.id.current_theme_color_name)
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing views", e)
             throw e
         }
     }
-    
+
     private fun loadSettings() {
         try {
             // Load settings from SettingsManager
             switchJavaScript.isChecked = settingsManager.isJavaScriptEnabled()
             switchBlockAds.isChecked = settingsManager.isAdBlockEnabled()
             switchNightMode.isChecked = settingsManager.isDarkThemeEnabled()
-            
+
             // Set bubble size
             val bubbleSize = settingsManager.getBubbleSize()
             seekBarBubbleSize.progress = ((bubbleSize - 0.5f) * 100).toInt()
             updateBubbleSizeText(bubbleSize)
-            
+
             // Set animation speed
             val animSpeed = settingsManager.getAnimationSpeed()
             seekBarAnimSpeed.progress = ((animSpeed - 0.5f) * 100).toInt()
             updateAnimSpeedText(animSpeed)
-            
+
             // Set expanded bubble size
             expandedBubbleSizeSlider.progress = settingsManager.getExpandedBubbleSize()
-            
+
             // Set other settings
             switchSaveHistory.isChecked = settingsManager.isSaveHistoryEnabled()
             switchEncryptData.isChecked = settingsManager.isEncryptionEnabled()
             switchPositionRight.isChecked = settingsManager.isBubblePositionRight()
-            
+
+            // Set theme color
+            updateThemeColorDisplay()
+
             // Apply night mode
             applyNightMode(settingsManager.isDarkThemeEnabled())
         } catch (e: Exception) {
@@ -118,24 +145,43 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateThemeColorDisplay() {
+        val currentThemeColorName = settingsManager.getThemeColor()
+        val themeColor = ThemeColor.fromName(currentThemeColorName)
+
+        // Update color circle
+        val primaryColor = ContextCompat.getColor(this, themeColor.primaryColorRes)
+        this.currentThemeColorView.setCardBackgroundColor(primaryColor)
+
+        // Update color name text
+        this.currentThemeColorName.text = themeColor.colorName
+    }
+
     private fun setupListeners() {
         try {
             // JavaScript setting
             switchJavaScript.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setJavaScriptEnabled(isChecked)
             }
-            
+
             // Ad blocking setting
             switchBlockAds.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setAdBlockEnabled(isChecked)
             }
-            
+
             // Night mode setting
             switchNightMode.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setDarkThemeEnabled(isChecked)
                 applyNightMode(isChecked)
+                // Refresh theme to update UI elements
+                themeManager.applyTheme(this)
             }
-            
+
+            // Theme color selector
+            themeColorSelector.setOnClickListener {
+                showThemeColorPicker()
+            }
+
             // Bubble size setting
             seekBarBubbleSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -145,11 +191,11 @@ class SettingsActivity : AppCompatActivity() {
                         settingsManager.setBubbleSize(size)
                     }
                 }
-                
+
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {}
             })
-            
+
             // Animation speed setting
             seekBarAnimSpeed.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -159,11 +205,11 @@ class SettingsActivity : AppCompatActivity() {
                         settingsManager.setAnimationSpeed(speed)
                     }
                 }
-                
+
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {}
             })
-            
+
             // Expanded bubble size setting
             expandedBubbleSizeSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -171,21 +217,21 @@ class SettingsActivity : AppCompatActivity() {
                         settingsManager.setExpandedBubbleSize(progress)
                     }
                 }
-                
+
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {}
             })
-            
+
             // Save history setting
             switchSaveHistory.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setSaveHistoryEnabled(isChecked)
             }
-            
+
             // Encrypt data setting
             switchEncryptData.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setEncryptionEnabled(isChecked)
             }
-            
+
             // Bubble position setting
             switchPositionRight.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setBubblePositionRight(isChecked)
@@ -195,7 +241,7 @@ class SettingsActivity : AppCompatActivity() {
             throw e
         }
     }
-    
+
     private fun updateBubbleSizeText(size: Float) {
         val sizeText = when {
             size < 0.7f -> getString(R.string.size_small)
@@ -206,7 +252,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         textViewBubbleSize.text = sizeText
     }
-    
+
     private fun updateAnimSpeedText(speed: Float) {
         val speedText = when {
             speed < 0.7f -> getString(R.string.speed_slow)
@@ -217,14 +263,37 @@ class SettingsActivity : AppCompatActivity() {
         }
         textViewAnimSpeed.text = speedText
     }
-    
+
     private fun applyNightMode(isNightMode: Boolean) {
         AppCompatDelegate.setDefaultNightMode(
             if (isNightMode) AppCompatDelegate.MODE_NIGHT_YES
             else AppCompatDelegate.MODE_NIGHT_NO
         )
     }
-    
+
+    /**
+     * Show the theme color picker dialog
+     */
+    private fun showThemeColorPicker() {
+        ThemeColorPickerDialog.show(this) { selectedColor ->
+            // Save the selected color
+            settingsManager.setThemeColor(selectedColor.colorName)
+
+            // Update the UI
+            updateThemeColorDisplay()
+
+            // Apply the theme to the activity
+            themeManager.applyTheme(this)
+
+            // Show confirmation toast
+            Toast.makeText(
+                this,
+                getString(R.string.theme_color_changed, selectedColor.colorName),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {

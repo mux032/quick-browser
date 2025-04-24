@@ -28,6 +28,7 @@ import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.qb.browser.Constants
 import com.qb.browser.QBApplication
 import com.qb.browser.R
@@ -956,8 +957,10 @@ class BubbleView @JvmOverloads constructor(
     private fun saveForOffline() {
         try {
             // Get UI components
-            val saveButton = findViewById<ImageView>(R.id.btn_save_offline)
+            val saveButton = findViewById<View>(R.id.btn_save_offline)
             val messageView = findViewById<TextView>(R.id.save_message)
+            val messageContainer = findViewById<View>(R.id.save_message_container)
+            val messageIcon = findViewById<ImageView>(R.id.save_message_icon)
             
             // Update save button appearance with animation
             highlightSaveButton(saveButton)
@@ -966,7 +969,7 @@ class BubbleView @JvmOverloads constructor(
             sendSaveOfflineIntent()
             
             // Show feedback to user with animations
-            showSaveFeedbackMessage(messageView, saveButton)
+            showSaveFeedbackMessage(messageView, messageContainer, messageIcon, saveButton)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save for offline", e)
         }
@@ -975,14 +978,20 @@ class BubbleView @JvmOverloads constructor(
     /**
      * Highlight the save button to indicate action
      */
-    private fun highlightSaveButton(saveButton: ImageView) {
-        saveButton.setColorFilter(
-            ContextCompat.getColor(context, R.color.colorAccent), 
-            PorterDuff.Mode.SRC_IN
-        )
-        
+    private fun highlightSaveButton(saveButton: View) {
         // Pulse animation for feedback
         bubbleAnimator.animatePulse(saveButton, 2)
+        
+        // Apply color filter if it's an ImageView
+        if (saveButton is ImageView) {
+            saveButton.setColorFilter(
+                ContextCompat.getColor(context, R.color.colorAccent), 
+                PorterDuff.Mode.SRC_IN
+            )
+        } else if (saveButton is com.google.android.material.button.MaterialButton) {
+            // For MaterialButton, change the icon tint
+            saveButton.setIconTintResource(R.color.colorAccent)
+        }
     }
     
     /**
@@ -1000,22 +1009,37 @@ class BubbleView @JvmOverloads constructor(
     /**
      * Show feedback message for save operation
      */
-    private fun showSaveFeedbackMessage(messageView: TextView, saveButton: ImageView) {
-        // Show initial saving message
+    private fun showSaveFeedbackMessage(
+        messageView: TextView, 
+        messageContainer: View, 
+        messageIcon: ImageView,
+        saveButton: View
+    ) {
+        // Set up initial message
         messageView.text = context.getString(R.string.saving_page_offline)
-        messageView.visibility = View.VISIBLE
+        messageIcon.setImageResource(R.drawable.ic_save)
+        messageIcon.setColorFilter(ContextCompat.getColor(context, R.color.colorPrimary))
+        
+        // Show message container with animation
+        messageContainer.visibility = View.VISIBLE
+        bubbleAnimator.animateAppear(messageContainer)
         
         // Update to saved message after delay
         postDelayed({
             messageView.text = context.getString(R.string.page_saved_offline)
+            messageIcon.setImageResource(R.drawable.ic_check)
             
-            // Hide the message after additional delay
+            // Hide the message after additional delay with animation
             postDelayed({
-                messageView.visibility = View.GONE
+                bubbleAnimator.animateDisappear(messageContainer) {
+                    messageContainer.visibility = View.GONE
+                }
             }, 2000)
             
             // Reset save button appearance
-            saveButton.clearColorFilter()
+            if (saveButton is ImageView) {
+                saveButton.clearColorFilter()
+            }
         }, 3000)
     }
     

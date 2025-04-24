@@ -12,6 +12,7 @@ class SettingsManager private constructor(context: Context) {
     
     private val preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
     
     companion object {
         // Keys for preferences
@@ -36,12 +37,14 @@ class SettingsManager private constructor(context: Context) {
         private const val KEY_EXPANDED_BUBBLE_SIZE = "expanded_bubble_size"
         private const val KEY_MAIN_BUBBLE_X = "main_bubble_x"
         private const val KEY_MAIN_BUBBLE_Y = "main_bubble_y"
+        private const val KEY_THEME_COLOR = "pref_theme_color"
         
         // Default values
         private const val DEFAULT_TEXT_SIZE = 16
         private const val DEFAULT_BUBBLE_SIZE = 100 // Percentage of default size
         private const val DEFAULT_BUBBLE_OPACITY = 90 // Percentage of opacity
         private const val DEFAULT_EXPANDED_BUBBLE_SIZE = 64
+        private const val DEFAULT_THEME_COLOR = "Blue"
         
         // Font family options
         const val FONT_FAMILY_DEFAULT = "default"
@@ -382,5 +385,40 @@ class SettingsManager private constructor(context: Context) {
     
     fun setBubblePositionRight(isRight: Boolean) {
         preferences.edit().putBoolean("bubble_position_right", isRight).apply()
+    }
+
+    /**
+     * Theme color settings
+     */
+    fun getThemeColor(): String {
+        return preferences.getString(KEY_THEME_COLOR, DEFAULT_THEME_COLOR) ?: DEFAULT_THEME_COLOR
+    }
+    
+    fun setThemeColor(colorName: String) {
+        preferences.edit().putString(KEY_THEME_COLOR, colorName).apply()
+    }
+    
+    /**
+     * Get the primary color resource ID for the current theme
+     */
+    fun getCurrentThemePrimaryColorResId(): Int {
+        val themeColor = com.qb.browser.ui.theme.ThemeColor.fromName(getThemeColor())
+        return themeColor.primaryColorRes
+    }
+    
+    /**
+     * Get the primary dark color resource ID for the current theme
+     */
+    fun getCurrentThemePrimaryDarkColorResId(): Int {
+        val themeColor = com.qb.browser.ui.theme.ThemeColor.fromName(getThemeColor())
+        return themeColor.primaryDarkColorRes
+    }
+    
+    /**
+     * Get the accent color resource ID for the current theme
+     */
+    fun getCurrentThemeAccentColorResId(): Int {
+        val themeColor = com.qb.browser.ui.theme.ThemeColor.fromName(getThemeColor())
+        return themeColor.accentColorRes
     }
 }
