@@ -9,7 +9,7 @@ import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.qb.browser.ui.base.BaseActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
@@ -24,9 +24,7 @@ import com.qb.browser.util.SettingsManager
  * This implementation uses SettingsManager directly instead of BubbleViewModel
  * to avoid potential crashes
  */
-class SettingsActivity : AppCompatActivity() {
-
-    private lateinit var settingsManager: SettingsManager
+class SettingsActivity : BaseActivity() {
 
     // UI Components
     private lateinit var switchJavaScript: Switch
@@ -63,8 +61,7 @@ class SettingsActivity : AppCompatActivity() {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             supportActionBar?.title = getString(R.string.settings)
 
-            // Initialize SettingsManager and ThemeManager
-            settingsManager = SettingsManager.getInstance(this)
+            // Initialize ThemeManager
             themeManager = ThemeManager.getInstance(this)
 
             // Initialize UI Components

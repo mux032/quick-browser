@@ -6,9 +6,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.qb.browser.QBApplication
 import com.qb.browser.R
 import com.qb.browser.ui.adapter.ThemeColorAdapter
 import com.qb.browser.ui.theme.ThemeColor
@@ -65,7 +67,30 @@ class ThemeColorPickerDialog(
     
     companion object {
         fun show(context: Context, onColorSelected: (ThemeColor) -> Unit) {
-            ThemeColorPickerDialog(context, onColorSelected).show()
+            // Use the new ColorPickerDialog instead
+            val settingsManager = SettingsManager.getInstance(context)
+            val currentColor = ThemeColor.fromName(settingsManager.getThemeColor())
+            val isDynamicColorEnabled = settingsManager.isDynamicColorEnabled()
+            
+            ColorPickerDialog.show(context, currentColor, isDynamicColorEnabled) { selectedColor, useDynamicColor ->
+                // Save dynamic color setting
+                settingsManager.setDynamicColorEnabled(useDynamicColor)
+                
+                // If not using dynamic color, apply the selected color
+                if (!useDynamicColor) {
+                    onColorSelected(selectedColor)
+                } else {
+                    // Show toast for dynamic color
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.dynamic_colors_enabled),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    
+                    // Restart the app to apply dynamic colors
+                    (context.applicationContext as QBApplication).applyThemeSettings()
+                }
+            }
         }
     }
 }

@@ -17,6 +17,20 @@
     <!-- Text colors -->
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
+    
+    <!-- Uniform text colors -->
+    <color name="textColorPrimary">#212121</color>
+    <color name="textColorSecondary">#757575</color>
+    
+    <!-- Uniform background colors -->
+    <color name="backgroundColor">#FFFFFF</color>
+    <color name="surfaceColor">#FFFFFF</color>
+    <color name="onSurfaceColor">#212121</color>
+    
+    <!-- Dark theme colors -->
+    <color name="darkBackground">#121212</color>
+    <color name="darkSurface">#1E1E1E</color>
+    <color name="darkOnSurface">#E0E0E0</color>
 
     <!-- Bubble UI colors -->
     <color name="bubble_background">#F5F5F5</color>

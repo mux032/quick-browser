@@ -36,4 +36,10 @@
         <item name="android:textColor">?android:attr/textColorPrimary</item>
         <item name="android:lineSpacingMultiplier">1.5</item>
     </style>
+    
+    <!-- Popup menu style for consistent appearance -->
+    <style name="PopupMenu.QBrowser" parent="Widget.MaterialComponents.PopupMenu">
+        <item name="android:popupBackground">?attr/colorSurface</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+    </style>
 </resources>

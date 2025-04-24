@@ -13,6 +13,19 @@
         <item name="android:statusBarColor">@color/primaryDarkColorDark</item>
         <!-- Customize your theme here. -->
         <item name="android:navigationBarColor">@color/primaryDarkColorDark</item>
+        
+        <!-- Uniform text colors -->
+        <item name="android:textColorPrimary">@color/darkOnSurface</item>
+        <item name="android:textColorSecondary">#9E9E9E</item>
+        
+        <!-- Uniform background colors -->
+        <item name="android:colorBackground">@color/darkBackground</item>
+        <item name="colorSurface">@color/darkSurface</item>
+        <item name="colorOnSurface">@color/darkOnSurface</item>
+        
+        <!-- Menu and popup styles -->
+        <item name="popupMenuStyle">@style/PopupMenu.QBrowser</item>
+        <item name="actionOverflowMenuStyle">@style/PopupMenu.QBrowser</item>
     </style>
 
     <style name="Theme.QBrowser.ReadMode" parent="Theme.QBrowser">

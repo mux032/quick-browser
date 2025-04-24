@@ -48,7 +48,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
+        app:cardElevation="2dp"
         android:visibility="gone">
 
         <!-- Main Content Area -->

@@ -55,7 +55,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import com.qb.browser.ui.base.BaseActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.qb.browser.Constants
@@ -73,13 +73,13 @@ import com.qb.browser.db.WebPageDao
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
     companion object {
         private const val TAG = "MainActivity"
         private const val NOTIFICATION_PERMISSION = "android.permission.POST_NOTIFICATIONS"
     }
 
-    private lateinit var settingsManager: SettingsManager
+    // Using settingsManager from BaseActivity
     private lateinit var bubbleIntentProcessor: BubbleIntentProcessor
     private lateinit var historyViewModel: HistoryViewModel
     private lateinit var historyAdapter: HistoryAdapter
@@ -142,6 +142,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Apply theme before setting content view
+        applyAppTheme()
+        
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -150,7 +153,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false) // Hide default title
 
-        settingsManager = SettingsManager.getInstance(this)
+        // settingsManager is already initialized in BaseActivity
         intent?.let { handleIntent(it) }
 
         // Initialize ViewModel
@@ -342,6 +345,8 @@ class MainActivity : AppCompatActivity() {
             startBubbleService()
         }
     }
+    
+
     
     // RecyclerView Adapter for History items
     private inner class HistoryAdapter(

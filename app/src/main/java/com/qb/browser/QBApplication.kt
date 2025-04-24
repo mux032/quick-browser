@@ -1,14 +1,17 @@
 package com.qb.browser
 
 import android.app.Application
+import android.os.Build
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.color.DynamicColors
 import com.qb.browser.db.AppDatabase
 import com.qb.browser.db.SettingsDao
+import com.qb.browser.util.SettingsManager
 import com.qb.browser.service.BubbleService
 import com.qb.browser.viewmodel.BubbleViewModel
 import com.qb.browser.viewmodel.WebViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModel
-
 
 class QBApplication : Application() {
 
@@ -35,6 +38,29 @@ class QBApplication : Application() {
         // Optional global ViewModels (can be removed in favor of using ViewModelProviders)
         bubbleViewModel = BubbleViewModel(settingsDao)
         webViewModel = WebViewModel()
+        
+        // Apply dynamic colors if enabled
+        applyThemeSettings()
+    }
+    
+    /**
+     * Apply theme settings including dynamic colors and night mode
+     */
+    fun applyThemeSettings() {
+        val settingsManager = SettingsManager.getInstance(this)
+        
+        // Apply dynamic colors if enabled and available
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && settingsManager.isDynamicColorEnabled()) {
+            DynamicColors.applyToActivitiesIfAvailable(this)
+        }
+        
+        // Apply night mode setting
+        val nightMode = if (settingsManager.isNightModeEnabled()) {
+            AppCompatDelegate.MODE_NIGHT_YES
+        } else {
+            AppCompatDelegate.MODE_NIGHT_NO
+        }
+        AppCompatDelegate.setDefaultNightMode(nightMode)
     }
 }
 

@@ -56,6 +56,9 @@
     <string name="theme_color_changed">Theme color changed to %1$s</string>
     <string name="selected_color">Selected color</string>
     <string name="apply">Apply</string>
+    <string name="use_dynamic_colors">Use dynamic colors from wallpaper</string>
+    <string name="dynamic_colors_enabled">Dynamic colors enabled</string>
+    <string name="dynamic_colors_disabled">Dynamic colors disabled</string>
     <string name="privacy">Privacy</string>
     <string name="save_browsing_history">Save browsing history</string>
     <string name="encrypt_saved_pages">Encrypt saved pages</string>

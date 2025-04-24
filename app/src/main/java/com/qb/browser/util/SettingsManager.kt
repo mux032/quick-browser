@@ -38,6 +38,8 @@ class SettingsManager private constructor(context: Context) {
         private const val KEY_MAIN_BUBBLE_X = "main_bubble_x"
         private const val KEY_MAIN_BUBBLE_Y = "main_bubble_y"
         private const val KEY_THEME_COLOR = "pref_theme_color"
+        private const val KEY_DYNAMIC_COLOR = "pref_dynamic_color"
+        private const val KEY_NIGHT_MODE = "pref_night_mode"
         
         // Default values
         private const val DEFAULT_TEXT_SIZE = 16
@@ -45,6 +47,7 @@ class SettingsManager private constructor(context: Context) {
         private const val DEFAULT_BUBBLE_OPACITY = 90 // Percentage of opacity
         private const val DEFAULT_EXPANDED_BUBBLE_SIZE = 64
         private const val DEFAULT_THEME_COLOR = "Blue"
+        private const val DEFAULT_DYNAMIC_COLOR = true
         
         // Font family options
         const val FONT_FAMILY_DEFAULT = "default"
@@ -420,5 +423,27 @@ class SettingsManager private constructor(context: Context) {
     fun getCurrentThemeAccentColorResId(): Int {
         val themeColor = com.qb.browser.ui.theme.ThemeColor.fromName(getThemeColor())
         return themeColor.accentColorRes
+    }
+    
+    /**
+     * Dynamic color settings
+     */
+    fun isDynamicColorEnabled(): Boolean {
+        return preferences.getBoolean(KEY_DYNAMIC_COLOR, DEFAULT_DYNAMIC_COLOR)
+    }
+    
+    fun setDynamicColorEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_DYNAMIC_COLOR, enabled).apply()
+    }
+    
+    /**
+     * Night mode settings
+     */
+    fun isNightModeEnabled(): Boolean {
+        return preferences.getBoolean(KEY_NIGHT_MODE, false)
+    }
+    
+    fun setNightModeEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_NIGHT_MODE, enabled).apply()
     }
 }
