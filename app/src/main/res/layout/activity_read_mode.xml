@@ -32,6 +32,43 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone" />
+            
+        <!-- Summary container that will be shown when summarize is clicked -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/summary_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+            
+            <LinearLayout
+                android:id="@+id/summary_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                
+                <TextView
+                    android:id="@+id/summary_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp"
+                    android:text="@string/summary_title" />
+                    
+                <ProgressBar
+                    android:id="@+id/summary_progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="24dp" />
+                    
+                <!-- Summary points will be added here dynamically -->
+                
+            </LinearLayout>
+            
+        </androidx.core.widget.NestedScrollView>
 
         <ProgressBar
             android:id="@+id/progress_bar"
@@ -52,5 +89,15 @@
             android:visibility="gone" />
 
     </FrameLayout>
+    
+    <!-- Floating action button for summarization -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_summarize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/summarize"
+        app:srcCompat="@drawable/ic_summarize" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

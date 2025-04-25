@@ -16,6 +16,34 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Handle TensorFlow Lite namespace conflicts
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+    }
+    
+    // Suppress namespace warnings for TensorFlow Lite
+    lint {
+        disable 'DuplicateNamespace'
+        abortOnError false
+    }
+    
+    // Add packaging options to handle duplicate files
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/*.kotlin_module'
+        pickFirst 'lib/armeabi-v7a/libtensorflowlite_jni.so'
+        pickFirst 'lib/arm64-v8a/libtensorflowlite_jni.so'
+        pickFirst 'lib/x86/libtensorflowlite_jni.so'
+        pickFirst 'lib/x86_64/libtensorflowlite_jni.so'
     }
 
     buildTypes {
@@ -95,6 +123,9 @@ dependencies {
     
     // JSoup for HTML parsing (for read mode)
     implementation 'org.jsoup:jsoup:1.17.2'
+    
+    // Natural language processing libraries
+    implementation 'org.apache.opennlp:opennlp-tools:2.1.0'
     
     // Testing
     testImplementation 'junit:junit:4.13.2'

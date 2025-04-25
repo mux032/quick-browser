@@ -3,15 +3,20 @@ package com.qb.browser.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import android.view.LayoutInflater
+import androidx.core.widget.NestedScrollView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -24,6 +29,7 @@ import com.qb.browser.util.SettingsManager
 import com.qb.browser.util.TextToSpeechManager
 import com.qb.browser.util.ErrorHandler
 import com.qb.browser.util.withErrorHandlingAndFallback
+import com.qb.browser.util.SummarizationManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,6 +46,10 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
     private lateinit var settingsManager: SettingsManager
     private lateinit var contentExtractor: ContentExtractor
     private lateinit var ttsManager: TextToSpeechManager
+    private lateinit var fabSummarize: FloatingActionButton
+    private lateinit var summaryContainer: NestedScrollView
+    private lateinit var summaryContent: LinearLayout
+    private lateinit var summaryProgress: ProgressBar
     
     private var currentUrl: String = ""
     private var bubbleId: String = ""
@@ -47,6 +57,8 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
     private var currentTheme = SettingsManager.THEME_LIGHT
     private var isTtsSpeaking = false
     private var extractedText: String = ""
+    private var isSummaryMode = false
+    private var summarizationManager: SummarizationManager? = null
     
     companion object {
         // Using centralized constants from Constants.kt
@@ -64,11 +76,23 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
         webView = findViewById(R.id.webview_read_mode)
         progressBar = findViewById(R.id.progress_bar)
         errorView = findViewById(R.id.error_text)
+        fabSummarize = findViewById(R.id.fab_summarize)
+        summaryContainer = findViewById(R.id.summary_container)
+        summaryContent = findViewById(R.id.summary_content)
+        summaryProgress = findViewById(R.id.summary_progress)
         
         // Setup toolbar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        
+        // Initialize summarization manager
+        summarizationManager = SummarizationManager.getInstance(this)
+        
+        // Setup FAB click listener
+        fabSummarize.setOnClickListener {
+            toggleSummaryMode()
+        }
         
         // Get extras from intent
         currentUrl = intent.getStringExtra(Constants.EXTRA_URL) ?: ""
@@ -124,6 +148,11 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
         progressBar.visibility = View.VISIBLE
         errorView.visibility = View.GONE
         webView.visibility = View.GONE
+        summaryContainer.visibility = View.GONE
+        fabSummarize.visibility = View.GONE
+        
+        // Reset summary mode
+        isSummaryMode = false
         
         // Stop TTS if playing
         if (isTtsSpeaking) {
@@ -171,10 +200,14 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
                         result.byline
                     )
                     
+                    // Store the raw content in the WebView tag for later use
+                    webView.tag = result.content
+                    
                     // Load the content
                     webView.loadDataWithBaseURL(validatedUrl, htmlContent, "text/html", "UTF-8", null)
                     progressBar.visibility = View.GONE
                     webView.visibility = View.VISIBLE
+                    fabSummarize.visibility = View.VISIBLE
                 }
             } else {
                 withContext(Dispatchers.Main) {
@@ -315,6 +348,8 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
     private fun showError(message: String) {
         progressBar.visibility = View.GONE
         webView.visibility = View.GONE
+        summaryContainer.visibility = View.GONE
+        fabSummarize.visibility = View.GONE
         errorView.visibility = View.VISIBLE
         errorView.text = message
     }
@@ -371,6 +406,167 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
             putExtra(Intent.EXTRA_TEXT, "Check out this article: $currentUrl")
         }
         startActivity(Intent.createChooser(shareIntent, "Share via"))
+    }
+    
+    /**
+     * Toggle between web view and summary view
+     */
+    private fun toggleSummaryMode() {
+        if (isSummaryMode) {
+            // Switch back to web view
+            showWebView()
+        } else {
+            // Switch to summary view
+            showSummaryView()
+        }
+    }
+    
+    /**
+     * Show the web view and hide the summary view
+     */
+    private fun showWebView() {
+        isSummaryMode = false
+        
+        // Update UI
+        webView.visibility = View.VISIBLE
+        summaryContainer.visibility = View.GONE
+        
+        // Update FAB icon
+        fabSummarize.setImageResource(R.drawable.ic_summarize)
+        fabSummarize.contentDescription = getString(R.string.summarize)
+        
+        // Show a toast
+        Toast.makeText(this, R.string.showing_web_view, Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Show the summary view and hide the web view
+     */
+    private fun showSummaryView() {
+        if (webView.visibility != View.VISIBLE) {
+            Toast.makeText(this, R.string.summary_error, Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        isSummaryMode = true
+        
+        // Update UI
+        webView.visibility = View.GONE
+        summaryContainer.visibility = View.VISIBLE
+        summaryProgress.visibility = View.VISIBLE
+        
+        // Clear previous summary content
+        summaryContent.removeAllViews()
+        
+        // Keep only the title and progress bar
+        val titleView = summaryContent.findViewById<TextView>(R.id.summary_title)
+        titleView?.text = getString(R.string.summary_title)
+        
+        // Update FAB icon
+        fabSummarize.setImageResource(R.drawable.ic_web_page)
+        fabSummarize.contentDescription = getString(R.string.show_web_view)
+        
+        // Show a toast
+        Toast.makeText(this, R.string.summarizing, Toast.LENGTH_SHORT).show()
+        
+        // Start summarization
+        summarizeContent()
+    }
+    
+    /**
+     * Summarize the content using SummarizationManager
+     */
+    private fun summarizeContent() {
+        // Get the content for summarization
+        val content = getContentForSummarization()
+        
+        if (content.isEmpty()) {
+            showSummaryError(getString(R.string.summary_error))
+            return
+        }
+        
+        // Start summarization in a coroutine
+        lifecycleScope.launch {
+            try {
+                // Get summary points
+                val summaryPoints = withContext(Dispatchers.Default) {
+                    summarizationManager?.summarizeContent(content) ?: emptyList()
+                }
+                
+                withContext(Dispatchers.Main) {
+                    if (summaryPoints.isNotEmpty()) {
+                        displaySummaryPoints(summaryPoints)
+                    } else {
+                        showSummaryError(getString(R.string.summary_not_article))
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ReadModeActivity", "Error summarizing content", e)
+                withContext(Dispatchers.Main) {
+                    showSummaryError(getString(R.string.summary_error))
+                }
+            }
+        }
+    }
+    
+    /**
+     * Display the summary points in the UI
+     */
+    private fun displaySummaryPoints(points: List<String>) {
+        // Hide progress
+        summaryProgress.visibility = View.GONE
+        
+        // Add bullet points
+        for (point in points) {
+            val bulletPoint = LayoutInflater.from(this).inflate(
+                R.layout.item_summary_point, 
+                summaryContent, 
+                false
+            ) as TextView
+            
+            bulletPoint.text = "• $point"
+            
+            summaryContent.addView(bulletPoint)
+        }
+    }
+    
+    /**
+     * Show an error in the summary view
+     */
+    private fun showSummaryError(message: String) {
+        // Hide progress
+        summaryProgress.visibility = View.GONE
+        
+        // Add error message
+        val errorText = TextView(this)
+        errorText.text = message
+        errorText.setPadding(16, 16, 16, 16)
+        errorText.textSize = 16f
+        
+        summaryContent.addView(errorText)
+    }
+    
+    /**
+     * Get the content for summarization
+     * This uses the already extracted content from ContentExtractor
+     */
+    private fun getContentForSummarization(): String {
+        // We already have the extracted content in the extractedText variable
+        // Just return the content part without title and byline
+        return if (::contentExtractor.isInitialized) {
+            // We already have the content in the result variable from loadContent()
+            // Just return the content part
+            val content = webView.tag as? String ?: ""
+            if (content.isNotEmpty()) {
+                content
+            } else {
+                // If we don't have the content cached, use the extractedText
+                // which already has HTML tags stripped
+                extractedText
+            }
+        } else {
+            ""
+        }
     }
     
     private fun toggleTextToSpeech() {

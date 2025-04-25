@@ -15,17 +15,18 @@ import kotlinx.coroutines.runBlocking
 
 /**
  * Extended WebViewClient with ad blocking and other features
+ * This class is open for extension
  */
-class WebViewClientEx(
-    context: Context,
-    private val onPageUrlChanged: (String) -> Unit
+open class WebViewClientEx(
+    protected val context: Context,
+    protected val onPageUrlChanged: (String) -> Unit
 ) : WebViewClient() {
     
     private val adBlocker = AdBlocker.getInstance(context)
     private val settingsManager = SettingsManager.getInstance(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     
-    override fun shouldInterceptRequest(
+    override open fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
@@ -42,12 +43,12 @@ class WebViewClientEx(
         return super.shouldInterceptRequest(view, request)
     }
     
-    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+    override open fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
         url?.let { onPageUrlChanged(it) }
     }
     
-    override fun onPageFinished(view: WebView?, url: String?) {
+    override open fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
         
         // Apply content extraction script for read mode only if ad blocking is enabled
@@ -71,10 +72,30 @@ class WebViewClientEx(
         }
     }
     
-    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+    // For newer Android versions
+    override open fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
         // Custom URL handling
         val url = request?.url?.toString() ?: return false
         
+        // Always notify about URL change first to update UI
+        onPageUrlChanged(url)
+        
+        return handleUrlOverride(view, url)
+    }
+    
+    // For older Android versions (API < 24)
+    @Suppress("DEPRECATION")
+    override open fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+        if (url == null) return false
+        
+        // Always notify about URL change first to update UI
+        onPageUrlChanged(url)
+        
+        return handleUrlOverride(view, url)
+    }
+    
+    // Common URL handling logic for both API versions
+    private fun handleUrlOverride(view: WebView?, url: String): Boolean {
         return when {
             // Handle external schemes (tel, mailto, etc)
             url.startsWith("tel:") || 
@@ -124,13 +145,13 @@ class WebViewClientEx(
                     true
                 } catch (e: Exception) {
                     // If no app can handle it, let WebView try to handle it
-                    onPageUrlChanged(url)
                     false
                 }
             }
-            // Handle regular URLs normally
+            // Handle regular URLs - let WebView load them directly
             else -> {
-                onPageUrlChanged(url)
+                // Return false to let WebView handle normal URLs
+                // This is critical for links to work properly
                 false
             }
         }

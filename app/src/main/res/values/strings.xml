@@ -92,11 +92,11 @@
     <string name="pages_deleted">Deleted %1$d pages</string>
     <string name="save_for_offline_reading">Save for offline reading</string>
     <string name="page_saved_for_offline">Page saved for offline reading</string>
-    <string name="saving_page_offline">Saving page for offline reading…</string>
+    <string name="saving_page_offline">Saving page for offline reading...</string>
     <string name="error_saving_page">Error saving page</string>
     <string name="error_loading_page">Error loading offline page</string>
-    <string name="saving_page">Saving page…</string>
-    <string name="downloading_resources">Downloading resources…</string>
+    <string name="saving_page">Saving page...</string>
+    <string name="downloading_resources">Downloading resources...</string>
     <string name="saved_on_date">Saved on %1$s</string>
     <string name="sharing_not_implemented">Sharing not implemented</string>
     <string name="untitled_page">Untitled</string>
@@ -104,6 +104,14 @@
     <!-- Web Actions -->
     <string name="refresh">Refresh</string>
     <string name="share">Share</string>
+    <string name="summarize">Summarize</string>
+    <string name="summarizing">Summarizing article...</string>
+    <string name="showing_summary">Showing article summary</string>
+    <string name="showing_web_view">Showing web view</string>
+    <string name="show_web_view">Show web view</string>
+    <string name="summary_title">Article Summary</string>
+    <string name="summary_error">Could not summarize this article</string>
+    <string name="summary_not_article">This page does not appear to be an article</string>
 
     <!-- Activities -->
     <string name="title_activity_settings">Settings</string>

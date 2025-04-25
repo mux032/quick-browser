@@ -6,6 +6,7 @@
         android:icon="@android:drawable/ic_menu_rotate"
         android:title="@string/refresh"
         app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/menu_read_mode"
         android:icon="@drawable/ic_read_mode"

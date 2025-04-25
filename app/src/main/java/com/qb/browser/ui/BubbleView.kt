@@ -64,7 +64,7 @@ import kotlin.math.max
 class BubbleView @JvmOverloads constructor(
     context: Context,
     val bubbleId: String,
-    val url: String,
+    var url: String,  // Changed from val to var to allow URL updates when navigating
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
@@ -503,20 +503,34 @@ class BubbleView @JvmOverloads constructor(
             
             // Common URL handling logic
             private fun handleUrlLoading(view: WebView?, url: String?): Boolean {
-                url?.let {
-                    Log.d(TAG, "Loading URL in WebView: $it")
-                    // Only override special URLs, let WebView handle normal URLs
-                    if (it.startsWith("tel:") || it.startsWith("mailto:") || it.startsWith("sms:") || 
-                        it.startsWith("intent:") || it.startsWith("market:")) {
-                        try {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(it)))
-                            return true
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error handling special URL: $it", e)
-                        }
+                if (url == null) return false
+                
+                Log.d(TAG, "Loading URL in WebView: $url")
+                
+                // Handle special URLs that should be opened by external apps
+                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || 
+                    url.startsWith("intent:") || url.startsWith("market:")) {
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                        return true
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error handling special URL: $url", e)
                     }
                 }
-                // Return false to let WebView handle normal URLs
+                
+                // Handle normal HTTP/HTTPS URLs
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    // Update the current URL
+                    this@BubbleView.url = url
+                    
+                    // We don't need to call loadUrl here, as returning false will let the WebView handle it
+                    // This ensures proper handling of all navigation states, history, etc.
+                    
+                    // Return false to let WebView handle the URL loading
+                    return false
+                }
+                
+                // Return false to let WebView handle other URLs
                 return false
             }
             
