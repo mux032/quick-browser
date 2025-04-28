@@ -20,6 +20,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.qb.browser.R
@@ -30,6 +32,7 @@ import com.qb.browser.util.TextToSpeechManager
 import com.qb.browser.util.ErrorHandler
 import com.qb.browser.util.withErrorHandlingAndFallback
 import com.qb.browser.util.SummarizationManager
+import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -477,35 +480,67 @@ class ReadModeActivity : AppCompatActivity(), TextToSpeechManager.TtsCallback {
      * Summarize the content using SummarizationManager
      */
     private fun summarizeContent() {
-        // Get the content for summarization
-        val content = getContentForSummarization()
-        
-        if (content.isEmpty()) {
-            showSummaryError(getString(R.string.summary_error))
-            return
-        }
-        
-        // Start summarization in a coroutine
-        lifecycleScope.launch {
+        try {
+            // First check if we have a cached summary in the WebViewModel
+            var webViewModel: com.qb.browser.viewmodel.WebViewModel? = null
             try {
-                // Get summary points
-                val summaryPoints = withContext(Dispatchers.Default) {
-                    summarizationManager?.summarizeContent(content) ?: emptyList()
+                webViewModel = (application as? ViewModelStoreOwner)?.let {
+                    ViewModelProvider(it)[com.qb.browser.viewmodel.WebViewModel::class.java]
                 }
                 
-                withContext(Dispatchers.Main) {
-                    if (summaryPoints.isNotEmpty()) {
-                        displaySummaryPoints(summaryPoints)
-                    } else {
-                        showSummaryError(getString(R.string.summary_not_article))
-                    }
+                val existingSummary = webViewModel?.getSummary(currentUrl)
+                if (existingSummary != null && existingSummary.isNotEmpty()) {
+                    Log.d("ReadModeActivity", "Using cached summary for URL: $currentUrl")
+                    displaySummaryPoints(existingSummary)
+                    return
                 }
             } catch (e: Exception) {
-                Log.e("ReadModeActivity", "Error summarizing content", e)
-                withContext(Dispatchers.Main) {
-                    showSummaryError(getString(R.string.summary_error))
+                Log.e("ReadModeActivity", "Error retrieving cached summary, will generate new one", e)
+                // Continue with summarization if there's an error retrieving the cached summary
+            }
+            
+            // Get the content for summarization
+            val content = getContentForSummarization()
+            
+            if (content.isEmpty()) {
+                showSummaryError(getString(R.string.summary_error))
+                return
+            }
+            
+            // Start summarization in a coroutine
+            lifecycleScope.launch {
+                try {
+                    // Get summary points
+                    val summaryPoints = withContext(Dispatchers.Default) {
+                        summarizationManager?.summarizeContent(content) ?: emptyList()
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        if (summaryPoints.isNotEmpty()) {
+                            // Store the summary in the WebViewModel for future use
+                            try {
+                                webViewModel?.updateSummary(currentUrl, summaryPoints)
+                            } catch (e: Exception) {
+                                Log.e("ReadModeActivity", "Error storing summary", e)
+                                // Continue even if storing fails
+                            }
+                            
+                            // Display the summary points
+                            displaySummaryPoints(summaryPoints)
+                        } else {
+                            showSummaryError(getString(R.string.summary_not_article))
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("ReadModeActivity", "Error summarizing content", e)
+                    withContext(Dispatchers.Main) {
+                        showSummaryError(getString(R.string.summary_error))
+                    }
                 }
             }
+        } catch (e: Exception) {
+            Log.e("ReadModeActivity", "Error in summarizeContent", e)
+            showSummaryError(getString(R.string.summary_error))
         }
     }
     

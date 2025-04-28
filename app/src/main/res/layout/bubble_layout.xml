@@ -1,231 +1,285 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:layout_height="wrap_content">
 
-    <!-- Bubble Head -->
-    <FrameLayout
-        android:id="@+id/bubble_container"
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="4dp">
-            
-            <ImageView
-                android:id="@+id/bubble_icon"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/bubble_background"
-                android:contentDescription="@string/bubble_description"
-                android:padding="12dp"
-                android:scaleType="fitCenter"
-                tools:src="@drawable/ic_globe" />
-        </androidx.cardview.widget.CardView>
-
-        <ProgressBar
-            android:id="@+id/progress_circular"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="0"
-            android:progressDrawable="@drawable/progress_circle" />
-    </FrameLayout>
-
-    <!-- Expanded Bubble Content -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/expanded_container"
-        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
-        android:visibility="gone">
+        android:orientation="vertical">
 
-        <!-- Main Content Area -->
+        <!-- Bubble Head -->
         <FrameLayout
-            android:id="@+id/content_container"
+            android:id="@+id/bubble_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="4dp">
+                
+                <ImageView
+                    android:id="@+id/bubble_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bubble_background"
+                    android:contentDescription="@string/bubble_description"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    tools:src="@drawable/ic_globe" />
+            </androidx.cardview.widget.CardView>
+
+            <ProgressBar
+                android:id="@+id/progress_circular"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/progress_circle" />
+        </FrameLayout>
+
+        <!-- Expanded Bubble Content -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/expanded_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="48dp">
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            android:visibility="gone">
 
-            <!-- WebView for regular bubbles -->
-            <WebView
-                android:id="@+id/web_view"
+            <!-- Main Content Area -->
+            <FrameLayout
+                android:id="@+id/content_container"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@android:color/white"
-                android:hardwareAccelerated="true"
-                android:scrollbars="vertical"
-                android:scrollbarStyle="insideOverlay"
-                android:visibility="gone" />
+                android:layout_marginTop="48dp">
 
-            <!-- Tab list for main bubble -->
-            <LinearLayout
-                android:id="@+id/tabs_container"
+                <!-- WebView for regular bubbles -->
+                <WebView
+                    android:id="@+id/web_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/white"
+                    android:hardwareAccelerated="true"
+                    android:scrollbars="vertical"
+                    android:scrollbarStyle="insideOverlay"
+                    android:visibility="gone" />
+
+                <!-- Summary container that will be shown when summarize is clicked -->
+                <androidx.core.widget.NestedScrollView
+                    android:id="@+id/summary_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone">
+                    
+                    <LinearLayout
+                        android:id="@+id/summary_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+                        
+                        <TextView
+                            android:id="@+id/summary_title"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="16dp"
+                            android:text="@string/summary_title" />
+                            
+                        <ProgressBar
+                            android:id="@+id/summary_progress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_marginTop="24dp"
+                            android:layout_marginBottom="24dp" />
+                            
+                        <!-- Summary points will be added here dynamically -->
+                        
+                    </LinearLayout>
+                    
+                </androidx.core.widget.NestedScrollView>
+
+                <!-- Tab list for main bubble -->
+                <LinearLayout
+                    android:id="@+id/tabs_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/open_tabs"
+                            android:textAppearance="?attr/textAppearanceSubtitle1"
+                            android:textColor="?android:attr/textColorPrimary" />
+
+                        <ImageButton
+                            android:id="@+id/btn_new_tab"
+                            style="@style/Bubble.Button"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:contentDescription="@string/add_new_bubble"
+                            android:src="@drawable/ic_add" />
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/tabs_recycler_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:clipToPadding="false"
+                        android:padding="8dp" />
+
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- Toolbar -->
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:visibility="gone">
+                android:layout_height="56dp"
+                android:background="?attr/colorPrimary"
+                android:elevation="4dp"
+                app:contentInsetStart="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:orientation="horizontal"
-                    android:padding="8dp">
+                    android:gravity="center_vertical">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/open_tabs"
-                        android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="?android:attr/textColorPrimary" />
-
-                    <ImageButton
-                        android:id="@+id/btn_new_tab"
-                        style="@style/Bubble.Button"
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_close"
+                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/add_new_bubble"
-                        android:src="@drawable/ic_add" />
+                        android:contentDescription="@string/close_bubble"
+                        app:icon="@drawable/ic_close"
+                        app:iconTint="@android:color/white"
+                        app:iconPadding="0dp"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="12dp" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_read_mode"
+                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/read_mode"
+                        app:icon="@drawable/ic_read_mode"
+                        app:iconTint="@android:color/white"
+                        app:iconPadding="0dp"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_save_offline"
+                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/save_for_offline"
+                        app:icon="@drawable/ic_save"
+                        app:iconTint="@android:color/white"
+                        app:iconPadding="0dp"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_open_full"
+                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/open_in_full_view"
+                        app:icon="@drawable/ic_open_full"
+                        app:iconTint="@android:color/white"
+                        app:iconPadding="0dp"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="12dp" />
                 </LinearLayout>
+            </com.google.android.material.appbar.MaterialToolbar>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/tabs_recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:clipToPadding="false"
-                    android:padding="8dp" />
-
-            </LinearLayout>
-        </FrameLayout>
-
-        <!-- Toolbar -->
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:background="?attr/colorPrimary"
-            android:elevation="4dp"
-            app:contentInsetStart="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_close"
-                    style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="@string/close_bubble"
-                    app:icon="@drawable/ic_close"
-                    app:iconTint="@android:color/white"
-                    app:iconPadding="0dp"
-                    android:insetLeft="0dp"
-                    android:insetTop="0dp"
-                    android:insetRight="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="12dp" />
-
-                <Space
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_read_mode"
-                    style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="@string/read_mode"
-                    app:icon="@drawable/ic_read_mode"
-                    app:iconTint="@android:color/white"
-                    app:iconPadding="0dp"
-                    android:insetLeft="0dp"
-                    android:insetTop="0dp"
-                    android:insetRight="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="12dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_save_offline"
-                    style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="@string/save_for_offline"
-                    app:icon="@drawable/ic_save"
-                    app:iconTint="@android:color/white"
-                    app:iconPadding="0dp"
-                    android:insetLeft="0dp"
-                    android:insetTop="0dp"
-                    android:insetRight="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="12dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_open_full"
-                    style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="@string/open_in_full_view"
-                    app:icon="@drawable/ic_open_full"
-                    app:iconTint="@android:color/white"
-                    app:iconPadding="0dp"
-                    android:insetLeft="0dp"
-                    android:insetTop="0dp"
-                    android:insetRight="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="12dp" />
-            </LinearLayout>
-        </com.google.android.material.appbar.MaterialToolbar>
-
-        <!-- Feedback message -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/save_message_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="6dp"
-            android:visibility="gone">
-            
-            <LinearLayout
+            <!-- Feedback message -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/save_message_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="12dp">
+                android:layout_gravity="center"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="6dp"
+                android:visibility="gone">
                 
-                <ImageView
-                    android:id="@+id/save_message_icon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="8dp"
-                    android:src="@drawable/ic_check"
-                    app:tint="?attr/colorPrimary" />
-                    
-                <TextView
-                    android:id="@+id/save_message"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="12dp">
+                    
+                    <ImageView
+                        android:id="@+id/save_message_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/ic_check"
+                        app:tint="?attr/colorPrimary" />
+                        
+                    <TextView
+                        android:id="@+id/save_message"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-    </androidx.cardview.widget.CardView>
-</LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+
+    <!-- Floating action button for summarization -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_summarize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/summarize"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_summarize" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

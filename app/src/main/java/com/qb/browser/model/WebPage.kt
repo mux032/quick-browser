@@ -19,23 +19,28 @@ data class WebPage(
     var content: String = "",
     var isAvailableOffline: Boolean = false,
     var visitCount: Int = 1,
-    var favicon: Bitmap? = null,
-    
-    // This field is ignored by Room but used for in-memory reference
-    @Ignore
-    var parentBubbleId: String? = null
+    var favicon: Bitmap? = null
 ) : Parcelable {
 
-    // Secondary constructor without parentBubbleId for Room
-    constructor(
-        url: String,
-        title: String,
-        timestamp: Long,
-        content: String = "",
-        isAvailableOffline: Boolean = false,
-        visitCount: Int = 1,
-        favicon: Bitmap? = null
-    ) : this(url, title, timestamp, content, isAvailableOffline, visitCount, favicon, null)
+    // Transient fields not stored in the database
+    @Ignore
+    var summary: List<String> = emptyList()
+    
+    @Ignore
+    var parentBubbleId: String? = null
+
+    /**
+     * No-arg constructor required by Room
+     */
+    constructor() : this(
+        url = "",
+        title = "",
+        timestamp = 0,
+        content = "",
+        isAvailableOffline = false,
+        visitCount = 0,
+        favicon = null
+    )
 
     /**
      * Constructor to create a WebPage object from a Parcel.
@@ -47,9 +52,20 @@ data class WebPage(
         content = parcel.readString() ?: "",
         isAvailableOffline = parcel.readInt() == 1,
         visitCount = parcel.readInt(),
-        favicon = parcel.readParcelable(Bitmap::class.java.classLoader),
+        favicon = parcel.readParcelable(Bitmap::class.java.classLoader)
+    ) {
+        summary = parcel.createStringArrayList() ?: emptyList()
         parentBubbleId = parcel.readString()
-    )
+    }
+
+    /**
+     * Copies the transient fields to a new WebPage instance
+     */
+    fun copyTransientFields(webPage: WebPage): WebPage {
+        webPage.summary = this.summary
+        webPage.parentBubbleId = this.parentBubbleId
+        return webPage
+    }
 
     /**
      * Writes the WebPage object to a Parcel for serialization.
@@ -62,6 +78,7 @@ data class WebPage(
         parcel.writeInt(if (isAvailableOffline) 1 else 0)
         parcel.writeInt(visitCount)
         parcel.writeParcelable(favicon, flags)
+        parcel.writeStringList(summary)
         parcel.writeString(parentBubbleId)
     }
 

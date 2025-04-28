@@ -104,7 +104,9 @@ class WebViewModel : ViewModel() {
                     // Only update if the current title is the URL or empty
                     if (currentPage.title == url || currentPage.title.isEmpty()) {
                         Log.d("WebViewModel", "Updating title for $url from '${currentPage.title}' to '$title'")
-                        currentPages[url] = currentPage.copy(title = title)
+                        val updatedPage = currentPage.copy(title = title)
+                        currentPage.copyTransientFields(updatedPage)
+                        currentPages[url] = updatedPage
                         _webPages.value = currentPages
                     } else {
                         Log.d("WebViewModel", "Skipping title update - page already has a title: ${currentPage.title}")
@@ -137,9 +139,11 @@ class WebViewModel : ViewModel() {
     fun updateProgress(url: String, progress: Int) {
         viewModelScope.launch {
             val currentPages = _webPages.value.toMutableMap()
-            currentPages[url]?.let { 
-                it.content += "<div>Progress updated: $progress</div>" // Placeholder logic
-                currentPages[url] = it.copy(content = it.content)
+            currentPages[url]?.let { currentPage -> 
+                currentPage.content += "<div>Progress updated: $progress</div>" // Placeholder logic
+                val updatedPage = currentPage.copy(content = currentPage.content)
+                currentPage.copyTransientFields(updatedPage)
+                currentPages[url] = updatedPage
             }
             _webPages.value = currentPages
         }
@@ -155,9 +159,11 @@ class WebViewModel : ViewModel() {
             try {
                 Log.d("WebViewModel", "Updating favicon for URL: $url")
                 val currentPages = _webPages.value.toMutableMap()
-                currentPages[url]?.let { 
+                currentPages[url]?.let { currentPage -> 
                     // Update the favicon in the WebPage object
-                    currentPages[url] = it.copy(favicon = favicon)
+                    val updatedPage = currentPage.copy(favicon = favicon)
+                    currentPage.copyTransientFields(updatedPage)
+                    currentPages[url] = updatedPage
                     Log.d("WebViewModel", "Favicon updated successfully for URL: $url")
                 } ?: run {
                     // If the page doesn't exist yet, create it with the favicon
@@ -209,6 +215,83 @@ class WebViewModel : ViewModel() {
             )
     
             updateWebPage(webPage)
+        }
+    }
+    
+    // In-memory cache for summaries since they're not stored in the database
+    private val summaryCache = mutableMapOf<String, List<String>>()
+    
+    /**
+     * Updates the summary for a web page
+     * @param url The URL of the page
+     * @param summary The list of summary points
+     */
+    fun updateSummary(url: String, summary: List<String>) {
+        viewModelScope.launch {
+            try {
+                Log.d("WebViewModel", "Updating summary for URL: $url")
+                
+                // Store in the in-memory cache
+                summaryCache[url] = summary
+                
+                // Update the WebPage object if it exists
+                val currentPages = _webPages.value.toMutableMap()
+                val currentPage = currentPages[url]
+                
+                if (currentPage != null) {
+                    // Create a new instance with the summary
+                    val updatedPage = currentPage.copy()
+                    currentPage.copyTransientFields(updatedPage)
+                    updatedPage.summary = summary
+                    currentPages[url] = updatedPage
+                    _webPages.value = currentPages
+                    Log.d("WebViewModel", "Summary updated successfully for URL: $url")
+                } else {
+                    // If the page doesn't exist yet, create it with the summary
+                    val webPage = WebPage(
+                        url = url,
+                        title = url,
+                        timestamp = System.currentTimeMillis(),
+                        content = "",
+                        isAvailableOffline = false,
+                        visitCount = 1
+                    )
+                    webPage.summary = summary
+                    currentPages[url] = webPage
+                    _webPages.value = currentPages
+                    Log.d("WebViewModel", "Created new page with summary for URL: $url")
+                }
+            } catch (e: Exception) {
+                Log.e("WebViewModel", "Error updating summary for URL: $url", e)
+            }
+        }
+    }
+    
+    /**
+     * Gets the summary for a web page if available
+     * @param url The URL of the page
+     * @return The list of summary points or null if not available
+     */
+    fun getSummary(url: String): List<String>? {
+        try {
+            // First check the in-memory cache
+            val cachedSummary = summaryCache[url]
+            if (cachedSummary != null && cachedSummary.isNotEmpty()) {
+                return cachedSummary
+            }
+            
+            // Then check the WebPage object
+            val pageSummary = _webPages.value[url]?.summary
+            if (pageSummary != null && pageSummary.isNotEmpty()) {
+                // Update the cache for future use
+                summaryCache[url] = pageSummary
+                return pageSummary
+            }
+            
+            return null
+        } catch (e: Exception) {
+            Log.e("WebViewModel", "Error retrieving summary for URL: $url", e)
+            return null
         }
     }
 }

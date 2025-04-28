@@ -17,10 +17,12 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.findViewTreeLifecycleOwner
@@ -29,6 +31,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.qb.browser.Constants
 import com.qb.browser.QBApplication
 import com.qb.browser.R
@@ -41,12 +44,15 @@ import com.qb.browser.ui.WebViewActivity
 import com.qb.browser.ui.adapter.TabsAdapter
 import com.qb.browser.util.AdBlocker
 import com.qb.browser.util.ContentExtractor
+import com.qb.browser.util.SummarizationManager
+import com.qb.browser.util.SummarizingWebViewClient
 import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jsoup.Jsoup
 import java.lang.Math.min
 import kotlin.math.hypot
 import kotlin.math.max
@@ -136,6 +142,10 @@ class BubbleView @JvmOverloads constructor(
         contentContainer = findViewById(R.id.content_container)
         tabsContainer = findViewById(R.id.tabs_container)
         webViewContainer = findViewById(R.id.web_view)
+        
+        // Hide summarize button and summary container
+        findViewById<View>(R.id.fab_summarize)?.visibility = View.GONE
+        findViewById<View>(R.id.summary_container)?.visibility = View.GONE
         
         // Set up default favicon
         bubbleIcon.setImageResource(R.drawable.ic_globe)
@@ -292,6 +302,8 @@ class BubbleView @JvmOverloads constructor(
         }
     }
     
+
+    
     /**
      * Configure WebView settings based on user preferences
      */
@@ -337,8 +349,17 @@ class BubbleView @JvmOverloads constructor(
         // Set up WebChromeClient for progress, favicon and title handling
         webViewContainer.webChromeClient = createWebChromeClient()
         
-        // Set up WebViewClient for page loading and error handling
-        webViewContainer.webViewClient = createWebViewClient()
+        // Set up WebViewClient for page loading and error handling with summarization support
+        webViewContainer.webViewClient = SummarizingWebViewClient(
+            context,
+            { newUrl ->
+                url = newUrl
+            },
+            { htmlContent ->
+                // HTML content received, but we're not using it for summarization anymore
+                Log.d(TAG, "HTML content received, length: ${htmlContent.length}")
+            }
+        )
     }
     
     /**
@@ -685,6 +706,8 @@ class BubbleView @JvmOverloads constructor(
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
         
+        // Summarize button has been removed
+        
         // Bounce the bubble
         bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), true)
         
@@ -771,6 +794,8 @@ class BubbleView @JvmOverloads constructor(
     private fun collapseBubble() {
         // Hide expanded container with animation
         bubbleAnimator.animateCollapse(expandedContainer)
+        
+        // Summarize button has been removed
         
         // Slight shrink animation on collapse
         bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), false)
@@ -1355,7 +1380,10 @@ class BubbleView @JvmOverloads constructor(
         isActive = true
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
-        showWebView()
+        // Show the regular web view (not the summary view)
+        webViewContainer.visibility = View.VISIBLE
+        tabsContainer.visibility = View.GONE
+        loadUrlInWebView()
     }
     
     /**
@@ -1399,4 +1427,20 @@ class BubbleView @JvmOverloads constructor(
     fun setExpanded(expanded: Boolean) {
         isExpanded = expanded
     }
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
 }

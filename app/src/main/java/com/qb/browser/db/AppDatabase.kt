@@ -11,7 +11,7 @@ import com.qb.browser.model.WebPage
 /**
  * Room database for the QB app
  */
-@Database(entities = [WebPage::class, Settings::class], version = 1, exportSchema = false)
+@Database(entities = [WebPage::class, Settings::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     
@@ -31,6 +31,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DATABASE_NAME
                 )
+                // Use destructive migration for simplicity
+                // This will delete the database and recreate it if the version changes
                 .fallbackToDestructiveMigration()
                 .build()
                 

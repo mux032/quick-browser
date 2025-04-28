@@ -37,6 +37,14 @@
     <color name="tab_background">#EEEEEE</color>
     <color name="tab_text">#424242</color>
     <color name="selected_tab">#E8F0FE</color>
+    
+    <!-- Launcher icon colors -->
+    <color name="launcher_background">#FFFFFF</color>
+    <color name="launcher_bubble_light">#BCD9F2</color>
+    <color name="launcher_bubble_medium">#9DCBF4</color>
+    <color name="launcher_bubble_medium_dark">#75ADDF</color>
+    <color name="launcher_bubble_dark">#389AD6</color>
+    <color name="launcher_stroke">#2A5081</color>
 
     <!-- Read mode colors -->
     <color name="read_mode_background_light">#FAFAFA</color>

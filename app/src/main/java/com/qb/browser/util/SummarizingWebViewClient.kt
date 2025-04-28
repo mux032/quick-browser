@@ -42,13 +42,16 @@ class SummarizingWebViewClient(
                                         .replace("\\n", "\n")
                                         .replace("\\\\", "\\")
                                     
-                                    // Pass the HTML content to the callback
+                                    // Pass the HTML content to the callback for background summarization
+                                    android.util.Log.d("SummarizingWebViewClient", "Captured HTML content for URL: $url (${unescapedHtml.length} chars)")
                                     onPageLoaded(unescapedHtml)
                                 } catch (e: Exception) {
                                     // Log the error but don't crash
                                     android.util.Log.e("SummarizingWebViewClient", "Error processing HTML", e)
                                 }
                             }
+                        } else {
+                            android.util.Log.w("SummarizingWebViewClient", "HTML content too short or null for URL: $url")
                         }
                     }
                 } catch (e: Exception) {
