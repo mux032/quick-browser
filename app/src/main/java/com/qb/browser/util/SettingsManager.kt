@@ -247,6 +247,18 @@ class SettingsManager private constructor(context: Context) {
     }
     
     /**
+     * Check if secure mode is enabled
+     * 
+     * Secure mode combines several security settings to provide enhanced protection
+     * 
+     * @return Boolean indicating if secure mode is enabled
+     */
+    fun isSecureMode(): Boolean {
+        // Consider secure mode enabled if encryption is enabled or JavaScript is disabled
+        return isEncryptionEnabled() || !isJavaScriptEnabled()
+    }
+    
+    /**
      * Page snapshot settings
      */
     fun isPageSnapshotEnabled(): Boolean {

@@ -97,7 +97,6 @@ class BubbleView @JvmOverloads constructor(
     private var onCloseListener: (() -> Unit)? = null
     private var isActive = false
     private var isShowingAllBubbles = false
-    private var isExpanded = false
     
     // Services and utilities
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
@@ -129,6 +128,8 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Initialize all view components from the layout
+     * 
+     * @return Unit
      */
     private fun initializeViews() {
         // Use application context with theme for inflation
@@ -159,6 +160,8 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Initialize WebViewModel and set up favicon observers
+     * 
+     * @return Unit
      */
     private fun initializeWebViewModel() {
         val lifecycleOwner = findViewTreeLifecycleOwner()
@@ -203,6 +206,9 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Observe favicon changes from WebViewModel
+     * 
+     * @param lifecycleOwner The lifecycle owner to use for launching coroutines
+     * @return Unit
      */
     private fun observeFaviconChanges(lifecycleOwner: androidx.lifecycle.LifecycleOwner) {
         lifecycleOwner.lifecycleScope.launch {
@@ -306,40 +312,112 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Configure WebView settings based on user preferences
+     * 
+     * @return Unit
      */
     private fun configureWebViewSettings() {
+        // Apply basic settings
+        configureBasicWebViewSettings()
+        
+        // Configure security settings
+        configureSecuritySettings()
+        
+        // Configure performance settings
+        configurePerformanceSettings()
+        
+        // Configure content settings
+        configureContentSettings()
+    }
+    
+    /**
+     * Configure basic WebView settings like zoom and viewport
+     * 
+     * @return Unit
+     */
+    private fun configureBasicWebViewSettings() {
         webViewContainer.settings.apply {
-            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
-            domStorageEnabled = true
+            // Viewport settings
             loadWithOverviewMode = true
             useWideViewPort = true
+            
+            // Zoom settings
             builtInZoomControls = true
             displayZoomControls = false
             setSupportZoom(true)
-            setGeolocationEnabled(true)
-            loadsImagesAutomatically = true
-            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            allowContentAccess = true
-            allowFileAccess = true
-            cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-            databaseEnabled = true
-            javaScriptCanOpenWindowsAutomatically = true
-            setSupportMultipleWindows(true)
             
-            // Additional settings to ensure content loads properly
+            // Default encoding
+            defaultTextEncodingName = "UTF-8"
+        }
+    }
+    
+    /**
+     * Configure security-related WebView settings
+     * 
+     * @return Unit
+     */
+    private fun configureSecuritySettings() {
+        webViewContainer.settings.apply {
+            // JavaScript settings based on user preferences
+            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
+            javaScriptCanOpenWindowsAutomatically = settingsManager.isJavaScriptEnabled()
+            
+            // Mixed content - consider using a more restrictive setting
+            // MIXED_CONTENT_NEVER_ALLOW is more secure
+            mixedContentMode = if (settingsManager.isSecureMode()) {
+                android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            } else {
+                android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            }
+            
+            // File access - restrict based on security settings
+            allowContentAccess = !settingsManager.isSecureMode()
+            allowFileAccess = !settingsManager.isSecureMode()
+        }
+    }
+    
+    /**
+     * Configure performance-related WebView settings
+     * 
+     * @return Unit
+     */
+    private fun configurePerformanceSettings() {
+        // Enable hardware acceleration if device supports it
+        try {
+            @Suppress("DEPRECATION")
+            webViewContainer.settings.setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
+            webViewContainer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting hardware acceleration", e)
+            webViewContainer.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+        }
+    }
+    
+    /**
+     * Configure content-related WebView settings
+     * 
+     * @return Unit
+     */
+    private fun configureContentSettings() {
+        webViewContainer.settings.apply {
+            // Storage settings
+            domStorageEnabled = true
+            databaseEnabled = true
+            cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+            
+            // Content settings
+            loadsImagesAutomatically = true
             blockNetworkImage = false
             blockNetworkLoads = false
+            
+            // Media settings
             mediaPlaybackRequiresUserGesture = false
             
-            // Set default text encoding
-            defaultTextEncodingName = "UTF-8"
+            // Location settings
+            setGeolocationEnabled(true)
             
-            // Enable hardware acceleration
-            setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
+            // Window settings
+            setSupportMultipleWindows(true)
         }
-        
-        // Enable hardware acceleration on the WebView
-        webViewContainer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
     }
     
     /**
@@ -383,28 +461,18 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Handle a received favicon from the WebView
+     * 
+     * @param favicon The bitmap favicon received from the WebView
+     * @return Unit
      */
     private fun handleReceivedFavicon(favicon: Bitmap) {
         // Update local favicon
         updateFavicon(favicon)
         
         // Update in WebViewModel to persist the favicon
-        webViewModel?.let { viewModel ->
-            try {
-                viewModel.updateFavicon(url, favicon)
-                Log.d(TAG, "Updated favicon in WebViewModel for URL: $url")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating favicon in WebViewModel", e)
-            }
-        } ?: run {
-            // If WebViewModel is null, try to create it
-            try {
-                Log.d(TAG, "WebViewModel is null, creating new instance")
-                webViewModel = WebViewModel()
-                webViewModel?.updateFavicon(url, favicon)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error creating WebViewModel on the fly", e)
-            }
+        updateWebViewModel { viewModel ->
+            viewModel.updateFavicon(url, favicon)
+            Log.d(TAG, "Updated favicon in WebViewModel for URL: $url")
         }
         
         Log.d(TAG, "Received favicon for bubble: $bubbleId")
@@ -412,35 +480,24 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Handle a received page title from the WebView
+     * 
+     * @param title The title received from the WebView
+     * @return Unit
      */
     private fun handleReceivedTitle(title: String) {
         Log.d(TAG, "Received page title for bubble $bubbleId: $title")
         
         // Update title in WebViewModel
-        webViewModel?.let { viewModel ->
-            try {
-                viewModel.updateTitle(url, title)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating title in WebViewModel", e)
-            }
-        } ?: run {
-            // If WebViewModel is null, try to create it
-            try {
-                Log.d(TAG, "WebViewModel is null, creating new instance")
-                webViewModel = WebViewModel()
-                webViewModel?.updateTitle(url, title)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error creating WebViewModel on the fly", e)
-            }
+        updateWebViewModel { viewModel ->
+            viewModel.updateTitle(url, title)
         }
         
-        // Update title in history database
+        // Update title in history database if we have access to the application
         try {
-            // Use WebViewModel to update the title
-            webViewModel?.updateTitle(url, title)
+            // Log that we've updated the title
             Log.d(TAG, "Updated page title in WebViewModel: $title")
             
-            // Also update in the database if we have access to it
+            // Also update in the application's WebViewModel if available
             val app = context.applicationContext as? QBApplication
             app?.webViewModel?.updateTitle(url, title)
         } catch (e: Exception) {
@@ -1303,6 +1360,8 @@ class BubbleView @JvmOverloads constructor(
      * Create a standalone instance of WebViewModel when we can't get it from ViewModelProvider
      * 
      * This is a fallback mechanism when the normal ViewModel architecture can't be used.
+     * 
+     * @return Unit
      */
     private fun createStandaloneWebViewModel() {
         try {
@@ -1317,18 +1376,69 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
+     * Helper method to safely update the WebViewModel
+     * Creates a new instance if needed
+     * 
+     * @param action The action to perform with the WebViewModel
+     * @return Unit
+     */
+    private fun updateWebViewModel(action: (WebViewModel) -> Unit) {
+        webViewModel?.let { viewModel ->
+            try {
+                action(viewModel)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating WebViewModel", e)
+            }
+        } ?: run {
+            // If WebViewModel is null, try to create it
+            try {
+                Log.d(TAG, "WebViewModel is null, creating new instance")
+                webViewModel = WebViewModel()
+                webViewModel?.let { action(it) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating WebViewModel on the fly", e)
+            }
+        }
+    }
+    
+    /**
      * Set up a periodic check for favicon updates from the WebView
+     * 
+     * @return Unit
      */
     private fun setupPeriodicFaviconCheck() {
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
-        handler.post(object : Runnable {
+        val faviconRunnable = object : Runnable {
             override fun run() {
+                // Only continue if the view is attached to window
+                if (!isAttachedToWindow) {
+                    Log.d(TAG, "Stopping favicon checks as view is detached")
+                    return
+                }
+                
                 // Check if the WebView has a favicon and update if available
                 webViewContainer.favicon?.let { favicon ->
                     updateBubbleIcon(favicon)
                 }
-                // Schedule the next check
-                handler.postDelayed(this, 2000) // Check every 2 seconds
+                
+                // Schedule the next check with a longer interval (5 seconds instead of 2)
+                handler.postDelayed(this, 5000)
+            }
+        }
+        
+        // Start the periodic check
+        handler.post(faviconRunnable)
+        
+        // Make sure to remove callbacks when view is detached
+        addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                // Restart checks when view is reattached
+                handler.post(faviconRunnable)
+            }
+            
+            override fun onViewDetachedFromWindow(v: View) {
+                // Stop checks when view is detached
+                handler.removeCallbacks(faviconRunnable)
             }
         })
     }
@@ -1423,9 +1533,17 @@ class BubbleView @JvmOverloads constructor(
      * Set the expanded state of the bubble
      * 
      * @param expanded Whether the bubble should be expanded
+     * @return Unit
      */
     fun setExpanded(expanded: Boolean) {
-        isExpanded = expanded
+        isBubbleExpanded = expanded
+        
+        // Update UI based on expanded state
+        if (expanded) {
+            expandBubble()
+        } else {
+            collapseBubble()
+        }
     }
     
 
