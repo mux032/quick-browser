@@ -892,6 +892,11 @@ class BubbleView @JvmOverloads constructor(
      * Animate the bubble disappearing and notify listeners
      */
     private fun animateBubbleDisappearance() {
+        // First hide the bubble icon to prevent flicker
+        val bubbleContainer = findViewById<View>(R.id.bubble_container)
+        bubbleContainer.visibility = View.INVISIBLE
+        
+        // Then animate the entire view disappearing
         bubbleAnimator.animateDisappear(this, onEnd = {
             onCloseListener?.invoke()
         })

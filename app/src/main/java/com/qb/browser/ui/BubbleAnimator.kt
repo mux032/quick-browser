@@ -121,8 +121,9 @@ class BubbleAnimator(private val context: Context) {
      * @param isExpand true for expansion bounce, false for collapse
      */
     fun animateBounce(view: View, isExpand: Boolean) {
-        val fromScale = if (isExpand) 1f else 1.1f
-        val toScale = if (isExpand) 1.1f else 1f
+        // Use a more moderate scale to prevent clipping
+        val fromScale = if (isExpand) 1f else 1.05f
+        val toScale = if (isExpand) 1.05f else 1f
         
         val animSet = AnimatorSet()
         val scaleXAnim = ObjectAnimator.ofFloat(view, "scaleX", fromScale, toScale)
@@ -130,7 +131,7 @@ class BubbleAnimator(private val context: Context) {
         
         animSet.playTogether(scaleXAnim, scaleYAnim)
         animSet.duration = ANIMATION_DURATION_SHORT
-        animSet.interpolator = if (isExpand) OvershootInterpolator(2f) else DecelerateInterpolator()
+        animSet.interpolator = if (isExpand) OvershootInterpolator(1.5f) else DecelerateInterpolator()
         
         // Animate back to original size after the bounce
         animSet.addListener(object : AnimatorListenerAdapter() {
