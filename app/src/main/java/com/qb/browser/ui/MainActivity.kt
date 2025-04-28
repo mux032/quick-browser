@@ -76,7 +76,7 @@ import kotlinx.coroutines.launch
 class MainActivity : BaseActivity() {
     companion object {
         private const val TAG = "MainActivity"
-        private const val NOTIFICATION_PERMISSION = "android.permission.POST_NOTIFICATIONS"
+        // Removed NOTIFICATION_PERMISSION constant as it's no longer needed
     }
 
     // Using settingsManager from BaseActivity
@@ -86,14 +86,7 @@ class MainActivity : BaseActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyView: TextView
     
-    private val permissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-                if (isGranted) {
-                    startBubbleService()
-                } else {
-                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
-                }
-            }
+    // Removed permissionLauncher as notification permission is now optional
 
     /** Starts the BubbleService to display floating bubbles. */
     private fun startBubbleService() {
@@ -107,7 +100,7 @@ class MainActivity : BaseActivity() {
             } else {
                 startService(intent)
             }
-            moveTaskToBack(true)
+            // Removed moveTaskToBack(true) to keep the app in foreground
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start bubble service", e)
             Toast.makeText(this, "Failed to start bubble service", Toast.LENGTH_SHORT).show()
@@ -134,7 +127,7 @@ class MainActivity : BaseActivity() {
                 Log.d(TAG, "Using startService for pre-Oreo devices")
                 startService(intent)
             }
-            moveTaskToBack(true)
+            // Removed moveTaskToBack(true) to keep the app in foreground
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start bubble service", e)
             Toast.makeText(this, "Failed to start bubble service", Toast.LENGTH_SHORT).show()
@@ -142,6 +135,13 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Check if this is a link sharing intent before setting up the UI
+        if (isLinkSharingIntent(intent)) {
+            // Handle the intent without showing the main UI
+            handleLinkSharingIntent(intent)
+            return
+        }
+        
         // Apply theme before setting content view
         applyAppTheme()
         
@@ -154,8 +154,7 @@ class MainActivity : BaseActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false) // Hide default title
 
         // settingsManager is already initialized in BaseActivity
-        intent?.let { handleIntent(it) }
-
+        
         // Initialize ViewModel
         historyViewModel = ViewModelProvider(this)[HistoryViewModel::class.java]
         
@@ -169,12 +168,8 @@ class MainActivity : BaseActivity() {
         // Observe history data
         observeHistoryData()
         
-        // Automatically start bubble service when app opens
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && 
-            Settings.canDrawOverlays(this) && 
-            !isBubbleServiceRunning()) {
-            checkPermissionsAndStartBubble()
-        }
+        // Handle main app intent (not link sharing)
+        handleMainAppIntent()
     }
     
     private fun setupRecyclerView() {
@@ -232,37 +227,84 @@ class MainActivity : BaseActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
+        
+        // If it's a link sharing intent, handle it without showing the UI
+        if (intent != null && isLinkSharingIntent(intent)) {
+            handleLinkSharingIntent(intent)
+            return
+        }
+        
         setIntent(intent)
-        intent?.let { handleIntent(it) }
     }
-
+    
     /**
-     * Handles incoming intents to perform actions like opening URLs or starting the bubble browser.
+     * Checks if the intent is for link sharing (ACTION_SEND or ACTION_VIEW)
      */
-    private fun handleIntent(intent: Intent) {
-        Log.d(TAG, "handleIntent | Received intent: ${intent.action}, data: ${intent.extras}")
+    private fun isLinkSharingIntent(intent: Intent?): Boolean {
+        return intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_VIEW
+    }
+    
+    /**
+     * Handles link sharing intents by starting the bubble service and finishing the activity
+     */
+    private fun handleLinkSharingIntent(intent: Intent?) {
+        if (intent == null) return
+        
+        Log.d(TAG, "handleLinkSharingIntent | Received intent: ${intent.action}, data: ${intent.extras}")
+        
         when (intent.action) {
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
                 Log.d(TAG, "Received shared text: $sharedText")
                 if (sharedText != null) {
-                    startBubbleServiceWithUrl(sharedText)
+                    // Start bubble service with the URL
+                    if (checkPermissionsAndStartBubbleWithUrl(sharedText)) {
+                        // Finish activity to avoid showing the main UI
+                        finish()
+                    }
                 }
             }
             Intent.ACTION_VIEW -> {
                 val url = intent.data?.toString()
                 Log.d(TAG, "Received view URL: $url")
                 if (url != null) {
-                    startBubbleServiceWithUrl(url)
-                }
-            }
-            else -> {
-                if (!isBubbleServiceRunning()) {
-                    lifecycleScope.launch {
-                        delay(1000)
-                        checkPermissionsAndStartBubble()
+                    // Start bubble service with the URL
+                    if (checkPermissionsAndStartBubbleWithUrl(url)) {
+                        // Finish activity to avoid showing the main UI
+                        finish()
                     }
                 }
+            }
+        }
+    }
+    
+    /**
+     * Checks permissions and starts the bubble service with a URL
+     * Returns true if successful, false if permissions are needed
+     */
+    private fun checkPermissionsAndStartBubbleWithUrl(url: String): Boolean {
+        // Check overlay permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            // Show permission dialog
+            requestOverlayPermission()
+            // Save the URL to use after permission is granted
+            settingsManager.saveLastSharedUrl(url)
+            return false
+        }
+        
+        // Start bubble service with URL
+        startBubbleServiceWithUrl(url)
+        return true
+    }
+    
+    /**
+     * Handles incoming intents for the main app (not link sharing)
+     */
+    private fun handleMainAppIntent() {
+        if (!isBubbleServiceRunning()) {
+            lifecycleScope.launch {
+                delay(1000)
+                checkPermissionsAndStartBubble()
             }
         }
     }
@@ -274,29 +316,13 @@ class MainActivity : BaseActivity() {
 
     /** Checks required permissions and starts the BubbleService if permissions are granted. */
     private fun checkPermissionsAndStartBubble(): Boolean {
+        // Only check for overlay permission as it's essential
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             requestOverlayPermission()
             return false
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(this, NOTIFICATION_PERMISSION) ==
-                        PackageManager.PERMISSION_GRANTED -> {
-                    startBubbleService()
-                    return true
-                }
-                shouldShowRequestPermissionRationale(NOTIFICATION_PERMISSION) -> {
-                    showNotificationPermissionRationale()
-                    return false
-                }
-                else -> {
-                    permissionLauncher.launch(NOTIFICATION_PERMISSION)
-                    return false
-                }
-            }
-        }
-
+        // Start the service regardless of notification permission
         startBubbleService()
         return true
     }
@@ -322,25 +348,27 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    /** Shows a rationale dialog for notification permission. */
-    private fun showNotificationPermissionRationale() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Notification Permission Required")
-                .setMessage(
-                        "The app needs notification permission to run in the background and show floating bubbles."
-                )
-                .setPositiveButton("Grant Permission") { _, _ ->
-                    permissionLauncher.launch(NOTIFICATION_PERMISSION)
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-    }
+    // Notification permission rationale dialog removed as notifications are now optional
 
     override fun onResume() {
         super.onResume()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                        Settings.canDrawOverlays(this) &&
-                        !isBubbleServiceRunning()
+        
+        // Check if we have a saved URL from a previous permission request
+        val lastSharedUrl = settingsManager.getLastSharedUrl()
+        if (lastSharedUrl != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && 
+            Settings.canDrawOverlays(this)) {
+            // Start bubble with the saved URL
+            startBubbleServiceWithUrl(lastSharedUrl)
+            // Clear the saved URL
+            settingsManager.clearLastSharedUrl()
+            // Finish activity if it was started from a link sharing intent
+            if (isLinkSharingIntent(intent)) {
+                finish()
+                return
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                Settings.canDrawOverlays(this) &&
+                !isBubbleServiceRunning()
         ) {
             startBubbleService()
         }

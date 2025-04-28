@@ -95,11 +95,17 @@ class BubbleService : LifecycleService() {
                             webPageDao = webPageDao,
                             lifecycleScope = lifecycleScope
                     )
-            // Start foreground service
-            startForeground(
-                    BubbleNotificationManager.NOTIFICATION_ID,
-                    notificationManager.createNotification()
-            )
+            // Start foreground service with notification
+            try {
+                startForeground(
+                        BubbleNotificationManager.NOTIFICATION_ID,
+                        notificationManager.createNotification()
+                )
+            } catch (e: Exception) {
+                // If notification fails (e.g., permission not granted), log but continue
+                Log.e(TAG, "Could not show notification, but service will continue", e)
+                // Service will still run, but might be killed by system in low memory situations
+            }
 
             Log.d(TAG, "Service initialized successfully")
         } catch (e: Exception) {

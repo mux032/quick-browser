@@ -40,6 +40,7 @@ class SettingsManager private constructor(context: Context) {
         private const val KEY_THEME_COLOR = "pref_theme_color"
         private const val KEY_DYNAMIC_COLOR = "pref_dynamic_color"
         private const val KEY_NIGHT_MODE = "pref_night_mode"
+        private const val KEY_LAST_SHARED_URL = "last_shared_url"
         
         // Default values
         private const val DEFAULT_TEXT_SIZE = 16
@@ -445,5 +446,26 @@ class SettingsManager private constructor(context: Context) {
     
     fun setNightModeEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_NIGHT_MODE, enabled).apply()
+    }
+    
+    /**
+     * Save the last shared URL (used when permission is requested during link sharing)
+     */
+    fun saveLastSharedUrl(url: String) {
+        preferences.edit().putString(KEY_LAST_SHARED_URL, url).apply()
+    }
+    
+    /**
+     * Get the last shared URL
+     */
+    fun getLastSharedUrl(): String? {
+        return preferences.getString(KEY_LAST_SHARED_URL, null)
+    }
+    
+    /**
+     * Clear the last shared URL
+     */
+    fun clearLastSharedUrl() {
+        preferences.edit().remove(KEY_LAST_SHARED_URL).apply()
     }
 }
