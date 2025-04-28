@@ -902,8 +902,8 @@ class BubbleView @JvmOverloads constructor(
                 Constants.EXTRA_BUBBLE_ID to bubbleId
             )
             
-            // Collapse if expanded
-            if (isBubbleExpanded) toggleBubbleExpanded()
+            // Close the bubble completely
+            closeBubbleWithAnimation()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to open full WebView", e)
         }
