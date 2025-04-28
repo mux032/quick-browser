@@ -3,7 +3,7 @@
     android:color="?android:attr/colorControlHighlight">
     <item>
         <shape android:shape="oval">
-            <solid android:color="?attr/colorPrimary" />
+            <solid android:color="@android:color/white" />
             <stroke
                 android:width="0.5dp"
                 android:color="?attr/colorPrimaryVariant" />

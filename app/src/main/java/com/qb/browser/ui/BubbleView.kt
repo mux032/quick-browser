@@ -642,6 +642,11 @@ class BubbleView @JvmOverloads constructor(
             
             // Common error handling logic
             private fun handleWebViewError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
+                // Show broken link icon
+                post {
+                    bubbleIcon.setImageResource(R.drawable.ic_broken_link)
+                }
+                
                 // For connection errors, try to reload after a delay
                 if (errorCode == android.webkit.WebViewClient.ERROR_CONNECT || 
                     errorCode == android.webkit.WebViewClient.ERROR_TIMEOUT ||

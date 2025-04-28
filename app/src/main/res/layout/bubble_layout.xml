@@ -28,7 +28,7 @@
                     android:layout_height="match_parent"
                     android:background="@drawable/bubble_background"
                     android:contentDescription="@string/bubble_description"
-                    android:padding="12dp"
+                    android:padding="0dp"
                     android:scaleType="fitCenter"
                     tools:src="@drawable/ic_globe" />
             </androidx.cardview.widget.CardView>
