@@ -17,10 +17,23 @@
         <!-- Bubble Head -->
         <FrameLayout
             android:id="@+id/bubble_container"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
             android:clipChildren="false"
             android:clipToPadding="false">
+
+            <!-- Progress Bar positioned around the bubble -->
+            <ProgressBar
+                android:id="@+id/progress_circular"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="65"
+                android:progressDrawable="@drawable/progress_circle" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="48dp"
@@ -39,17 +52,6 @@
                     android:scaleType="fitCenter"
                     tools:src="@drawable/ic_globe" />
             </androidx.cardview.widget.CardView>
-
-            <ProgressBar
-                android:id="@+id/progress_circular"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:indeterminate="false"
-                android:max="100"
-                android:progress="0"
-                android:progressDrawable="@drawable/progress_circle" />
         </FrameLayout>
 
         <!-- Expanded Bubble Content -->
