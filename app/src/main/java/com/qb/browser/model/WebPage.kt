@@ -28,6 +28,9 @@ data class WebPage(
     
     @Ignore
     var parentBubbleId: String? = null
+    
+    @Ignore
+    var progress: Int = 0
 
     /**
      * No-arg constructor required by Room
@@ -64,6 +67,7 @@ data class WebPage(
     fun copyTransientFields(webPage: WebPage): WebPage {
         webPage.summary = this.summary
         webPage.parentBubbleId = this.parentBubbleId
+        webPage.progress = this.progress
         return webPage
     }
 

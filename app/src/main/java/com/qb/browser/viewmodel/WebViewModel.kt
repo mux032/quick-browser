@@ -140,12 +140,13 @@ class WebViewModel : ViewModel() {
         viewModelScope.launch {
             val currentPages = _webPages.value.toMutableMap()
             currentPages[url]?.let { currentPage -> 
-                currentPage.content += "<div>Progress updated: $progress</div>" // Placeholder logic
-                val updatedPage = currentPage.copy(content = currentPage.content)
-                currentPage.copyTransientFields(updatedPage)
-                currentPages[url] = updatedPage
+                // Just update the transient progress field if needed
+                currentPage.progress = progress
+                
+                // No need to modify content for progress updates
+                // Don't create a new instance for just progress updates
+                // as it's a transient field and doesn't need to trigger state updates
             }
-            _webPages.value = currentPages
         }
     }
 

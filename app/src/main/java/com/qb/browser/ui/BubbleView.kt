@@ -5,6 +5,7 @@ import android.view.ContextThemeWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
+import android.os.Build
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
@@ -324,10 +325,20 @@ class BubbleView @JvmOverloads constructor(
      * @return Unit
      */
     private fun configurePerformanceSettings() {
-        // Enable hardware acceleration if device supports it
-        try {
+        webViewContainer.settings.apply {
+            // Configure cache mode for better performance
+            cacheMode = android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK
+            
+            // Set render priority (deprecated but still works on older devices)
             @Suppress("DEPRECATION")
-            webViewContainer.settings.setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
+            setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
+        }
+        
+        // Reduce overdraw
+        webViewContainer.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        
+        // Hardware acceleration with fallback
+        try {
             webViewContainer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         } catch (e: Exception) {
             Log.e(TAG, "Error setting hardware acceleration", e)
@@ -430,21 +441,19 @@ class BubbleView @JvmOverloads constructor(
     private fun handleReceivedTitle(title: String) {
         Log.d(TAG, "Received page title for bubble $bubbleId: $title")
         
-        // Update title in WebViewModel
+        // Update title in WebViewModel only once
         updateWebViewModel { viewModel ->
             viewModel.updateTitle(url, title)
         }
         
-        // Update title in history database if we have access to the application
+        // Also update in the application's WebViewModel if available
         try {
-            // Log that we've updated the title
-            Log.d(TAG, "Updated page title in WebViewModel: $title")
-            
-            // Also update in the application's WebViewModel if available
             val app = context.applicationContext as? QBApplication
-            app?.webViewModel?.updateTitle(url, title)
+            if (app?.webViewModel != webViewModel) {
+                app?.webViewModel?.updateTitle(url, title)
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating title in history database", e)
+            Log.e(TAG, "Error updating title in application WebViewModel", e)
         }
     }
     
@@ -711,8 +720,6 @@ class BubbleView @JvmOverloads constructor(
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
         
-        // Summarize button has been removed
-        
         // Bounce the bubble
         bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), true)
         
@@ -724,21 +731,60 @@ class BubbleView @JvmOverloads constructor(
         // Set the dimensions for the expanded container
         resizeExpandedContainer()
         
-        // Make WebView visible and ensure content is loaded
-        loadContentInExpandedWebView()
+        // Restore WebView content and make it visible
+        restoreWebViewContent()
+    }
+    
+    /**
+     * Restore WebView content when expanding the bubble
+     */
+    private fun restoreWebViewContent() {
+        // Resume the WebView
+        webViewContainer.onResume()
+        
+        // Make sure the WebView is visible
+        webViewContainer.visibility = View.VISIBLE
+        webViewContainer.alpha = 1f
+        
+        // Check if we need to load the URL
+        val currentUrl = webViewContainer.url
+        if (currentUrl == null || currentUrl == "about:blank" || currentUrl.isEmpty()) {
+            // If no URL is loaded, load the initial URL
+            loadInitialUrl()
+        } else if (currentUrl != formatUrl(url)) {
+            // If the URL doesn't match our expected URL, reload it
+            webViewContainer.loadUrl(formatUrl(url))
+        } else {
+            // Otherwise just make the content visible
+            loadContentInExpandedWebView()
+            
+            // Force a redraw to ensure content is visible
+            webViewContainer.invalidate()
+        }
+        
+        // Log the state for debugging
+        Log.d(TAG, "Restored WebView content for bubble $bubbleId, URL: ${webViewContainer.url}")
     }
     
     /**
      * Resize the expanded container to take appropriate screen space
+     * Optimized for different device sizes
      */
     private fun resizeExpandedContainer() {
-        val layoutParams = expandedContainer.layoutParams
-        layoutParams.width = resources.displayMetrics.widthPixels * 9 / 10  // 90% of screen width
-        layoutParams.height = resources.displayMetrics.heightPixels * 7 / 10 // 70% of screen height
-        expandedContainer.layoutParams = layoutParams
+        val displayMetrics = resources.displayMetrics
+        val isTablet = resources.configuration.screenWidthDp >= 600
         
-        // Force layout update
-        expandedContainer.requestLayout()
+        // Adjust size based on device type
+        val widthPercent = if (isTablet) 0.7f else 0.9f
+        val heightPercent = if (isTablet) 0.6f else 0.7f
+        
+        // Calculate dimensions
+        val layoutParams = expandedContainer.layoutParams
+        layoutParams.width = (displayMetrics.widthPixels * widthPercent).toInt()
+        layoutParams.height = (displayMetrics.heightPixels * heightPercent).toInt()
+        
+        // Prevent layout during animation by setting layout params only once
+        expandedContainer.layoutParams = layoutParams
     }
     
     /**
@@ -781,7 +827,14 @@ class BubbleView @JvmOverloads constructor(
             } else {
                 // If the page is already loaded, make sure it's visible
                 webViewContainer.invalidate()
-                Log.d(TAG, "WebView already has content loaded: $currentUrl")
+                
+                // Force a reload if the page appears blank (might have been cleared)
+                if (webViewContainer.contentHeight == 0) {
+                    Log.d(TAG, "WebView content height is 0, forcing reload")
+                    webViewContainer.reload()
+                } else {
+                    Log.d(TAG, "WebView already has content loaded: $currentUrl")
+                }
             }
             
             // Force layout update to ensure content is visible
@@ -800,17 +853,17 @@ class BubbleView @JvmOverloads constructor(
         // Hide expanded container with animation
         bubbleAnimator.animateCollapse(expandedContainer)
         
-        // Summarize button has been removed
-        
         // Slight shrink animation on collapse
         bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), false)
         
-        // Keep WebView loaded but invisible
+        // Make WebView invisible but don't clear content
         webViewContainer.visibility = View.INVISIBLE
         webViewContainer.alpha = 0f
         
-        // Don't destroy WebView content - just hide it
-        // This ensures the content stays loaded in the background
+        // Just pause the WebView to reduce CPU usage, but don't clear content
+        webViewContainer.onPause()
+        
+        // Don't clear DOM content - this was causing blank pages when re-expanding
     }
 
     /**
@@ -1172,7 +1225,7 @@ class BubbleView @JvmOverloads constructor(
             
             MotionEvent.ACTION_MOVE -> {
                 handleTouchMove(event, params, screenWidth, screenHeight)
-                return isDragging
+                return true
             }
             
             MotionEvent.ACTION_UP -> {
@@ -1210,6 +1263,7 @@ class BubbleView @JvmOverloads constructor(
         // Check if we've moved enough to consider it a drag
         if (!isDragging && hypot(dx, dy) > touchSlop) {
             isDragging = true
+            
             // Collapse if expanded when starting to drag
             if (isBubbleExpanded) {
                 toggleBubbleExpanded()
@@ -1237,11 +1291,54 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
+     * Snap the bubble to the nearest edge of the screen
+     */
+    private fun snapToEdge() {
+        if (layoutParams !is WindowManager.LayoutParams) return
+        
+        val params = layoutParams as WindowManager.LayoutParams
+        val screenWidth = resources.displayMetrics.widthPixels
+        
+        // Determine which edge is closer
+        val distanceToLeft = params.x
+        val distanceToRight = screenWidth - (params.x + width)
+        
+        // Snap to the closest edge with animation
+        if (distanceToLeft < distanceToRight) {
+            // Snap to left edge
+            bubbleAnimator.animateMove(this, params.x.toFloat(), params.y.toFloat(), 0f, params.y.toFloat()) {
+                params.x = 0
+                windowManager.updateViewLayout(this, params)
+                saveBubblePosition()
+            }
+        } else {
+            // Snap to right edge
+            val targetX = screenWidth - width
+            bubbleAnimator.animateMove(this, params.x.toFloat(), params.y.toFloat(), targetX.toFloat(), params.y.toFloat()) {
+                params.x = targetX
+                windowManager.updateViewLayout(this, params)
+                saveBubblePosition()
+            }
+        }
+    }
+    
+    /**
      * Override performClick for accessibility
      */
     override fun performClick(): Boolean {
         super.performClick()
         return true
+    }
+    
+    /**
+     * Determines if this bubble view needs to be updated based on the bubble data
+     * 
+     * @param bubble The bubble data to compare against
+     * @return true if the view needs visual updates, false otherwise
+     */
+    fun needsUpdate(bubble: Bubble): Boolean {
+        // Only return true if something visually needs to change
+        return bubble.favicon != null || bubble.url != this.url
     }
 
     /**

@@ -56,26 +56,33 @@ class BubbleDisplayManager(
     /**
      * Updates the bubble views based on the current list of bubbles.
      * Adds new bubbles, updates existing ones, and removes bubbles that are no longer present.
+     * Optimized with diffing to minimize view operations.
      */
     private fun updateBubbleViews(bubbles: List<Bubble>) {
-        // Track current bubble IDs
+        // Calculate differences using sets for efficiency
         val currentBubbleIds = bubbles.map { it.id }.toSet()
+        val existingBubbleIds = bubbleViews.keys.toSet()
         
-        // Remove bubbles that are no longer in the list
-        bubbleViews.keys.toList().forEach { id ->
-            if (id !in currentBubbleIds) removeBubbleView(id)
-        }
+        // Calculate differences
+        val toRemove = existingBubbleIds - currentBubbleIds
+        val toAdd = currentBubbleIds - existingBubbleIds
+        val toUpdate = currentBubbleIds.intersect(existingBubbleIds)
         
-        // Add or update bubbles
-        bubbles.forEach { bubble ->
-            if (bubble.id in bubbleViews) {
-                // Update existing bubble
+        // Process removals first
+        toRemove.forEach { removeBubbleView(it) }
+        
+        // Process additions
+        bubbles.filter { it.id in toAdd }.forEach { addBubbleView(it) }
+        
+        // Process updates only when needed
+        bubbles.filter { it.id in toUpdate }.forEach { bubble ->
+            // Only update if the bubble has a favicon to update
+            if (bubble.favicon != null) {
                 updateBubbleView(bubble)
-            } else {
-                // Add new bubble
-                addBubbleView(bubble)
             }
         }
+        
+        Log.d(TAG, "Bubble view updates: ${toRemove.size} removed, ${toAdd.size} added, ${toUpdate.size} existing")
     }
 
     /**
