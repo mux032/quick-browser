@@ -128,8 +128,6 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Initialize all view components from the layout
-     * 
-     * @return Unit
      */
     private fun initializeViews() {
         // Use application context with theme for inflation
@@ -144,18 +142,11 @@ class BubbleView @JvmOverloads constructor(
         tabsContainer = findViewById(R.id.tabs_container)
         webViewContainer = findViewById(R.id.web_view)
         
-        // Hide summarize button and summary container
-        findViewById<View>(R.id.fab_summarize)?.visibility = View.GONE
-        findViewById<View>(R.id.summary_container)?.visibility = View.GONE
-        
         // Set up default favicon
         bubbleIcon.setImageResource(R.drawable.ic_globe)
         
         // Set up progress indicator
         progressBar.progress = 0
-        
-        // Hide new tab button as we don't need it anymore
-        findViewById<View>(R.id.btn_new_tab)?.visibility = View.GONE
     }
     
     /**
@@ -279,30 +270,12 @@ class BubbleView @JvmOverloads constructor(
             // Set up WebView clients
             setupWebViewClients()
             
-            // Make WebView ready to load content in the background
-            // It should be VISIBLE but with alpha=0 to ensure it renders properly
-            webViewContainer.visibility = View.VISIBLE
+            // Make WebView ready to load content in the background with alpha=0
             webViewContainer.alpha = 0f
             
-            // Ensure WebView has layout params
-            val layoutParams = webViewContainer.layoutParams
-            if (layoutParams != null) {
-                layoutParams.width = FrameLayout.LayoutParams.MATCH_PARENT
-                layoutParams.height = FrameLayout.LayoutParams.MATCH_PARENT
-                webViewContainer.layoutParams = layoutParams
-            }
-            
-            // Force layout to ensure WebView is properly sized
-            webViewContainer.requestLayout()
-            
             // Load the URL in the background
-            // Use post to ensure WebView is fully initialized
-            post {
-                loadInitialUrl()
-                Log.d(TAG, "URL loading initiated for bubble: $bubbleId")
-            }
+            post { loadInitialUrl() }
             
-            Log.d(TAG, "WebView initialized for bubble: $bubbleId")
         } catch (e: Exception) {
             Log.e(TAG, "Error setting up WebView for bubble $bubbleId", e)
         }
@@ -312,29 +285,8 @@ class BubbleView @JvmOverloads constructor(
     
     /**
      * Configure WebView settings based on user preferences
-     * 
-     * @return Unit
      */
     private fun configureWebViewSettings() {
-        // Apply basic settings
-        configureBasicWebViewSettings()
-        
-        // Configure security settings
-        configureSecuritySettings()
-        
-        // Configure performance settings
-        configurePerformanceSettings()
-        
-        // Configure content settings
-        configureContentSettings()
-    }
-    
-    /**
-     * Configure basic WebView settings like zoom and viewport
-     * 
-     * @return Unit
-     */
-    private fun configureBasicWebViewSettings() {
         webViewContainer.settings.apply {
             // Viewport settings
             loadWithOverviewMode = true
@@ -347,16 +299,7 @@ class BubbleView @JvmOverloads constructor(
             
             // Default encoding
             defaultTextEncodingName = "UTF-8"
-        }
-    }
-    
-    /**
-     * Configure security-related WebView settings
-     * 
-     * @return Unit
-     */
-    private fun configureSecuritySettings() {
-        webViewContainer.settings.apply {
+            
             // JavaScript settings based on user preferences
             javaScriptEnabled = settingsManager.isJavaScriptEnabled()
             javaScriptCanOpenWindowsAutomatically = settingsManager.isJavaScriptEnabled()
@@ -1317,15 +1260,7 @@ class BubbleView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Update the list of bubbles (currently just logs the update)
-     * 
-     * @param bubbles List of Bubble objects
-     */
-    fun updateBubblesList(bubbles: List<Bubble>) {
-        // We no longer use the main bubble concept
-        Log.d(TAG, "Bubble list update received: ${bubbles.size} bubbles")
-    }
+
 
     /**
      * Set a listener to be called when the bubble is closed

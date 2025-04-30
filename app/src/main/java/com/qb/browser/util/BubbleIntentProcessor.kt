@@ -52,18 +52,10 @@ class BubbleIntentProcessor(
 
     private fun handleCreateBubble(intent: Intent) {
         val sharedUrl = intent.getStringExtra(Constants.EXTRA_URL)
-        Log.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: ${sharedUrl}")
+        Log.d(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: ${sharedUrl}")
         
-        if (sharedUrl != null && isValidUrl(sharedUrl)) {
-            Log.e(TAG, "Creating bubble with URL: $sharedUrl")
-            
-            // Save to history
-            saveToHistory(sharedUrl)
-            
-            // Create a new bubble with the shared URL
-            bubbleManager.createOrUpdateBubbleWithNewUrl(sharedUrl)
-        } else {
-            Log.e(TAG, "No valid URL provided.")
+        processValidUrl(sharedUrl, "handleCreateBubble") { url ->
+            bubbleManager.createOrUpdateBubbleWithNewUrl(url)
         }
     }
     
@@ -83,7 +75,6 @@ class BubbleIntentProcessor(
                         visitCount = existingPage.visitCount + 1
                     )
                     webPageDao.updatePage(updatedPage)
-                    webPageDao.incrementVisitCount(url)
                     Log.d(TAG, "Updated existing page in history: $url")
                 } else {
                     // Try to get the title from HTML asynchronously
@@ -112,15 +103,25 @@ class BubbleIntentProcessor(
         }
     }
     
+    /**
+     * Process a URL if it's valid, handling common operations
+     * @param url The URL to process
+     * @param action The action name for logging
+     * @param handler The function to call with the valid URL
+     */
+    private fun processValidUrl(url: String?, action: String, handler: (String) -> Unit) {
+        if (url != null && isValidUrl(url)) {
+            saveToHistory(url)
+            handler(url)
+        } else {
+            Log.w(TAG, "Invalid or missing URL for $action")
+        }
+    }
+    
     private fun handleOpenUrl(intent: Intent) {
         val url = intent.getStringExtra(Constants.EXTRA_URL)
-        if (url != null && isValidUrl(url)) {
-            // Save to history
-            saveToHistory(url)
-            
-            bubbleManager.createOrUpdateBubbleWithNewUrl(url)
-        } else {
-            Log.w(TAG, "Invalid or missing URL for handleOpenUrl")
+        processValidUrl(url, "handleOpenUrl") { validUrl ->
+            bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl)
         }
     }
 
@@ -154,8 +155,7 @@ class BubbleIntentProcessor(
         // Optional: implement show/hide behavior if needed. Here’s a basic toggle logic idea.
         val bubbles = bubbleManager.bubbles.value
         if (bubbles.isNotEmpty()) {
-            // We now have multiple bubbles, so we'll just log this action
-            // The main bubble will show all bubbles in its expanded state
+            // We have multiple bubbles, so we'll just log this action
             Log.d(TAG, "Toggle bubbles requested with ${bubbles.size} bubbles")
         } else {
             Log.d(TAG, "Toggle bubbles requested, but no bubbles exist.")
@@ -164,31 +164,31 @@ class BubbleIntentProcessor(
 
     private fun handleSaveOffline(intent: Intent) {
         val url = intent.getStringExtra(Constants.EXTRA_URL)
-        if (url != null && isValidUrl(url)) {
+        processValidUrl(url, "handleSaveOffline") { validUrl ->
             // Save to DB for offline availability
             lifecycleScope.launch {
                 try {
-                    val existingPage = webPageDao.getPageByUrl(url)
+                    val existingPage = webPageDao.getPageByUrl(validUrl)
                     
                     if (existingPage != null) {
                         // Use existing page but mark as available offline
                         val pageToSave = existingPage.copy(isAvailableOffline = true)
                         webPageDao.insertPage(pageToSave)
-                        Log.d(TAG, "Existing page marked for offline: $url")
+                        Log.d(TAG, "Existing page marked for offline: $validUrl")
                     } else {
                         // Try to get the title from HTML asynchronously
                         val htmlTitle = try {
-                            extractTitleFromHtmlAsync(url)
+                            extractTitleFromHtmlAsync(validUrl)
                         } catch (e: Exception) {
                             Log.e(TAG, "Error extracting HTML title for offline page", e)
                             null
                         }
                         
                         // Create new page with the best available title
-                        val title = htmlTitle ?: extractTitleFromUrl(url)
+                        val title = htmlTitle ?: extractTitleFromUrl(validUrl)
                         
                         val pageToSave = WebPage(
-                            url = url,
+                            url = validUrl,
                             title = title,
                             timestamp = System.currentTimeMillis(),
                             content = "", // Can be filled with offline HTML content
@@ -196,14 +196,12 @@ class BubbleIntentProcessor(
                             visitCount = 1
                         )
                         webPageDao.insertPage(pageToSave)
-                        Log.d(TAG, "New page saved for offline with title '$title': $url")
+                        Log.d(TAG, "New page saved for offline with title '$title': $validUrl")
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error saving page for offline access", e)
                 }
             }
-        } else {
-            Log.w(TAG, "Invalid URL or null passed to handleSaveOffline")
         }
     }
 
@@ -223,16 +221,13 @@ class BubbleIntentProcessor(
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         Log.d(TAG, "handleSharedContent | Received shared text: $sharedText")
         
-        if (sharedText != null) {
-            // Save to history
-            saveToHistory(sharedText)
-            
-            // Create a new bubble with the extracted URL
-            Log.d(TAG, "Creating bubble with extracted URL: $sharedText")
-            bubbleManager.createOrUpdateBubbleWithNewUrl(sharedText)
-            
-        } else {
-            Log.w(TAG, "Missing shared text for handleSharedContent")
+        // Extract URL from shared text if possible
+        val url = sharedText?.let { text ->
+            extractUrl(text) ?: text
+        }
+        
+        processValidUrl(url, "handleSharedContent") { validUrl ->
+            bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl)
         }
     }
     
@@ -258,13 +253,12 @@ class BubbleIntentProcessor(
      */
     private fun handleViewAction(intent: Intent) {
         val data = intent.data
-        if (data != null && isValidUrl(data.toString())) {
-            val url = data.toString()
-            
-            // Save to history
-            saveToHistory(url)
-            
-            bubbleManager.createOrUpdateBubbleWithNewUrl(url)
+        if (data != null) {
+            processValidUrl(data.toString(), "handleViewAction") { url ->
+                bubbleManager.createOrUpdateBubbleWithNewUrl(url)
+            }
+        } else {
+            Log.w(TAG, "No data URI in VIEW intent")
         }
     }
 
