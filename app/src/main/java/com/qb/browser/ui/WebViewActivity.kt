@@ -91,9 +91,6 @@ class WebViewActivity : AppCompatActivity() {
                 supportActionBar?.subtitle = getString(R.string.offline_pages)
             }
             
-            // Set up WebView with offline client
-            setupWebViewForOffline(pageId)
-            
             // Get URI from intent data
             val uri = intent.data
             if (uri != null) {
@@ -191,61 +188,6 @@ class WebViewActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
-    }
-    
-    /**
-     * Set up WebView for offline mode
-     */
-    private fun setupWebViewForOffline(pageId: String?) {
-        if (pageId == null) {
-            // Fallback to regular setup if no page ID
-            setupWebView()
-            return
-        }
-        
-        // Get settings manager instance
-        val settingsManager = com.qb.browser.util.SettingsManager.getInstance(this)
-        
-        // Configure WebView settings for offline use
-        webView.settings.apply {
-            // Use user's JavaScript setting, but recommend enabling it for offline content
-            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
-            domStorageEnabled = true
-            loadWithOverviewMode = true
-            useWideViewPort = true
-            builtInZoomControls = true
-            displayZoomControls = false
-            cacheMode = android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK
-            allowFileAccess = true // Needed for file:// URLs
-        }
-        
-        // If JavaScript is disabled, show a recommendation to enable it for better offline experience
-        if (!settingsManager.isJavaScriptEnabled()) {
-            android.widget.Toast.makeText(
-                this,
-                "Enabling JavaScript in Settings may improve offline page rendering",
-                android.widget.Toast.LENGTH_LONG
-            ).show()
-        }
-        
-        // Get the file URI
-        val dataUri = intent.data
-        if (dataUri != null) {
-            // Set up chrome client for offline mode
-            webView.webChromeClient = object : WebChromeClient() {
-                override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                    if (newProgress < 100) {
-                        progressBar.visibility = View.VISIBLE
-                        progressBar.progress = newProgress
-                    } else {
-                        progressBar.visibility = View.GONE
-                    }
-                }
-            }
-        } else {
-            // Fallback to regular setup
-            setupWebView()
         }
     }
     
