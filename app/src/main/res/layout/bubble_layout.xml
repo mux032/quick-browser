@@ -172,21 +172,6 @@
                         android:padding="12dp" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_save_offline"
-                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:contentDescription="@string/save_for_offline"
-                        app:icon="@drawable/ic_save"
-                        app:iconTint="@android:color/white"
-                        app:iconPadding="0dp"
-                        android:insetLeft="0dp"
-                        android:insetTop="0dp"
-                        android:insetRight="0dp"
-                        android:insetBottom="0dp"
-                        android:padding="12dp" />
-
-                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_open_full"
                         style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                         android:layout_width="48dp"

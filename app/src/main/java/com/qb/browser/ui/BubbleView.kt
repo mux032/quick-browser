@@ -226,7 +226,6 @@ class BubbleView @JvmOverloads constructor(
         findViewById<View>(R.id.btn_close).setOnClickListener { closeBubbleWithAnimation() }
         findViewById<View>(R.id.btn_open_full).setOnClickListener { openFullWebView() }
         findViewById<View>(R.id.btn_read_mode).setOnClickListener { openReadMode() }
-        findViewById<View>(R.id.btn_save_offline).setOnClickListener { saveForOffline() }
     }
     
     /**
@@ -1019,98 +1018,6 @@ class BubbleView @JvmOverloads constructor(
             extras.forEach { (key, value) -> putExtra(key, value) }
         }
         context.startActivity(intent)
-    }
-    
-    /**
-     * Save the web page for offline access
-     */
-    private fun saveForOffline() {
-        try {
-            // Get UI components
-            val saveButton = findViewById<View>(R.id.btn_save_offline)
-            val messageView = findViewById<TextView>(R.id.save_message)
-            val messageContainer = findViewById<View>(R.id.save_message_container)
-            val messageIcon = findViewById<ImageView>(R.id.save_message_icon)
-            
-            // Update save button appearance with animation
-            highlightSaveButton(saveButton)
-            
-            // Send intent to service to save the page
-            sendSaveOfflineIntent()
-            
-            // Show feedback to user with animations
-            showSaveFeedbackMessage(messageView, messageContainer, messageIcon, saveButton)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to save for offline", e)
-        }
-    }
-    
-    /**
-     * Highlight the save button to indicate action
-     */
-    private fun highlightSaveButton(saveButton: View) {
-        // Pulse animation for feedback
-        bubbleAnimator.animatePulse(saveButton, 2)
-        
-        // Apply color filter if it's an ImageView
-        if (saveButton is ImageView) {
-            saveButton.setColorFilter(
-                ContextCompat.getColor(context, R.color.colorAccent), 
-                PorterDuff.Mode.SRC_IN
-            )
-        } else if (saveButton is com.google.android.material.button.MaterialButton) {
-            // For MaterialButton, change the icon tint
-            saveButton.setIconTintResource(R.color.colorAccent)
-        }
-    }
-    
-    /**
-     * Send intent to service to save the page for offline access
-     */
-    private fun sendSaveOfflineIntent() {
-        val intent = Intent(context, BubbleService::class.java).apply {
-            action = "com.qb.browser.SAVE_OFFLINE"
-            putExtra(Constants.EXTRA_URL, url)
-            putExtra(Constants.EXTRA_BUBBLE_ID, bubbleId)
-        }
-        context.startService(intent)
-    }
-    
-    /**
-     * Show feedback message for save operation
-     */
-    private fun showSaveFeedbackMessage(
-        messageView: TextView, 
-        messageContainer: View, 
-        messageIcon: ImageView,
-        saveButton: View
-    ) {
-        // Set up initial message
-        messageView.text = context.getString(R.string.saving_page_offline)
-        messageIcon.setImageResource(R.drawable.ic_save)
-        messageIcon.setColorFilter(ContextCompat.getColor(context, R.color.colorPrimary))
-        
-        // Show message container with animation
-        messageContainer.visibility = View.VISIBLE
-        bubbleAnimator.animateAppear(messageContainer)
-        
-        // Update to saved message after delay
-        postDelayed({
-            messageView.text = context.getString(R.string.page_saved_offline)
-            messageIcon.setImageResource(R.drawable.ic_check)
-            
-            // Hide the message after additional delay with animation
-            postDelayed({
-                bubbleAnimator.animateDisappear(messageContainer) {
-                    messageContainer.visibility = View.GONE
-                }
-            }, 2000)
-            
-            // Reset save button appearance
-            if (saveButton is ImageView) {
-                saveButton.clearColorFilter()
-            }
-        }, 3000)
     }
     
     // Commented out code removed for clarity
