@@ -40,7 +40,6 @@ import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
 import com.qb.browser.util.SettingsManager
 import com.qb.browser.ui.ReadModeActivity
-import com.qb.browser.ui.WebViewActivity
 import com.qb.browser.util.AdBlocker
 import com.qb.browser.util.ContentExtractor
 import com.qb.browser.util.SummarizationManager
@@ -866,19 +865,24 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Open the web page in a full WebView activity
+     * Open the web page in the device's default browser
      */
     private fun openFullWebView() {
         try {
-            launchActivity(WebViewActivity::class.java, 
-                Constants.EXTRA_URL to url,
-                Constants.EXTRA_BUBBLE_ID to bubbleId
-            )
-            
-            // Close the bubble completely
+            val formattedUrl = formatUrl(url)
+            if (formattedUrl.isNotEmpty()) {
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(formattedUrl)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            } else {
+                Toast.makeText(context, "Invalid URL", Toast.LENGTH_SHORT).show()
+            }
+            // Close the bubble if openFullWebView is called
             closeBubbleWithAnimation()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to open full WebView", e)
+            Log.e(TAG, "Failed to open in default browser", e)
+            Toast.makeText(context, "Could not open in browser", Toast.LENGTH_SHORT).show()
         }
     }
     
