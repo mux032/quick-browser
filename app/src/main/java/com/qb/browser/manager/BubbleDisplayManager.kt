@@ -58,21 +58,6 @@ class BubbleDisplayManager(
         // Track current bubble IDs
         val currentBubbleIds = bubbles.map { it.id }.toSet()
         
-        // Check if we need to create a main bubble
-        val hasMainBubble = currentBubbleIds.contains("main_bubble")
-        val needsMainBubble = bubbles.size > 1 && !hasMainBubble
-        
-        // Create main bubble if needed
-        if (needsMainBubble) {
-            val mainBubble = Bubble(
-                id = "main_bubble",
-                url = "",
-                title = "All Bubbles",
-                tabs = bubbles.filter { it.id != "main_bubble" }.flatMap { it.tabs }
-            )
-            addBubbleView(mainBubble)
-        }
-        
         // Remove bubbles that are no longer in the list
         val bubbleIdsToRemove = bubbleViews.keys.filter { it !in currentBubbleIds }
         bubbleIdsToRemove.forEach { removeBubbleView(it) }
@@ -86,12 +71,6 @@ class BubbleDisplayManager(
                 // Add new bubble
                 addBubbleView(bubble)
             }
-        }
-        
-        // Update main bubble with all other bubbles
-        if (hasMainBubble || needsMainBubble) {
-            val mainBubbleView = bubbleViews["main_bubble"]
-            mainBubbleView?.updateBubblesList(bubbles.filter { it.id != "main_bubble" })
         }
         
         Log.d(TAG, "Updated bubble views: ${bubbleViews.size} views for ${bubbles.size} bubbles")
@@ -156,13 +135,6 @@ class BubbleDisplayManager(
         try {
             // Update favicon if available
             bubble.favicon?.let { bubbleView.updateFavicon(it) }
-            
-            // For main bubble, update the list of all bubbles
-            if (bubble.id == "main_bubble") {
-                val allBubbles = bubbles.filter { it.id != "main_bubble" }
-                bubbleView.updateBubblesList(allBubbles)
-                Log.d(TAG, "Updated main bubble with ${allBubbles.size} bubbles")
-            }
         } catch (e: Exception) {
             Log.e(TAG, "Error updating bubble view", e)
         }

@@ -54,7 +54,6 @@ class BubbleManager(
                     id = bubbleId,
                     url = url,
                     title = url,
-                    tabs = listOf(newWebPage)
                 )
                 
                 // Add to current bubbles map

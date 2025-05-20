@@ -41,7 +41,6 @@ import com.qb.browser.service.BubbleService
 import com.qb.browser.util.SettingsManager
 import com.qb.browser.ui.ReadModeActivity
 import com.qb.browser.ui.WebViewActivity
-import com.qb.browser.ui.adapter.TabsAdapter
 import com.qb.browser.util.AdBlocker
 import com.qb.browser.util.ContentExtractor
 import com.qb.browser.util.SummarizationManager
@@ -81,9 +80,7 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var progressBar: ProgressBar
     private lateinit var expandedContainer: View
     private lateinit var contentContainer: FrameLayout
-    private lateinit var tabsContainer: View
     private lateinit var webViewContainer: WebView
-    private var tabsAdapter: TabsAdapter? = null
 
     // Touch handling state
     private var initialX = 0f
@@ -141,7 +138,6 @@ class BubbleView @JvmOverloads constructor(
         progressBar = findViewById(R.id.progress_circular)
         expandedContainer = findViewById(R.id.expanded_container)
         contentContainer = findViewById(R.id.content_container)
-        tabsContainer = findViewById(R.id.tabs_container)
         webViewContainer = findViewById(R.id.web_view)
         
         // Hide summarize button and summary container
@@ -152,10 +148,7 @@ class BubbleView @JvmOverloads constructor(
         bubbleIcon.setImageResource(R.drawable.ic_globe)
         
         // Set up progress indicator
-        progressBar.progress = 0
-        
-        // Hide new tab button as we don't need it anymore
-        findViewById<View>(R.id.btn_new_tab)?.visibility = View.GONE
+        progressBar.progress = 0   
     }
     
     /**
@@ -257,7 +250,6 @@ class BubbleView @JvmOverloads constructor(
     private fun setupContent() {
         // Show WebView for all bubbles
         webViewContainer.visibility = View.VISIBLE
-        tabsContainer.visibility = View.GONE
         
         // Set up WebView
         setupWebView()
@@ -776,7 +768,6 @@ class BubbleView @JvmOverloads constructor(
         // Configure container visibility
         webViewContainer.visibility = View.VISIBLE
         webViewContainer.alpha = 1f
-        tabsContainer.visibility = View.GONE
         
         // Set the dimensions for the expanded container
         resizeExpandedContainer()
@@ -1318,16 +1309,6 @@ class BubbleView @JvmOverloads constructor(
     }
 
     /**
-     * Update the list of bubbles (currently just logs the update)
-     * 
-     * @param bubbles List of Bubble objects
-     */
-    fun updateBubblesList(bubbles: List<Bubble>) {
-        // We no longer use the main bubble concept
-        Log.d(TAG, "Bubble list update received: ${bubbles.size} bubbles")
-    }
-
-    /**
      * Set a listener to be called when the bubble is closed
      * 
      * @param listener Callback function to invoke when bubble is closed
@@ -1502,7 +1483,6 @@ class BubbleView @JvmOverloads constructor(
         bubbleAnimator.animateExpand(expandedContainer)
         // Show the regular web view (not the summary view)
         webViewContainer.visibility = View.VISIBLE
-        tabsContainer.visibility = View.GONE
         loadUrlInWebView()
     }
     
@@ -1519,7 +1499,6 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun showWebView() {
         webViewContainer.visibility = View.VISIBLE
-        tabsContainer.visibility = View.GONE
         
         // Load URL in WebView
         loadUrlInWebView()
