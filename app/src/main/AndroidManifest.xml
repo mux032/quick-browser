@@ -89,18 +89,6 @@
                 <action android:name="com.qb.browser.action.ACTIVATE_BUBBLE" />
             </intent-filter>
         </service>
-        
-            
-        <activity
-            android:name=".ui.OfflinePageActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/offline_pages"
-            android:theme="@style/Theme.QBrowser" />
-            
-        <service
-            android:name=".service.OfflinePageService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
 
         <!-- Removed NotificationPermissionActivity as notifications are now optional -->
 

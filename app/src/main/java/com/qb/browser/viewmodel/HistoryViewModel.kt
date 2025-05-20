@@ -23,30 +23,12 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
     }
     
     /**
-     * Get all offline pages
-     */
-    fun getOfflinePages(): LiveData<List<WebPage>> {
-        return webPageDao.getOfflinePages()
-    }
-    
-    /**
      * Delete a page from history
      */
     fun deletePage(page: WebPage) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 webPageDao.deletePage(page)
-            }
-        }
-    }
-    
-    /**
-     * Clear all history (except saved offline pages)
-     */
-    fun clearAllHistory() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                webPageDao.deleteAllNonOfflinePages()
             }
         }
     }

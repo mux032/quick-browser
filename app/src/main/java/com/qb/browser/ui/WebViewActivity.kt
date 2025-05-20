@@ -19,8 +19,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.qb.browser.R
-import com.qb.browser.util.OfflinePageManager
-import com.qb.browser.util.OfflineWebViewClient
 import com.qb.browser.util.SummarizationManager
 import com.qb.browser.util.SummarizingWebViewClient
 import com.qb.browser.util.WebViewClientEx
@@ -234,13 +232,6 @@ class WebViewActivity : AppCompatActivity() {
         // Get the file URI
         val dataUri = intent.data
         if (dataUri != null) {
-            // Set up custom WebViewClient for offline resources
-            webView.webViewClient = OfflineWebViewClient(
-                context = this,
-                pageId = pageId,
-                baseUri = dataUri
-            )
-            
             // Set up chrome client for offline mode
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
@@ -268,19 +259,8 @@ class WebViewActivity : AppCompatActivity() {
         supportActionBar?.subtitle = host
     }
     
-    private var isOfflinePage = false
-    
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.web_view_menu, menu)
-        
-        // If this is an offline page, hide unnecessary menu items
-        isOfflinePage = intent.getBooleanExtra(Constants.EXTRA_IS_OFFLINE, false)
-        if (isOfflinePage) {
-            menu.findItem(R.id.menu_save_offline)?.isVisible = false
-            // If it's an offline page we already have a clean version,
-            // so read mode isn't necessary
-            menu.findItem(R.id.menu_read_mode)?.isVisible = false
-        }
         
         return true
     }

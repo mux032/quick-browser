@@ -140,10 +140,6 @@ class BubbleView @JvmOverloads constructor(
         contentContainer = findViewById(R.id.content_container)
         webViewContainer = findViewById(R.id.web_view)
         
-        // Hide summarize button and summary container
-        findViewById<View>(R.id.fab_summarize)?.visibility = View.GONE
-        findViewById<View>(R.id.summary_container)?.visibility = View.GONE
-        
         // Set up default favicon
         bubbleIcon.setImageResource(R.drawable.ic_globe)
         
@@ -271,31 +267,13 @@ class BubbleView @JvmOverloads constructor(
             // Set up WebView clients
             setupWebViewClients()
             
-            // Make WebView ready to load content in the background
-            // It should be VISIBLE but with alpha=0 to ensure it renders properly
-            webViewContainer.visibility = View.VISIBLE
+            // Make WebView ready to load content in the background with alpha=0
             webViewContainer.alpha = 0f
             
-            // Ensure WebView has layout params
-            val layoutParams = webViewContainer.layoutParams
-            if (layoutParams != null) {
-                layoutParams.width = FrameLayout.LayoutParams.MATCH_PARENT
-                layoutParams.height = FrameLayout.LayoutParams.MATCH_PARENT
-                webViewContainer.layoutParams = layoutParams
-            }
-            
-            // Force layout to ensure WebView is properly sized
-            webViewContainer.requestLayout()
-            
             // Load the URL in the background
-            // Use post to ensure WebView is fully initialized
-            post {
-                loadInitialUrl()
-                Log.d(TAG, "URL loading initiated for bubble: $bubbleId")
-            }
-            
-            Log.d(TAG, "WebView initialized for bubble: $bubbleId")
-        } catch (e: Exception) {
+        post { loadInitialUrl() }
+
+    } catch (e: Exception) {
             Log.e(TAG, "Error setting up WebView for bubble $bubbleId", e)
         }
     }
@@ -634,11 +612,6 @@ class BubbleView @JvmOverloads constructor(
             
             // Common error handling logic
             private fun handleWebViewError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
-                // Show broken link icon
-                post {
-                    bubbleIcon.setImageResource(R.drawable.ic_broken_link)
-                }
-                
                 // For connection errors, try to reload after a delay
                 if (errorCode == android.webkit.WebViewClient.ERROR_CONNECT || 
                     errorCode == android.webkit.WebViewClient.ERROR_TIMEOUT ||
@@ -1154,7 +1127,7 @@ class BubbleView @JvmOverloads constructor(
             inputUrl.startsWith("http://") || inputUrl.startsWith("https://") -> inputUrl
             
             // If it's a special URL like about:blank, use it as is
-            inputUrl.startsWith("about:") || inputUrl.startsWith("file:") || 
+            inputUrl.startsWith("about:") || inputUrl.startsWith("file:") ||
             inputUrl.startsWith("javascript:") || inputUrl.startsWith("data:") -> inputUrl
             
             // If it looks like a domain (contains dots), add https://

@@ -46,18 +46,6 @@ interface WebPageDao {
     suspend fun getPageByUrl(url: String): WebPage?
     
     /**
-     * Get all pages available offline
-     */
-    @Query("SELECT * FROM web_pages WHERE isAvailableOffline = 1 ORDER BY timestamp DESC")
-    fun getOfflinePages(): LiveData<List<WebPage>>
-    
-    /**
-     * Delete all pages from history (except those saved for offline)
-     */
-    @Query("DELETE FROM web_pages WHERE isAvailableOffline = 0")
-    suspend fun deleteAllNonOfflinePages()
-    
-    /**
      * Delete all pages
      */
     @Query("DELETE FROM web_pages")

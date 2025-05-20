@@ -112,6 +112,21 @@ class BubbleIntentProcessor(
         }
     }
     
+    /**
+     * Process a URL if it's valid, handling common operations
+     * @param url The URL to process
+     * @param action The action name for logging
+     * @param handler The function to call with the valid URL
+     */
+    private fun processValidUrl(url: String?, action: String, handler: (String) -> Unit) {
+        if (url != null && isValidUrl(url)) {
+            saveToHistory(url)
+            handler(url)
+        } else {
+            Log.w(TAG, "Invalid or missing URL for $action")
+        }
+    }
+    
     private fun handleOpenUrl(intent: Intent) {
         val url = intent.getStringExtra(Constants.EXTRA_URL)
         if (url != null && isValidUrl(url)) {
@@ -223,16 +238,13 @@ class BubbleIntentProcessor(
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         Log.d(TAG, "handleSharedContent | Received shared text: $sharedText")
         
-        if (sharedText != null) {
-            // Save to history
-            saveToHistory(sharedText)
-            
-            // Create a new bubble with the extracted URL
-            Log.d(TAG, "Creating bubble with extracted URL: $sharedText")
-            bubbleManager.createOrUpdateBubbleWithNewUrl(sharedText)
-            
-        } else {
-            Log.w(TAG, "Missing shared text for handleSharedContent")
+        // Extract URL from shared text if possible
+        val url = sharedText?.let { text ->
+            extractUrl(text) ?: text
+        }
+        
+        processValidUrl(url, "handleSharedContent") { validUrl ->
+            bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl)
         }
     }
     

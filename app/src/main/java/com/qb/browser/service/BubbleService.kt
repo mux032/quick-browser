@@ -9,7 +9,6 @@ import com.qb.browser.QBApplication
 import com.qb.browser.manager.BubbleDisplayManager
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.manager.BubbleNotificationManager
-import com.qb.browser.manager.BubblePositionManager
 import com.qb.browser.util.BubbleIntentProcessor
 import com.qb.browser.db.WebPageDao
 import com.qb.browser.db.AppDatabase
@@ -31,7 +30,6 @@ class BubbleService : LifecycleService() {
     private val serviceJob = SupervisorJob()
     private lateinit var bubbleManager: BubbleManager
     private lateinit var notificationManager: BubbleNotificationManager
-    private lateinit var positionManager: BubblePositionManager
     private lateinit var bubbleDisplayManager: BubbleDisplayManager
     private lateinit var intentProcessor: BubbleIntentProcessor
     private lateinit var webPageDao: WebPageDao
@@ -76,7 +74,6 @@ class BubbleService : LifecycleService() {
                     )
 
             notificationManager = BubbleNotificationManager(this)
-            positionManager = BubblePositionManager(this)
             val database = AppDatabase.getInstance(this)
             webPageDao = database.webPageDao() // Inject WebPageDao from application context
 
