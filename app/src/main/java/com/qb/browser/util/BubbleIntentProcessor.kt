@@ -40,7 +40,6 @@ class BubbleIntentProcessor(
                 Constants.ACTION_TOGGLE_BUBBLES -> handleToggleBubbles()
                 Constants.ACTION_ACTIVATE_BUBBLE -> handleActivateBubble(intent)
                 Constants.ACTION_SAVE_OFFLINE -> handleSaveOffline(intent)
-                Constants.ACTION_SAVE_POSITION -> handleSavePosition(intent)
                 Intent.ACTION_SEND -> handleSharedContent(intent)
                 Intent.ACTION_VIEW -> handleViewAction(intent)
                 else -> Log.w(TAG, "Unsupported intent action: ${intent.action}")
@@ -220,14 +219,6 @@ class BubbleIntentProcessor(
         } else {
             Log.w(TAG, "Invalid URL or null passed to handleSaveOffline")
         }
-    }
-
-    private fun handleSavePosition(intent: Intent) {
-        val x = intent.getIntExtra(BubbleService.EXTRA_X, 0)
-        val y = intent.getIntExtra(BubbleService.EXTRA_Y, 0)
-        val settingsManager = SettingsManager.getInstance(context)
-        settingsManager.setLastBubblePosition(x, y)
-        Log.d(TAG, "Saved bubble position: x=$x, y=$y")
     }
 
     /**

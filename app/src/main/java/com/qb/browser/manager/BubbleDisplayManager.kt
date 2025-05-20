@@ -117,9 +117,6 @@ class BubbleDisplayManager(
                 // Store reference to bubble view
                 bubbleViews[bubble.id] = bubbleView
                 
-                // Load saved position if available
-                bubbleView.loadSavedPosition()
-                
                 Log.d(TAG, "Bubble view added successfully: ${bubble.id}")
             }
         )

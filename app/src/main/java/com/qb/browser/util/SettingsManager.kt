@@ -35,8 +35,6 @@ class SettingsManager private constructor(context: Context) {
         private const val KEY_BUBBLE_POSITION_PREFIX = "bubble_position_"
         private const val PREFS_NAME = "bubble_settings"
         private const val KEY_EXPANDED_BUBBLE_SIZE = "expanded_bubble_size"
-        private const val KEY_MAIN_BUBBLE_X = "main_bubble_x"
-        private const val KEY_MAIN_BUBBLE_Y = "main_bubble_y"
         private const val KEY_THEME_COLOR = "pref_theme_color"
         private const val KEY_DYNAMIC_COLOR = "pref_dynamic_color"
         private const val KEY_NIGHT_MODE = "pref_night_mode"
@@ -308,99 +306,6 @@ class SettingsManager private constructor(context: Context) {
             TextToSpeechManager.MAX_PITCH
         )
         preferences.edit().putFloat(KEY_TTS_PITCH, boundedPitch).apply()
-    }
-
-    /**
-     * Animation speed settings
-     */
-    fun getAnimationSpeed(): Float {
-        return preferences.getFloat("animation_speed", 1.0f)
-    }
-    
-    fun setAnimationSpeed(speed: Float) {
-        preferences.edit().putFloat("animation_speed", speed).apply()
-    }
-    
-    /**
-     * Check if bubble animations are enabled
-     */
-    fun areBubbleAnimationsEnabled(): Boolean {
-        return preferences.getBoolean("bubble_animations_enabled", true)
-    }
-
-    /**
-     * Check if bubble position saving is enabled
-     */
-    fun isBubblePositionSavingEnabled(): Boolean {
-        return preferences.getBoolean(KEY_BUBBLE_SAVE_POSITION, true)
-    }
-
-    /**
-     * Save bubble position for a specific URL
-     */
-    fun saveBubblePosition(url: String, x: Int, y: Int) {
-        if (!isBubblePositionSavingEnabled()) return
-        val urlHash = url.hashCode().toString()
-        preferences.edit()
-            .putString("${KEY_BUBBLE_POSITION_PREFIX}$urlHash", "$x,$y")
-            .apply()
-    }
-
-    /**
-     * Get saved position for a bubble
-     */
-    fun getSavedBubblePosition(url: String): Pair<Int, Int>? {
-        val urlHash = url.hashCode().toString()
-        val positionStr = preferences.getString("${KEY_BUBBLE_POSITION_PREFIX}$urlHash", null) ?: return null
-        try {
-            val parts = positionStr.split(",")
-            if (parts.size == 2) {
-                return Pair(parts[0].toInt(), parts[1].toInt())
-            }
-        } catch (e: Exception) {
-            // If parsing fails, return null
-        }
-        return null
-    }
-
-    fun getExpandedBubbleSize(): Int {
-        return prefs.getInt(KEY_EXPANDED_BUBBLE_SIZE, DEFAULT_EXPANDED_BUBBLE_SIZE)
-    }
-
-    fun setExpandedBubbleSize(size: Int) {
-        prefs.edit().putInt(KEY_EXPANDED_BUBBLE_SIZE, size).apply()
-    }
-
-    fun saveMainBubblePosition(x: Int, y: Int) {
-        prefs.edit()
-            .putInt(KEY_MAIN_BUBBLE_X, x)
-            .putInt(KEY_MAIN_BUBBLE_Y, y)
-            .apply()
-    }
-
-    fun getMainBubblePosition(): Pair<Int, Int> {
-        val x = prefs.getInt(KEY_MAIN_BUBBLE_X, -1)
-        val y = prefs.getInt(KEY_MAIN_BUBBLE_Y, -1)
-        return Pair(x, y)
-    }
-
-    fun setLastBubblePosition(x: Int, y: Int) {
-        // Implementation to save the position
-        val editor = prefs.edit()
-        editor.putInt(KEY_MAIN_BUBBLE_X, x)
-        editor.putInt(KEY_MAIN_BUBBLE_Y, y)
-        editor.apply()
-    }
-    
-    /**
-     * Bubble position (right or left side of screen)
-     */
-    fun isBubblePositionRight(): Boolean {
-        return preferences.getBoolean("bubble_position_right", false)
-    }
-    
-    fun setBubblePositionRight(isRight: Boolean) {
-        preferences.edit().putBoolean("bubble_position_right", isRight).apply()
     }
 
     /**

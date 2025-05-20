@@ -62,13 +62,7 @@ class SettingsActivity : BaseActivity() {
         try {
             switchJavaScript = findViewById(R.id.switch_javascript)
             switchBlockAds = findViewById(R.id.switch_block_ads)
-            seekBarBubbleSize = findViewById(R.id.seekbar_bubble_size)
-            seekBarAnimSpeed = findViewById(R.id.seekbar_anim_speed)
-            expandedBubbleSizeSlider = findViewById(R.id.expanded_bubble_size_slider)
-            textViewBubbleSize = findViewById(R.id.text_bubble_size_value)
-            textViewAnimSpeed = findViewById(R.id.text_anim_speed_value)
             switchSaveHistory = findViewById(R.id.switch_save_history)
-            switchPositionRight = findViewById(R.id.switch_position_right)
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing views", e)
             throw e
@@ -80,23 +74,7 @@ class SettingsActivity : BaseActivity() {
             // Load settings from SettingsManager
             switchJavaScript.isChecked = settingsManager.isJavaScriptEnabled()
             switchBlockAds.isChecked = settingsManager.isAdBlockEnabled()
-
-            // Set bubble size
-            val bubbleSize = settingsManager.getBubbleSize()
-            seekBarBubbleSize.progress = ((bubbleSize - 0.5f) * 100).toInt()
-            updateBubbleSizeText(bubbleSize)
-
-            // Set animation speed
-            val animSpeed = settingsManager.getAnimationSpeed()
-            seekBarAnimSpeed.progress = ((animSpeed - 0.5f) * 100).toInt()
-            updateAnimSpeedText(animSpeed)
-
-            // Set expanded bubble size
-            expandedBubbleSizeSlider.progress = settingsManager.getExpandedBubbleSize()
-
-            // Set other settings
             switchSaveHistory.isChecked = settingsManager.isSaveHistoryEnabled()
-            switchPositionRight.isChecked = settingsManager.isBubblePositionRight()
         } catch (e: Exception) {
             Log.e(TAG, "Error loading settings", e)
             throw e
@@ -115,81 +93,15 @@ class SettingsActivity : BaseActivity() {
                 settingsManager.setAdBlockEnabled(isChecked)
             }
 
-            // Bubble size setting
-            seekBarBubbleSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    if (fromUser) {
-                        val size = 0.5f + (progress / 100f)
-                        updateBubbleSizeText(size)
-                        settingsManager.setBubbleSize(size)
-                    }
-                }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            })
-
-            // Animation speed setting
-            seekBarAnimSpeed.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    if (fromUser) {
-                        val speed = 0.5f + (progress / 100f)
-                        updateAnimSpeedText(speed)
-                        settingsManager.setAnimationSpeed(speed)
-                    }
-                }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            })
-
-            // Expanded bubble size setting
-            expandedBubbleSizeSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    if (fromUser) {
-                        settingsManager.setExpandedBubbleSize(progress)
-                    }
-                }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            })
-
             // Save history setting
             switchSaveHistory.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setSaveHistoryEnabled(isChecked)
             }
 
-            // Bubble position setting
-            switchPositionRight.setOnCheckedChangeListener { _, isChecked ->
-                settingsManager.setBubblePositionRight(isChecked)
-            }
         } catch (e: Exception) {
             Log.e(TAG, "Error setting up listeners", e)
             throw e
         }
-    }
-
-    private fun updateBubbleSizeText(size: Float) {
-        val sizeText = when {
-            size < 0.7f -> getString(R.string.size_small)
-            size < 0.9f -> getString(R.string.size_medium)
-            size < 1.1f -> getString(R.string.size_normal)
-            size < 1.3f -> getString(R.string.size_large)
-            else -> getString(R.string.size_extra_large)
-        }
-        textViewBubbleSize.text = sizeText
-    }
-
-    private fun updateAnimSpeedText(speed: Float) {
-        val speedText = when {
-            speed < 0.7f -> getString(R.string.speed_slow)
-            speed < 0.9f -> getString(R.string.speed_medium)
-            speed < 1.1f -> getString(R.string.speed_normal)
-            speed < 1.3f -> getString(R.string.speed_fast)
-            else -> getString(R.string.speed_very_fast)
-        }
-        textViewAnimSpeed.text = speedText
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

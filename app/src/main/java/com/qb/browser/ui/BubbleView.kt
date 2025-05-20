@@ -1139,37 +1139,6 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Save the current bubble position in preferences
-     */
-    private fun saveBubblePosition() {
-        if (!settingsManager.isBubblePositionSavingEnabled() || layoutParams !is WindowManager.LayoutParams) {
-            return
-        }
-        
-        val params = layoutParams as WindowManager.LayoutParams
-        settingsManager.saveBubblePosition(url, params.x, params.y)
-    }
-    
-    /**
-     * Load saved position for this bubble if available
-     * 
-     * @return true if position was loaded successfully, false otherwise
-     */
-    fun loadSavedPosition(): Boolean {
-        if (!settingsManager.isBubblePositionSavingEnabled() || layoutParams !is WindowManager.LayoutParams) {
-            return false
-        }
-        
-        val savedPosition = settingsManager.getSavedBubblePosition(url) ?: return false
-        
-        val params = layoutParams as WindowManager.LayoutParams
-        params.x = savedPosition.first
-        params.y = savedPosition.second
-        windowManager.updateViewLayout(this, params)
-        return true
-    }
-    
-    /**
      * Handle touch events for dragging with snap to edges
      * 
      * This method handles:
@@ -1253,7 +1222,6 @@ class BubbleView @JvmOverloads constructor(
             performClick()
         } else {
             windowManager.updateViewLayout(this, params)
-            saveBubblePosition()
         }
     }
     
