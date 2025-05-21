@@ -16,6 +16,8 @@
     <string name="bubble_icon">Bubble icon</string>
     <string name="open_tabs">Open Tabs</string>
     <string name="favicon_description">Website Icon</string>
+    <string name="reader_mode_loaded">Reader mode loaded</string>
+    <string name="failed_to_load_reader_mode">Failed to load reader mode</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

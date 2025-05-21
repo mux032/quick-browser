@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.webkit.WebChromeClient
@@ -101,6 +102,15 @@ class BubbleView @JvmOverloads constructor(
     private val bubbleAnimator = BubbleAnimator(context)
     private var webViewModel: WebViewModel? = null
 
+    // --- Summary/Summarization UI and State ---
+    private lateinit var fabSummarize: ImageView // Use ImageView as FAB for consistency
+    private lateinit var summaryContainer: FrameLayout
+    private lateinit var summaryContent: LinearLayout
+    private lateinit var summaryProgress: ProgressBar
+    private var isSummaryMode = false
+    private var isSummarizationInProgress = false
+    private var cachedHtmlContent: String? = null
+
     companion object {
         private const val TAG = "BubbleView"
     }
@@ -144,6 +154,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Set up progress indicator
         progressBar.progress = 0   
+        
+        // Ensure summary views and FAB are initialized after layout is ready
+        initializeSummaryViews()
     }
     
     /**
@@ -891,52 +904,33 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun openReadMode() {
         try {
-            // Show loading indicator
             progressBar.visibility = View.VISIBLE
             progressBar.isIndeterminate = true
-            
-            // Create content extractor
-            val contentExtractor = ContentExtractor(context)
-            
-            // Use a coroutine scope directly instead of relying on lifecycleOwner
-            val coroutineScope = CoroutineScope(Dispatchers.Main)
-            
+            val contentExtractor = com.qb.browser.util.ContentExtractor(context)
+            val coroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
             coroutineScope.launch {
                 try {
-                    // Extract readable content in the background
-                    val readableContent = withContext(Dispatchers.IO) {
+                    val readableContent = withContext(kotlinx.coroutines.Dispatchers.IO) {
                         contentExtractor.extractReadableContent(url)
                     }
-                    
-                    // Create styled HTML
                     val isNightMode = settingsManager.isDarkThemeEnabled()
                     val styledHtml = createStyledHtml(readableContent, isNightMode)
-                    
-                    // Load the content in the WebView on the main thread
-                    withContext(Dispatchers.Main) {
-                        // Make sure the bubble is expanded to show the content
+                    withContext(kotlinx.coroutines.Dispatchers.Main) {
                         if (!isBubbleExpanded) {
                             toggleBubbleExpanded()
                         }
-                        
-                        // Load the content
                         webViewContainer.loadDataWithBaseURL(url, styledHtml, "text/html", "UTF-8", null)
-                        
-                        // Hide loading indicator
                         progressBar.visibility = View.GONE
                         progressBar.isIndeterminate = false
-                        
-                        // Make sure WebView is visible
                         webViewContainer.alpha = 1f
-                        
-                        Log.d(TAG, "Reader mode content loaded successfully")
+                        android.widget.Toast.makeText(context, R.string.reader_mode_loaded, android.widget.Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error extracting content for read mode", e)
-                    withContext(Dispatchers.Main) {
+                    withContext(kotlinx.coroutines.Dispatchers.Main) {
                         progressBar.visibility = View.GONE
                         progressBar.isIndeterminate = false
-                        Toast.makeText(context, "Failed to load reader mode", Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, R.string.failed_to_load_reader_mode, android.widget.Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -944,6 +938,7 @@ class BubbleView @JvmOverloads constructor(
             Log.e(TAG, "Failed to open read mode", e)
             progressBar.visibility = View.GONE
             progressBar.isIndeterminate = false
+            android.widget.Toast.makeText(context, R.string.failed_to_load_reader_mode, android.widget.Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -1387,19 +1382,209 @@ class BubbleView @JvmOverloads constructor(
         }
     }
     
+    /**
+     * Initialize summary view and FAB
+     */
+    private fun initializeSummaryViews() {
+        // Inflate or find summary container and content
+        summaryContainer = findViewById(R.id.summary_container) ?: FrameLayout(context).also {
+            it.id = R.id.summary_container
+            it.visibility = View.GONE
+            (expandedContainer as? ViewGroup)?.addView(it)
+        }
+        summaryContent = findViewById(R.id.summary_content) ?: LinearLayout(context).also {
+            it.id = R.id.summary_content
+            it.orientation = LinearLayout.VERTICAL
+            (summaryContainer as? ViewGroup)?.addView(it)
+        }
+        summaryProgress = findViewById(R.id.summary_progress) ?: ProgressBar(context).also {
+            it.id = R.id.summary_progress
+            it.visibility = View.GONE
+            (summaryContainer as? ViewGroup)?.addView(it)
+        }
+        // Add FAB for summarization toggle
+        fabSummarize = findViewById(R.id.fab_summarize) ?: ImageView(context).also {
+            it.id = R.id.fab_summarize
+            it.setImageResource(R.drawable.ic_summarize)
+            it.contentDescription = context.getString(R.string.summarize)
+            val params = LayoutParams(
+                resources.getDimensionPixelSize(R.dimen.fab_size),
+                resources.getDimensionPixelSize(R.dimen.fab_size)
+            )
+            params.marginEnd = resources.getDimensionPixelSize(R.dimen.fab_margin)
+            params.bottomMargin = resources.getDimensionPixelSize(R.dimen.fab_margin)
+            params.gravity = android.view.Gravity.END or android.view.Gravity.BOTTOM
+            (expandedContainer as? ViewGroup)?.addView(it, params)
+        }
+        fabSummarize.setOnClickListener {
+            Toast.makeText(context, "FAB clicked", Toast.LENGTH_SHORT).show() // Debug: confirm click
+            toggleSummaryMode()
+        }
+        
+        // Set background color for summary container and content
+        summaryContainer.setBackgroundColor(android.graphics.Color.WHITE)
+        summaryContent.setBackgroundColor(android.graphics.Color.WHITE)
+    }
 
-    
+    /**
+     * Toggle between web view and summary view
+     */
+    private fun toggleSummaryMode() {
+        if (isSummaryMode) {
+            showWebViewOnly()
+        } else {
+            showSummaryView()
+        }
+    }
 
-    
+    /**
+     * Show only the web view, hide summary
+     */
+    private fun showWebViewOnly() {
+        isSummaryMode = false
+        webViewContainer.visibility = View.VISIBLE
+        summaryContainer.visibility = View.GONE
+        fabSummarize.setImageResource(R.drawable.ic_summarize)
+        fabSummarize.contentDescription = context.getString(R.string.summarize)
+        Toast.makeText(context, R.string.showing_web_view, Toast.LENGTH_SHORT).show()
+    }
 
-    
+    /**
+     * Show the summary view and hide the web view
+     */
+    private fun showSummaryView() {
+        if (webViewContainer.visibility != View.VISIBLE) {
+            Toast.makeText(context, R.string.summary_error, Toast.LENGTH_SHORT).show()
+            return
+        }
+        isSummaryMode = true
+        webViewContainer.visibility = View.GONE
+        summaryContainer.visibility = View.VISIBLE
+        summaryProgress.visibility = View.VISIBLE
+        summaryContent.removeAllViews()
+        fabSummarize.setImageResource(R.drawable.ic_web_page)
+        fabSummarize.contentDescription = context.getString(R.string.show_web_view)
+        Toast.makeText(context, R.string.summarizing, Toast.LENGTH_SHORT).show()
+        summarizeContent()
+    }
 
-    
+    /**
+     * Summarize the current page content
+     */
+    private fun summarizeContent() {
+        try {
+            if (cachedHtmlContent != null && cachedHtmlContent!!.length > 100) {
+                processSummarization(cachedHtmlContent!!)
+            } else {
+                webViewContainer.evaluateJavascript("(function() { return document.documentElement.outerHTML; })()") { html ->
+                    try {
+                        if (html != null && html.length > 50) {
+                            val unescapedHtml = html.substring(1, html.length - 1)
+                                .replace("\\\"", "\"")
+                                .replace("\\n", "\n")
+                                .replace("\\\\", "\\")
+                            cachedHtmlContent = unescapedHtml
+                            processSummarization(unescapedHtml)
+                        } else {
+                            showSummaryError(context.getString(R.string.summary_error))
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing HTML for summary", e)
+                        showSummaryError(context.getString(R.string.summary_error))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in summarizeContent", e)
+            showSummaryError(context.getString(R.string.summary_error))
+        }
+    }
 
-    
+    /**
+     * Process the HTML content for summarization
+     */
+    private fun processSummarization(htmlContent: String) {
+        isSummarizationInProgress = true
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val cleanedHtml = withContext(Dispatchers.IO) {
+                    try {
+                        val doc = org.jsoup.Jsoup.parse(htmlContent)
+                        doc.select("script, style, noscript, iframe, object, embed, header, footer, nav, aside").remove()
+                        doc.text()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error cleaning HTML", e)
+                        null
+                    }
+                }
+                if (cleanedHtml == null || cleanedHtml.length < 100) {
+                    showSummaryError(context.getString(R.string.summary_not_article))
+                    return@launch
+                }
+                val summaryPoints = withContext(Dispatchers.Default) {
+                    val summarizationManager = com.qb.browser.util.SummarizationManager.getInstance(context)
+                    summarizationManager.summarizeContent(cleanedHtml)
+                }
+                if (summaryPoints.isNotEmpty()) {
+                    displaySummaryPoints(summaryPoints)
+                } else {
+                    showSummaryError(context.getString(R.string.summary_not_article))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error processing summarization", e)
+                showSummaryError(context.getString(R.string.summary_error))
+            } finally {
+                isSummarizationInProgress = false
+            }
+        }
+    }
 
-    
+    /**
+     * Display the summary points in the UI
+     */
+    private fun displaySummaryPoints(points: List<String>) {
+        summaryProgress.visibility = View.GONE
+        for (point in points) {
+            val bulletPoint = TextView(context)
+            bulletPoint.text = "• $point"
+            bulletPoint.setPadding(16, 16, 16, 16)
+            bulletPoint.textSize = 16f
+            summaryContent.addView(bulletPoint)
+        }
+    }
 
-    
+    /**
+     * Show an error in the summary view
+     */
+    private fun showSummaryError(message: String) {
+        summaryProgress.visibility = View.GONE
+        val errorText = TextView(context)
+        errorText.text = message
+        errorText.setPadding(16, 16, 16, 16)
+        errorText.textSize = 16f
+        summaryContent.addView(errorText)
+    }
 
+    /**
+     * Start background summarization of the HTML content
+     */
+    private fun startBackgroundSummarization(htmlContent: String) {
+        if (isSummarizationInProgress || htmlContent.length < 100) return
+        isSummarizationInProgress = true
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val summarizationManager = com.qb.browser.util.SummarizationManager.getInstance(context)
+                val doc = org.jsoup.Jsoup.parse(htmlContent)
+                doc.select("script, style, noscript, iframe, object, embed, header, footer, nav, aside").remove()
+                val cleanedText = doc.text()
+                if (cleanedText.length > 100) {
+                    summarizationManager.summarizeContent(cleanedText)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Background summarization failed", e)
+            } finally {
+                isSummarizationInProgress = false
+            }
+        }
+    }
 }
