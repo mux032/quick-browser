@@ -74,10 +74,12 @@
     <string name="no">No</string>
 
     <!-- Read Mode -->
+    <string name="web_view_mode">Switched to web view mode</string>
     <string name="increase_text_size">Increase text size</string>
     <string name="decrease_text_size">Decrease text size</string>
     <string name="toggle_night_mode">Toggle night mode</string>
     <string name="text_to_speech">Read aloud</string>
+    <string name="error_loading_content">Error loading content</string>
 
     <!-- Offline Pages -->
     <string name="offline_pages">Offline Pages</string>

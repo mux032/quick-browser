@@ -102,7 +102,7 @@ class BubbleView @JvmOverloads constructor(
     private val bubbleAnimator = BubbleAnimator(context)
     private var webViewModel: WebViewModel? = null
 
-    // --- Summary/Summarization UI and State ---
+    // Summary/Summarization UI and State
     private lateinit var fabSummarize: ImageView // Use ImageView as FAB for consistency
     private lateinit var summaryContainer: FrameLayout
     private lateinit var summaryContent: LinearLayout
@@ -110,6 +110,10 @@ class BubbleView @JvmOverloads constructor(
     private var isSummaryMode = false
     private var isSummarizationInProgress = false
     private var cachedHtmlContent: String? = null
+    
+    // Read Mode UI and State
+    private var isReadMode = false
+    private lateinit var btnReadMode: MaterialButton
 
     companion object {
         private const val TAG = "BubbleView"
@@ -237,7 +241,7 @@ class BubbleView @JvmOverloads constructor(
         // Action button listeners
         findViewById<View>(R.id.btn_close).setOnClickListener { closeBubbleWithAnimation() }
         findViewById<View>(R.id.btn_open_full).setOnClickListener { openFullWebView() }
-        findViewById<View>(R.id.btn_read_mode).setOnClickListener { openReadMode() }
+        findViewById<View>(R.id.btn_read_mode).setOnClickListener { toggleReadMode() }
     }
     
     /**
@@ -909,6 +913,40 @@ class BubbleView @JvmOverloads constructor(
     /**
      * Open the web page in read mode directly in the bubble's WebView
      */
+    // Store original content URL
+    private var originalContent: String? = null
+    
+    private fun toggleReadMode() {
+        isReadMode = !isReadMode
+        if (isReadMode) {
+            // Save current URL before switching to reader mode
+            originalContent = webViewContainer.url
+            openReadMode()
+        } else {
+            // Restore WebView settings for normal mode
+            webViewContainer.settings.apply {
+                javaScriptEnabled = true
+                builtInZoomControls = true
+                displayZoomControls = false
+                textZoom = 100
+            }
+            
+            // Return to normal web view using cached content if available
+            originalContent?.let { savedUrl ->
+                webViewContainer.loadUrl(savedUrl)
+            } ?: webViewContainer.loadUrl(url) // Fallback to current URL if cache is empty
+            
+            // Announce mode change for accessibility
+            webViewContainer.announceForAccessibility(context.getString(R.string.web_view_mode))
+        }
+        updateReadModeButton()
+    }
+
+    private fun updateReadModeButton() {
+        btnReadMode = findViewById(R.id.btn_read_mode)
+        btnReadMode.setIconResource(if (isReadMode) R.drawable.ic_globe else R.drawable.ic_read_mode)
+    }
+
     private fun openReadMode() {
         try {
             progressBar.visibility = View.VISIBLE
@@ -926,27 +964,49 @@ class BubbleView @JvmOverloads constructor(
                         if (!isBubbleExpanded) {
                             toggleBubbleExpanded()
                         }
+                        // Cache the original content
+                        originalContent = webViewContainer.url
+                        
+                        // Load the reader mode content
+                        webViewContainer.settings.apply {
+                            // Disable JavaScript for reader mode
+                            javaScriptEnabled = false
+                            // Enable built-in zoom
+                            builtInZoomControls = true
+                            displayZoomControls = false
+                            // Enable text size adjustment
+                            textZoom = 100
+                        }
+                        
                         webViewContainer.loadDataWithBaseURL(url, styledHtml, "text/html", "UTF-8", null)
                         progressBar.visibility = View.GONE
                         progressBar.isIndeterminate = false
                         webViewContainer.alpha = 1f
+                        
+                        // Announce reader mode for accessibility
+                        webViewContainer.announceForAccessibility(context.getString(R.string.reader_mode_loaded))
                         android.widget.Toast.makeText(context, R.string.reader_mode_loaded, android.widget.Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error extracting content for read mode", e)
-                    withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        progressBar.visibility = View.GONE
-                        progressBar.isIndeterminate = false
-                        android.widget.Toast.makeText(context, R.string.failed_to_load_reader_mode, android.widget.Toast.LENGTH_SHORT).show()
-                    }
+                    handleReadModeError()
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to open read mode", e)
-            progressBar.visibility = View.GONE
-            progressBar.isIndeterminate = false
-            android.widget.Toast.makeText(context, R.string.failed_to_load_reader_mode, android.widget.Toast.LENGTH_SHORT).show()
+            handleReadModeError()
         }
+    }
+    
+    private fun handleReadModeError() {
+        progressBar.visibility = View.GONE
+        progressBar.isIndeterminate = false
+        android.widget.Toast.makeText(context, R.string.failed_to_load_reader_mode, android.widget.Toast.LENGTH_SHORT).show()
+        // Reset read mode state on error
+        isReadMode = false
+        updateReadModeButton()
+        // Restore original content if available
+        originalContent?.let { webViewContainer.loadUrl(it) }
     }
     
     /**
@@ -956,23 +1016,126 @@ class BubbleView @JvmOverloads constructor(
         val backgroundColor = if (isNightMode) "#121212" else "#FAFAFA"
         val textColor = if (isNightMode) "#E0E0E0" else "#212121"
         val linkColor = if (isNightMode) "#90CAF9" else "#1976D2"
+        val secondaryTextColor = if (isNightMode) "#B0B0B0" else "#666666"
         
         return """
             <!DOCTYPE html>
-            <html>
+            <html lang="en">
             <head>
+                <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
+                    :root {
+                        --content-width: 100%;
+                        --body-padding: clamp(16px, 5%, 32px);
+                        --content-max-width: 800px;
+                    }
+                    
                     body {
-                        font-family: 'Segoe UI', Arial, sans-serif;
-                        line-height: 1.6;
+                        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+                        line-height: 1.8;
                         color: $textColor;
                         background-color: $backgroundColor;
-                        padding: 16px;
-                        margin: 0;
+                        padding: var(--body-padding);
+                        margin: 0 auto;
+                        max-width: var(--content-max-width);
+                        text-rendering: optimizeLegibility;
+                        -webkit-font-smoothing: antialiased;
                     }
+                    
+                    article {
+                        width: var(--content-width);
+                        margin: 0 auto;
+                    }
+                    
+                    h1, h2, h3, h4, h5, h6 {
+                        line-height: 1.3;
+                        margin: 1.5em 0 0.5em;
+                        font-weight: 600;
+                    }
+                    
                     h1 {
-                        font-size: 1.4em;
+                        font-size: clamp(1.5em, 5vw, 2em);
+                        letter-spacing: -0.02em;
+                    }
+                    
+                    p {
+                        margin: 1.5em 0;
+                        font-size: clamp(1em, 2vw, 1.2em);
+                    }
+                    
+                    a {
+                        color: ${linkColor};
+                        text-decoration: none;
+                        border-bottom: 1px solid ${linkColor}40;
+                        transition: border-bottom-color 0.2s;
+                    }
+                    
+                    a:hover {
+                        border-bottom-color: ${linkColor};
+                    }
+                    
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                        margin: 1.5em 0;
+                        border-radius: 4px;
+                    }
+                    
+                    blockquote {
+                        margin: 2em 0;
+                        padding: 1em 2em;
+                        border-left: 4px solid ${linkColor}40;
+                        background-color: ${linkColor}10;
+                        font-style: italic;
+                        color: ${secondaryTextColor};
+                    }
+                    
+                    code {
+                        font-family: 'SF Mono', Consolas, Monaco, 'Andale Mono', monospace;
+                        background-color: ${textColor}10;
+                        padding: 0.2em 0.4em;
+                        border-radius: 3px;
+                        font-size: 0.9em;
+                    }
+                    
+                    pre {
+                        background-color: ${textColor}10;
+                        padding: 1em;
+                        border-radius: 4px;
+                        overflow-x: auto;
+                        font-size: 0.9em;
+                    }
+                    
+                    ul, ol {
+                        padding-left: 1.5em;
+                        margin: 1.5em 0;
+                    }
+                    
+                    li {
+                        margin: 0.5em 0;
+                    }
+                    
+                    hr {
+                        border: none;
+                        border-top: 1px solid ${textColor}20;
+                        margin: 2em 0;
+                    }
+                    
+                    .meta {
+                        color: ${secondaryTextColor};
+                        font-size: 0.9em;
+                        margin-bottom: 2em;
+                    }
+                    
+                    @media (prefers-reduced-motion: reduce) {
+                        * {
+                            animation-duration: 0.01ms !important;
+                            animation-iteration-count: 1 !important;
+                            transition-duration: 0.01ms !important;
+                            scroll-behavior: auto !important;
+                        }
+                    }
                         margin-bottom: 8px;
                     }
                     .byline {
