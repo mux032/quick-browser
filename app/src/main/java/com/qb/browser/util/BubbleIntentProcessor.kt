@@ -39,7 +39,6 @@ class BubbleIntentProcessor(
                 Constants.ACTION_CLOSE_BUBBLE -> handleCloseBubble(intent)
                 Constants.ACTION_TOGGLE_BUBBLES -> handleToggleBubbles()
                 Constants.ACTION_ACTIVATE_BUBBLE -> handleActivateBubble(intent)
-                Constants.ACTION_SAVE_OFFLINE -> handleSaveOffline(intent)
                 Intent.ACTION_SEND -> handleSharedContent(intent)
                 Intent.ACTION_VIEW -> handleViewAction(intent)
                 else -> Log.w(TAG, "Unsupported intent action: ${intent.action}")
@@ -56,11 +55,20 @@ class BubbleIntentProcessor(
         if (sharedUrl != null && isValidUrl(sharedUrl)) {
             Log.e(TAG, "Creating bubble with URL: $sharedUrl")
             
+            // Check if this is an authentication URL that should be handled with Custom Tabs
+            if (AuthenticationHandler.isAuthenticationUrl(sharedUrl)) {
+                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $sharedUrl")
+                // Generate a bubble ID for this URL to track it when returning from authentication
+                val authBubbleId = java.util.UUID.randomUUID().toString()
+                AuthenticationHandler.openInCustomTab(context, sharedUrl, authBubbleId)
+                return
+            }
+            
             // Save to history
             saveToHistory(sharedUrl)
             
             // Create a new bubble with the shared URL
-            bubbleManager.createOrUpdateBubbleWithNewUrl(sharedUrl)
+            bubbleManager.createOrUpdateBubbleWithNewUrl(sharedUrl, null)
         } else {
             Log.e(TAG, "No valid URL provided.")
         }
@@ -119,6 +127,15 @@ class BubbleIntentProcessor(
      */
     private fun processValidUrl(url: String?, action: String, handler: (String) -> Unit) {
         if (url != null && isValidUrl(url)) {
+            // Check if this is an authentication URL that should be handled with Custom Tabs
+            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
+                // Generate a bubble ID for this URL to track it when returning from authentication
+                val authBubbleId = java.util.UUID.randomUUID().toString()
+                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
+                return
+            }
+            
             saveToHistory(url)
             handler(url)
         } else {
@@ -128,11 +145,22 @@ class BubbleIntentProcessor(
     
     private fun handleOpenUrl(intent: Intent) {
         val url = intent.getStringExtra(Constants.EXTRA_URL)
+        val bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
+        
         if (url != null && isValidUrl(url)) {
+            // Check if this is an authentication URL that should be handled with Custom Tabs
+            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
+                // Use the provided bubble ID or generate a new one
+                val authBubbleId = bubbleId ?: java.util.UUID.randomUUID().toString()
+                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
+                return
+            }
+            
             // Save to history
             saveToHistory(url)
             
-            bubbleManager.createOrUpdateBubbleWithNewUrl(url)
+            bubbleManager.createOrUpdateBubbleWithNewUrl(url, bubbleId)
         } else {
             Log.w(TAG, "Invalid or missing URL for handleOpenUrl")
         }
@@ -176,51 +204,6 @@ class BubbleIntentProcessor(
         }
     }
 
-    private fun handleSaveOffline(intent: Intent) {
-        val url = intent.getStringExtra(Constants.EXTRA_URL)
-        if (url != null && isValidUrl(url)) {
-            // Save to DB for offline availability
-            lifecycleScope.launch {
-                try {
-                    val existingPage = webPageDao.getPageByUrl(url)
-                    
-                    if (existingPage != null) {
-                        // Use existing page but mark as available offline
-                        val pageToSave = existingPage.copy(isAvailableOffline = true)
-                        webPageDao.insertPage(pageToSave)
-                        Log.d(TAG, "Existing page marked for offline: $url")
-                    } else {
-                        // Try to get the title from HTML asynchronously
-                        val htmlTitle = try {
-                            extractTitleFromHtmlAsync(url)
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error extracting HTML title for offline page", e)
-                            null
-                        }
-                        
-                        // Create new page with the best available title
-                        val title = htmlTitle ?: extractTitleFromUrl(url)
-                        
-                        val pageToSave = WebPage(
-                            url = url,
-                            title = title,
-                            timestamp = System.currentTimeMillis(),
-                            content = "", // Can be filled with offline HTML content
-                            isAvailableOffline = true,
-                            visitCount = 1
-                        )
-                        webPageDao.insertPage(pageToSave)
-                        Log.d(TAG, "New page saved for offline with title '$title': $url")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error saving page for offline access", e)
-                }
-            }
-        } else {
-            Log.w(TAG, "Invalid URL or null passed to handleSaveOffline")
-        }
-    }
-
     /**
      * Handles the ACTION_SEND intent to create or update a bubble with a new URL.
      * @param intent The incoming intent containing the shared content.
@@ -233,9 +216,9 @@ class BubbleIntentProcessor(
         val url = sharedText?.let { text ->
             extractUrl(text) ?: text
         }
-        
+        Log.d(TAG, "handleSharedContent | Received url: $url")
         processValidUrl(url, "handleSharedContent") { validUrl ->
-            bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl)
+            bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl, null)
         }
     }
     
@@ -264,10 +247,19 @@ class BubbleIntentProcessor(
         if (data != null && isValidUrl(data.toString())) {
             val url = data.toString()
             
+            // Check if this is an authentication URL that should be handled with Custom Tabs
+            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
+                // Generate a bubble ID for this URL to track it when returning from authentication
+                val authBubbleId = java.util.UUID.randomUUID().toString()
+                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
+                return
+            }
+            
             // Save to history
             saveToHistory(url)
             
-            bubbleManager.createOrUpdateBubbleWithNewUrl(url)
+            bubbleManager.createOrUpdateBubbleWithNewUrl(url, null)
         }
     }
 

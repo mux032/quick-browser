@@ -43,41 +43,50 @@ open class WebViewClientEx(
         return super.shouldInterceptRequest(view, request)
     }
     
-    override open fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-        super.onPageStarted(view, url, favicon)
-        url?.let { onPageUrlChanged(it) }
-    }
+    // override open fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+    //     super.onPageStarted(view, url, favicon)
+    //     url?.let { onPageUrlChanged(it) }
+    // }
     
-    override open fun onPageFinished(view: WebView?, url: String?) {
-        super.onPageFinished(view, url)
+    // override open fun onPageFinished(view: WebView?, url: String?) {
+    //     super.onPageFinished(view, url)
         
-        // Apply content extraction script for read mode only if ad blocking is enabled
-        url?.let {
-            view?.let { webView ->
-                // Only inject ad-blocking script if the setting is enabled AND JavaScript is enabled
-                if (settingsManager.isAdBlockEnabled() && settingsManager.isJavaScriptEnabled()) {
-                    // Execute JS to strip out unnecessary elements, can be used later for read mode
-                    val cleanupScript = """
-                        javascript:(function() {
-                            var elements = document.querySelectorAll('iframe, ins, script[src*="ads"], script[src*="analytics"], div[id*="banner"], div[id*="ad-"], div[class*="banner"], div[class*="ad-"]');
-                            for (var i = 0; i < elements.length; i++) {
-                                elements[i].style.display = 'none';
-                            }
-                        })()
-                    """.trimIndent()
+    //     // Apply content extraction script for read mode only if ad blocking is enabled
+    //     url?.let {
+    //         view?.let { webView ->
+    //             // Only inject ad-blocking script if the setting is enabled AND JavaScript is enabled
+    //             if (settingsManager.isAdBlockEnabled() && settingsManager.isJavaScriptEnabled()) {
+    //                 // Execute JS to strip out unnecessary elements, can be used later for read mode
+    //                 val cleanupScript = """
+    //                     javascript:(function() {
+    //                         var elements = document.querySelectorAll('iframe, ins, script[src*="ads"], script[src*="analytics"], div[id*="banner"], div[id*="ad-"], div[class*="banner"], div[class*="ad-"]');
+    //                         for (var i = 0; i < elements.length; i++) {
+    //                             elements[i].style.display = 'none';
+    //                         }
+    //                     })()
+    //                 """.trimIndent()
                     
-                    webView.loadUrl(cleanupScript)
-                }
-            }
-        }
-    }
+    //                 webView.loadUrl(cleanupScript)
+    //             }
+    //         }
+    //     }
+    // }
     
     // For newer Android versions
     override open fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
         // Custom URL handling
         val url = request?.url?.toString() ?: return false
         
-        // Always notify about URL change first to update UI
+        // Check for authentication URLs first - before any other processing
+        if (AuthenticationHandler.isAuthenticationUrl(url)) {
+            android.util.Log.d("WebViewClientEx", "Authentication URL detected in shouldOverrideUrlLoading: $url")
+            view?.context?.let { context ->
+                AuthenticationHandler.openInCustomTab(context, url)
+                return true
+            }
+        }
+        
+        // Always notify about URL change to update UI
         onPageUrlChanged(url)
         
         return handleUrlOverride(view, url)
@@ -88,14 +97,48 @@ open class WebViewClientEx(
     override open fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
         if (url == null) return false
         
-        // Always notify about URL change first to update UI
+        // Check for authentication URLs first - before any other processing
+        if (AuthenticationHandler.isAuthenticationUrl(url)) {
+            android.util.Log.d("WebViewClientEx", "Authentication URL detected in shouldOverrideUrlLoading (legacy): $url")
+            view?.context?.let { context ->
+                AuthenticationHandler.openInCustomTab(context, url)
+                return true
+            }
+        }
+        
+        // Always notify about URL change to update UI
         onPageUrlChanged(url)
         
         return handleUrlOverride(view, url)
     }
     
+    // Also intercept page loads before they start
+    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+        // Check if this is an authentication URL before the page starts loading
+        if (url != null && AuthenticationHandler.isAuthenticationUrl(url)) {
+            android.util.Log.d("WebViewClientEx", "Authentication URL detected in onPageStarted: $url")
+            view?.stopLoading() // Stop the WebView from loading this URL
+            
+            view?.context?.let { context ->
+                AuthenticationHandler.openInCustomTab(context, url)
+                // Don't call super to prevent the WebView from loading this URL
+                return
+            }
+        }
+        
+        super.onPageStarted(view, url, favicon)
+        url?.let { onPageUrlChanged(it) }
+    }
+    
     // Common URL handling logic for both API versions
     private fun handleUrlOverride(view: WebView?, url: String): Boolean {
+        // Check if this is an authentication URL that should be handled with Custom Tabs
+        if (AuthenticationHandler.isAuthenticationUrl(url)) {
+            view?.context?.let { context ->
+                return AuthenticationHandler.openInCustomTab(context, url)
+            }
+        }
+        
         return when {
             // Handle external schemes (tel, mailto, etc)
             url.startsWith("tel:") || 

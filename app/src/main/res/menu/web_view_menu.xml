@@ -22,4 +22,10 @@
         android:icon="@android:drawable/ic_menu_share"
         android:title="@string/share"
         app:showAsAction="ifRoom" />
+        
+    <item
+        android:id="@+id/menu_open_in_browser"
+        android:icon="@android:drawable/ic_menu_view"
+        android:title="@string/open_in_browser"
+        app:showAsAction="never" />
 </menu>

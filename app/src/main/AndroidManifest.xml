@@ -45,6 +45,14 @@
                 <data android:scheme="https" />
             </intent-filter>
             
+            <!-- Handle custom scheme for authentication callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="qbbrowser" android:host="auth-callback" />
+            </intent-filter>
+            
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -56,7 +64,17 @@
             android:name=".ui.WebViewActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/web_view"
-            android:theme="@style/Theme.QBrowser" />
+            android:theme="@style/Theme.QBrowser"
+            android:exported="true">
+            <!-- Add intent filter for handling web URLs directly -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".ui.ReadModeActivity"

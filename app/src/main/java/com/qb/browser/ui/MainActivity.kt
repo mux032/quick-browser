@@ -228,13 +228,42 @@ class MainActivity : BaseActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         
+        if (intent == null) return
+        
+        // Check if this is a return from authentication
+        val data = intent.data
+        if (data != null && data.scheme == "qbbrowser" && data.host == "auth-callback") {
+            Log.d(TAG, "Received authentication callback: $data")
+            handleAuthenticationCallback(data)
+            return
+        }
+        
         // If it's a link sharing intent, handle it without showing the UI
-        if (intent != null && isLinkSharingIntent(intent)) {
+        if (isLinkSharingIntent(intent)) {
             handleLinkSharingIntent(intent)
             return
         }
         
         setIntent(intent)
+    }
+    
+    /**
+     * Handles the callback from Chrome Custom Tabs after authentication
+     */
+    private fun handleAuthenticationCallback(uri: Uri) {
+        Log.d(TAG, "Handling authentication callback: $uri")
+        
+        // Use the AuthenticationHandler to handle the return
+        val handled = com.qb.browser.util.AuthenticationHandler.handleAuthenticationReturn(this, uri)
+        
+        if (handled) {
+            Log.d(TAG, "Authentication callback handled successfully")
+            // Minimize the app after handling the callback
+            moveTaskToBack(true)
+        } else {
+            Log.e(TAG, "Failed to handle authentication callback")
+            Toast.makeText(this, "Failed to complete authentication", Toast.LENGTH_SHORT).show()
+        }
     }
     
     /**

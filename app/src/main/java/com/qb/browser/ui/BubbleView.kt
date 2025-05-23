@@ -566,6 +566,13 @@ class BubbleView @JvmOverloads constructor(
                 
                 Log.d(TAG, "Loading URL in WebView: $url")
                 
+                // Check if this is an authentication URL that should be handled with Custom Tabs
+                if (com.qb.browser.util.AuthenticationHandler.isAuthenticationUrl(url)) {
+                    Log.d(TAG, "Authentication URL detected in BubbleView, opening in Custom Tab: $url")
+                    com.qb.browser.util.AuthenticationHandler.openInCustomTab(context, url, bubbleId)
+                    return true
+                }
+                
                 // Handle special URLs that should be opened by external apps
                 if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || 
                     url.startsWith("intent:") || url.startsWith("market:")) {
@@ -1358,7 +1365,17 @@ class BubbleView @JvmOverloads constructor(
         val formattedUrl = formatUrl(url)
         if (formattedUrl.isNotEmpty()) {
             Log.d(TAG, "Loading URL in showWebView: $formattedUrl")
-            webViewContainer.loadUrl(formattedUrl)
+            
+            // Check if this is an authentication URL that should be handled with Custom Tabs
+            if (com.qb.browser.util.AuthenticationHandler.isAuthenticationUrl(formattedUrl)) {
+                Log.d(TAG, "Authentication URL detected in loadUrlInWebView, opening in Custom Tab: $formattedUrl")
+                com.qb.browser.util.AuthenticationHandler.openInCustomTab(context, formattedUrl, bubbleId)
+                // Load a blank page in the WebView to avoid showing the authentication page
+                webViewContainer.loadUrl("about:blank")
+            } else {
+                // Load the URL in the WebView
+                webViewContainer.loadUrl(formattedUrl)
+            }
         } else {
             Log.d(TAG, "Invalid URL format in showWebView: $url")
             webViewContainer.loadUrl("about:blank")

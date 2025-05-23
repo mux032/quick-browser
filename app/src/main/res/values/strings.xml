@@ -115,6 +115,7 @@
     <string name="summary_error">Could not summarize this article</string>
     <string name="summary_error_no_content">No content found to summarize</string>
     <string name="summary_not_article">This page does not appear to be an article</string>
+    <string name="open_in_browser">Open in Browser</string>
 
     <!-- Activities -->
     <string name="title_activity_settings">Settings</string>

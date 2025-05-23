@@ -29,15 +29,15 @@ class BubbleManager(
         private const val SINGLE_BUBBLE_ID = "single_bubble"
     }
 
-    fun createOrUpdateBubbleWithNewUrl(url: String) {
+    fun createOrUpdateBubbleWithNewUrl(url: String, existingBubbleId: String? = null) {
         lifecycleScope.launch {
-            Log.d(TAG, "Creating new bubble for URL: $url")
+            Log.d(TAG, "Creating new bubble for URL: $url, existing bubble ID: $existingBubbleId")
             
             try {
                 val currentBubbles = _bubbles.value.toMutableMap()
                 
-                // Generate a unique ID for the new bubble
-                val bubbleId = "bubble_${System.currentTimeMillis()}"
+                // Use the provided bubble ID or generate a new one
+                val bubbleId = existingBubbleId ?: "bubble_${System.currentTimeMillis()}"
                 
                 val timestamp = System.currentTimeMillis()
                 val newWebPage = WebPage(

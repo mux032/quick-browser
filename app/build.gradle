@@ -130,6 +130,9 @@ dependencies {
     // Gson for JSON serialization/deserialization
     implementation 'com.google.code.gson:gson:2.10.1'
     
+    // Chrome Custom Tabs for secure authentication
+    implementation 'androidx.browser:browser:1.7.0'
+    
     // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
