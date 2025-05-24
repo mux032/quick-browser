@@ -50,25 +50,26 @@ class BubbleIntentProcessor(
 
     private fun handleCreateBubble(intent: Intent) {
         val sharedUrl = intent.getStringExtra(Constants.EXTRA_URL)
-        Log.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: ${sharedUrl}")
+        val url = sharedUrl?.let { text -> extractUrl(text) ?: text}
+        Log.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: ${url}")
         
-        if (sharedUrl != null && isValidUrl(sharedUrl)) {
-            Log.e(TAG, "Creating bubble with URL: $sharedUrl")
+        if (url != null && isValidUrl(url)) {
+            Log.e(TAG, "Creating bubble with URL: $url")
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
-            if (AuthenticationHandler.isAuthenticationUrl(sharedUrl)) {
-                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $sharedUrl")
+            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Generate a bubble ID for this URL to track it when returning from authentication
                 val authBubbleId = java.util.UUID.randomUUID().toString()
-                AuthenticationHandler.openInCustomTab(context, sharedUrl, authBubbleId)
+                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
                 return
             }
             
             // Save to history
-            saveToHistory(sharedUrl)
+            saveToHistory(url)
             
             // Create a new bubble with the shared URL
-            bubbleManager.createOrUpdateBubbleWithNewUrl(sharedUrl, null)
+            bubbleManager.createOrUpdateBubbleWithNewUrl(url, null)
         } else {
             Log.e(TAG, "No valid URL provided.")
         }
@@ -226,7 +227,15 @@ class BubbleIntentProcessor(
      * Extracts a URL from text that might contain other content
      */
     private fun extractUrl(text: String): String? {
-        // Simple URL extraction using regex
+        // Check for Google App specific pattern first (search.app/*)
+        val googleAppPattern = "(https?://)?search\\.app/[^\\s]+"
+        val googleAppMatcher = Pattern.compile(googleAppPattern).matcher(text)
+        if (googleAppMatcher.find()) {
+            Log.d(TAG, "Found Google App URL: ${googleAppMatcher.group()}")
+            return googleAppMatcher.group()
+        }
+        
+        // Standard URL extraction using regex
         val urlPattern = "(https?://(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|https?://(?:www\\.|(?!www))[a-zA-Z0-9]+\\.[^\\s]{2,}|www\\.[a-zA-Z0-9]+\\.[^\\s]{2,})"
         val pattern = Pattern.compile(urlPattern)
         val matcher = pattern.matcher(text)
