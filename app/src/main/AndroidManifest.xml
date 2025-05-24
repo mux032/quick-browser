@@ -77,13 +77,6 @@
         </activity>
 
         <activity
-            android:name=".ui.ReadModeActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/read_mode"
-            android:theme="@style/Theme.QBrowser" />
-            
-
-        <activity
             android:name=".ui.SettingsActivity"
             android:label="@string/settings"
             android:theme="@style/Theme.QBrowser" />
@@ -102,8 +95,6 @@
                 <action android:name="com.qb.browser.action.ACTIVATE_BUBBLE" />
             </intent-filter>
         </service>
-
-        <!-- Removed NotificationPermissionActivity as notifications are now optional -->
 
         <!-- FileProvider for sharing content -->
         <provider

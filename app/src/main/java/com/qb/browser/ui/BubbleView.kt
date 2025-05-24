@@ -40,7 +40,6 @@ import com.qb.browser.model.Bubble
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
 import com.qb.browser.util.SettingsManager
-import com.qb.browser.ui.ReadModeActivity
 import com.qb.browser.util.AdBlocker
 import com.qb.browser.util.ContentExtractor
 import com.qb.browser.util.SummarizationManager

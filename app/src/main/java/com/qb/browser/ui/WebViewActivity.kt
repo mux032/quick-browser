@@ -221,10 +221,6 @@ class WebViewActivity : AppCompatActivity() {
                 shareUrl()
                 true
             }
-            R.id.menu_read_mode -> {
-                openReadMode()
-                true
-            }
             R.id.menu_save_offline -> {
                 saveForOffline()
                 true
@@ -483,14 +479,6 @@ class WebViewActivity : AppCompatActivity() {
             type = "text/plain"
         }
         startActivity(android.content.Intent.createChooser(shareIntent, getString(R.string.share)))
-    }
-    
-    private fun openReadMode() {
-        val intent = android.content.Intent(this, ReadModeActivity::class.java).apply {
-            putExtra(Constants.EXTRA_URL, url)
-            bubbleId?.let { putExtra(Constants.EXTRA_BUBBLE_ID, it) }
-        }
-        startActivity(intent)
     }
     
     private fun saveForOffline() {
