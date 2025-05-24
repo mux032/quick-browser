@@ -82,11 +82,6 @@
             android:label="@string/read_mode"
             android:theme="@style/Theme.QBrowser" />
             
-        <activity
-            android:name=".ui.SummaryActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/summary_title"
-            android:theme="@style/Theme.QBrowser" />
 
         <activity
             android:name=".ui.SettingsActivity"
