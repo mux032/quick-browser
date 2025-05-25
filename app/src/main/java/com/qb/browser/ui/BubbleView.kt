@@ -41,7 +41,7 @@ import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
 import com.qb.browser.util.SettingsManager
 import com.qb.browser.util.AdBlocker
-import com.qb.browser.util.ContentExtractor
+import com.qb.browser.util.ReadabilityExtractor
 import com.qb.browser.util.SummarizationManager
 import com.qb.browser.util.SummarizingWebViewClient
 import com.qb.browser.viewmodel.WebViewModel
@@ -950,21 +950,25 @@ class BubbleView @JvmOverloads constructor(
         try {
             progressBar.visibility = View.VISIBLE
             progressBar.isIndeterminate = true
-            val contentExtractor = com.qb.browser.util.ContentExtractor(context)
+            val contentExtractor = com.qb.browser.util.ReadabilityExtractor(context)
             val coroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
             coroutineScope.launch {
                 try {
                     val readableContent = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        contentExtractor.extractReadableContent(url)
+                        contentExtractor.extractFromUrl(url)
                     }
                     val isNightMode = settingsManager.isDarkThemeEnabled()
+                    if (readableContent == null) {
+                        handleReadModeError()
+                        return@launch // Prevent further execution if null
+                    }
                     val styledHtml = createStyledHtml(readableContent, isNightMode)
                     withContext(kotlinx.coroutines.Dispatchers.Main) {
                         if (!isBubbleExpanded) {
                             toggleBubbleExpanded()
                         }
                         // Cache the original content
-                        originalContent = webViewContainer.url
+                        originalContent?.let { webViewContainer.loadUrl(it) }
                         
                         // Load the reader mode content
                         webViewContainer.settings.apply {
@@ -1011,7 +1015,7 @@ class BubbleView @JvmOverloads constructor(
     /**
      * Create styled HTML for reader mode
      */
-    private fun createStyledHtml(content: ContentExtractor.ReadableContent, isNightMode: Boolean): String {
+    private fun createStyledHtml(content: ReadabilityExtractor.ReadableContent, isNightMode: Boolean): String {
         val backgroundColor = if (isNightMode) "#121212" else "#FAFAFA"
         val textColor = if (isNightMode) "#E0E0E0" else "#212121"
         val linkColor = if (isNightMode) "#90CAF9" else "#1976D2"
@@ -1170,7 +1174,7 @@ class BubbleView @JvmOverloads constructor(
             </head>
             <body>
                 <h1>${content.title}</h1>
-                ${if (content.byline.isNotEmpty()) "<div class=\"byline\">${content.byline}</div>" else ""}
+                ${if (!content.byline.isNullOrEmpty()) "<div class=\"byline\">${content.byline}</div>" else ""}
                 ${content.content}
             </body>
             </html>
