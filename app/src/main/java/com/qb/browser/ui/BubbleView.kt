@@ -960,6 +960,7 @@ class BubbleView @JvmOverloads constructor(
                     val isNightMode = settingsManager.isDarkThemeEnabled()
                     if (readableContent == null) {
                         handleReadModeError()
+                        return@launch
                     }
                     val styledHtml = createStyledHtml(readableContent, isNightMode)
                     withContext(kotlinx.coroutines.Dispatchers.Main) {
