@@ -960,7 +960,6 @@ class BubbleView @JvmOverloads constructor(
                     val isNightMode = settingsManager.isDarkThemeEnabled()
                     if (readableContent == null) {
                         handleReadModeError()
-                        return@launch // Prevent further execution if null
                     }
                     val styledHtml = createStyledHtml(readableContent, isNightMode)
                     withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -969,6 +968,7 @@ class BubbleView @JvmOverloads constructor(
                         }
                         // Cache the original content
                         originalContent?.let { webViewContainer.loadUrl(it) }
+                        
                         
                         // Load the reader mode content
                         webViewContainer.settings.apply {
@@ -981,10 +981,12 @@ class BubbleView @JvmOverloads constructor(
                             textZoom = 100
                         }
                         
+                        
                         webViewContainer.loadDataWithBaseURL(url, styledHtml, "text/html", "UTF-8", null)
                         progressBar.visibility = View.GONE
                         progressBar.isIndeterminate = false
                         webViewContainer.alpha = 1f
+                        
                         
                         // Announce reader mode for accessibility
                         webViewContainer.announceForAccessibility(context.getString(R.string.reader_mode_loaded))

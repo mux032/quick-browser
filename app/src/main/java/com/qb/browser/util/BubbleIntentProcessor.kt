@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.LifecycleCoroutineScope
+import java.util.UUID
 import java.util.regex.Pattern
 import com.qb.browser.Constants
 import com.qb.browser.db.WebPageDao

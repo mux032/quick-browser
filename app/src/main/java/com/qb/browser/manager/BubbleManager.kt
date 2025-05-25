@@ -10,6 +10,7 @@ import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 /**
  * BubbleManager is responsible for managing the lifecycle and operations of browser bubbles. It
@@ -26,7 +27,6 @@ class BubbleManager(
 
     companion object {
         private const val TAG = "BubbleManager"
-        private const val SINGLE_BUBBLE_ID = "single_bubble"
     }
 
     fun createOrUpdateBubbleWithNewUrl(url: String, existingBubbleId: String? = null) {
@@ -36,8 +36,8 @@ class BubbleManager(
             try {
                 val currentBubbles = _bubbles.value.toMutableMap()
                 
-                // Use the provided bubble ID or generate a new one
-                val bubbleId = existingBubbleId ?: "bubble_${System.currentTimeMillis()}"
+                // Use the provided bubble ID or generate a new UUID
+                val bubbleId = existingBubbleId ?: UUID.randomUUID().toString()
                 
                 val timestamp = System.currentTimeMillis()
                 val newWebPage = WebPage(
@@ -90,11 +90,6 @@ class BubbleManager(
             
             Log.d(TAG, "Removed bubble with ID: $bubbleId")
         }
-    }
-
-    fun removeBubble() {
-        // For backward compatibility
-        removeBubble(SINGLE_BUBBLE_ID)
     }
     
     fun getAllBubbles(): List<Bubble> {
