@@ -11,7 +11,7 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import com.qb.browser.Constants
 import com.qb.browser.model.Bubble
 import com.qb.browser.service.BubbleService
-import com.qb.browser.ui.BubbleView
+import com.qb.browser.ui.bubble.BubbleView
 import com.qb.browser.util.ErrorHandler
 import com.qb.browser.viewmodel.BubbleViewModel
 import kotlinx.coroutines.flow.collectLatest

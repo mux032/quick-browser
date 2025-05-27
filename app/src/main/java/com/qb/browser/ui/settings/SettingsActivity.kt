@@ -1,4 +1,4 @@
-package com.qb.browser.ui
+package com.qb.browser.ui.settings
 
 import android.os.Bundle
 import android.util.Log

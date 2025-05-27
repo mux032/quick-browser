@@ -31,7 +31,7 @@
  * - Kotlin Coroutines for asynchronous operations.
  * - Custom classes like `BubbleService`, `SettingsManager`, and `SettingsActivity`.
  */
-package com.qb.browser.ui
+package com.qb.browser.ui.main
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -66,6 +66,7 @@ import com.qb.browser.viewmodel.HistoryViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.qb.browser.ui.settings.SettingsActivity
 import com.qb.browser.util.SettingsManager
 import com.qb.browser.util.BubbleIntentProcessor
 import com.qb.browser.manager.BubbleManager

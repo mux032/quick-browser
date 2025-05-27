@@ -1,4 +1,4 @@
-package com.qb.browser.ui
+package com.qb.browser.ui.bubble
 
 import android.content.Context
 import android.view.ContextThemeWrapper
