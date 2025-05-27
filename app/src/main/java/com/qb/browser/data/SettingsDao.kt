@@ -1,4 +1,4 @@
-package com.qb.browser.db
+package com.qb.browser.data
 
 import androidx.room.*
 import com.qb.browser.model.Settings

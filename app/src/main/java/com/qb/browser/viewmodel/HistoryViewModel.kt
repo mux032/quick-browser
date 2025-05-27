@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
-import com.qb.browser.db.AppDatabase
+import com.qb.browser.data.AppDatabase
 import com.qb.browser.model.WebPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

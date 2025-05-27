@@ -70,7 +70,7 @@ import com.qb.browser.ui.settings.SettingsActivity
 import com.qb.browser.util.SettingsManager
 import com.qb.browser.util.BubbleIntentProcessor
 import com.qb.browser.manager.BubbleManager
-import com.qb.browser.db.WebPageDao
+import com.qb.browser.data.WebPageDao
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

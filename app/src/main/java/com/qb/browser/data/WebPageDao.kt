@@ -1,4 +1,4 @@
-package com.qb.browser.db
+package com.qb.browser.data
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao

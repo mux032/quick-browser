@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.qb.browser.db.SettingsDao
+import com.qb.browser.data.SettingsDao
 import com.qb.browser.model.Bubble
 import com.qb.browser.model.Settings
 import kotlinx.coroutines.flow.MutableStateFlow

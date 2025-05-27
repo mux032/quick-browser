@@ -1,4 +1,4 @@
-package com.qb.browser.db
+package com.qb.browser.data
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

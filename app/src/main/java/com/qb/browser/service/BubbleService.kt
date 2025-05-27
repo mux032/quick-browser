@@ -10,8 +10,8 @@ import com.qb.browser.manager.BubbleDisplayManager
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.manager.BubbleNotificationManager
 import com.qb.browser.util.BubbleIntentProcessor
-import com.qb.browser.db.WebPageDao
-import com.qb.browser.db.AppDatabase
+import com.qb.browser.data.WebPageDao
+import com.qb.browser.data.AppDatabase
 import kotlinx.coroutines.SupervisorJob
 
 /**

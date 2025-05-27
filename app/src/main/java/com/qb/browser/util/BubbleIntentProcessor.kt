@@ -8,7 +8,7 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import java.util.UUID
 import java.util.regex.Pattern
 import com.qb.browser.Constants
-import com.qb.browser.db.WebPageDao
+import com.qb.browser.data.WebPageDao
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
