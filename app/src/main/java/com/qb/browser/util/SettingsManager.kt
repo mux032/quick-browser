@@ -277,36 +277,6 @@ class SettingsManager private constructor(context: Context) {
     fun setBackgroundSyncEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_BACKGROUND_SYNC, enabled).apply()
     }
-    
-    /**
-     * TTS speech rate settings
-     */
-    fun getTtsSpeechRate(): Float {
-        return preferences.getFloat(KEY_TTS_SPEECH_RATE, TextToSpeechManager.DEFAULT_SPEECH_RATE)
-    }
-    
-    fun setTtsSpeechRate(rate: Float) {
-        val boundedRate = rate.coerceIn(
-            TextToSpeechManager.MIN_SPEECH_RATE, 
-            TextToSpeechManager.MAX_SPEECH_RATE
-        )
-        preferences.edit().putFloat(KEY_TTS_SPEECH_RATE, boundedRate).apply()
-    }
-    
-    /**
-     * TTS pitch settings
-     */
-    fun getTtsPitch(): Float {
-        return preferences.getFloat(KEY_TTS_PITCH, TextToSpeechManager.DEFAULT_PITCH)
-    }
-    
-    fun setTtsPitch(pitch: Float) {
-        val boundedPitch = pitch.coerceIn(
-            TextToSpeechManager.MIN_PITCH, 
-            TextToSpeechManager.MAX_PITCH
-        )
-        preferences.edit().putFloat(KEY_TTS_PITCH, boundedPitch).apply()
-    }
 
     /**
      * Theme color settings

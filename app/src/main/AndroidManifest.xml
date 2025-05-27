@@ -61,22 +61,6 @@
         </activity>
 
         <activity
-            android:name=".ui.WebViewActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/web_view"
-            android:theme="@style/Theme.QBrowser"
-            android:exported="true">
-            <!-- Add intent filter for handling web URLs directly -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-            </intent-filter>
-        </activity>
-
-        <activity
             android:name=".ui.SettingsActivity"
             android:label="@string/settings"
             android:theme="@style/Theme.QBrowser" />
