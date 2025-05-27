@@ -1,4 +1,4 @@
-package com.qb.browser.util
+package com.qb.browser.ui.bubble
 
 import android.content.Context
 import android.content.Intent
@@ -12,6 +12,8 @@ import com.qb.browser.data.WebPageDao
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
+import com.qb.browser.util.AuthenticationHandler
+import com.qb.browser.util.ErrorHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,8 +46,8 @@ class BubbleIntentProcessor(
                 Intent.ACTION_VIEW -> handleViewAction(intent)
                 else -> Log.w(TAG, "Unsupported intent action: ${intent.action}")
             }
-        }.onError(tag = TAG) { 
-            "Error processing intent: ${it.message}" 
+        }.onFailure { 
+            Log.e(TAG, "Error processing intent: ${it.message}")
         }
     }
 

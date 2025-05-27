@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.color.DynamicColors
 import com.qb.browser.data.AppDatabase
 import com.qb.browser.data.SettingsDao
-import com.qb.browser.util.SettingsManager
+import com.qb.browser.manager.SettingsManager
 import com.qb.browser.service.BubbleService
 import com.qb.browser.viewmodel.BubbleViewModel
 import com.qb.browser.viewmodel.WebViewModel

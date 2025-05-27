@@ -67,8 +67,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.qb.browser.ui.settings.SettingsActivity
-import com.qb.browser.util.SettingsManager
-import com.qb.browser.util.BubbleIntentProcessor
+import com.qb.browser.manager.SettingsManager
+import com.qb.browser.ui.bubble.BubbleIntentProcessor
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.data.WebPageDao
 import kotlinx.coroutines.delay

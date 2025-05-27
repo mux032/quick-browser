@@ -1,4 +1,4 @@
-package com.qb.browser.util
+package com.qb.browser.manager
 
 import android.content.Context
 import android.content.SharedPreferences

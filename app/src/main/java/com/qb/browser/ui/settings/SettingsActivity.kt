@@ -9,7 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.qb.browser.ui.base.BaseActivity
 import com.qb.browser.R
-import com.qb.browser.util.SettingsManager
+import com.qb.browser.manager.SettingsManager
 
 /**
  * Settings activity for the browser

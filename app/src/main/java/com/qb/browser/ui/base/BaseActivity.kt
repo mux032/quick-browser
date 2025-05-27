@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.qb.browser.R
 import com.qb.browser.ui.theme.ThemeColor
-import com.qb.browser.util.SettingsManager
+import com.qb.browser.manager.SettingsManager
 
 /**
  * Base activity class that applies consistent theming across all activities

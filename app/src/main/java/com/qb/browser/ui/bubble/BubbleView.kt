@@ -39,11 +39,11 @@ import com.qb.browser.R
 import com.qb.browser.model.Bubble
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
-import com.qb.browser.util.SettingsManager
+import com.qb.browser.manager.SettingsManager
 import com.qb.browser.util.AdBlocker
 import com.qb.browser.util.ReadabilityExtractor
-import com.qb.browser.util.SummarizationManager
-import com.qb.browser.util.SummarizingWebViewClient
+import com.qb.browser.manager.SummarizationManager
+import com.qb.browser.ui.bubble.SummarizingWebViewClient
 import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -1708,7 +1708,7 @@ class BubbleView @JvmOverloads constructor(
                     return@launch
                 }
                 val summaryPoints = withContext(Dispatchers.Default) {
-                    val summarizationManager = com.qb.browser.util.SummarizationManager.getInstance(context)
+                    val summarizationManager = com.qb.browser.manager.SummarizationManager.getInstance(context)
                     summarizationManager.summarizeContent(cleanedHtml)
                 }
                 if (summaryPoints.isNotEmpty()) {
@@ -1759,7 +1759,7 @@ class BubbleView @JvmOverloads constructor(
         isSummarizationInProgress = true
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val summarizationManager = com.qb.browser.util.SummarizationManager.getInstance(context)
+                val summarizationManager = com.qb.browser.manager.SummarizationManager.getInstance(context)
                 val doc = org.jsoup.Jsoup.parse(htmlContent)
                 doc.select("script, style, noscript, iframe, object, embed, header, footer, nav, aside").remove()
                 val cleanedText = doc.text()
