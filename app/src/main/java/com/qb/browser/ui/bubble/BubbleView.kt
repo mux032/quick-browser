@@ -40,8 +40,9 @@ import com.qb.browser.model.Bubble
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
 import com.qb.browser.manager.SettingsManager
-import com.qb.browser.util.AdBlocker
-import com.qb.browser.util.ReadabilityExtractor
+import com.qb.browser.manager.AdBlocker
+import com.qb.browser.manager.AuthenticationHandler
+import com.qb.browser.manager.ReadabilityExtractor
 import com.qb.browser.manager.SummarizationManager
 import com.qb.browser.ui.bubble.SummarizingWebViewClient
 import com.qb.browser.viewmodel.WebViewModel
@@ -570,9 +571,9 @@ class BubbleView @JvmOverloads constructor(
                 Log.d(TAG, "Loading URL in WebView: $url")
                 
                 // Check if this is an authentication URL that should be handled with Custom Tabs
-                if (com.qb.browser.util.AuthenticationHandler.isAuthenticationUrl(url)) {
+                if (AuthenticationHandler.isAuthenticationUrl(url)) {
                     Log.d(TAG, "Authentication URL detected in BubbleView, opening in Custom Tab: $url")
-                    com.qb.browser.util.AuthenticationHandler.openInCustomTab(context, url, bubbleId)
+                    AuthenticationHandler.openInCustomTab(context, url, bubbleId)
                     return true
                 }
                 
@@ -950,7 +951,7 @@ class BubbleView @JvmOverloads constructor(
         try {
             progressBar.visibility = View.VISIBLE
             progressBar.isIndeterminate = true
-            val contentExtractor = com.qb.browser.util.ReadabilityExtractor(context)
+            val contentExtractor = ReadabilityExtractor(context)
             val coroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
             coroutineScope.launch {
                 try {
@@ -1536,9 +1537,9 @@ class BubbleView @JvmOverloads constructor(
             Log.d(TAG, "Loading URL in showWebView: $formattedUrl")
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
-            if (com.qb.browser.util.AuthenticationHandler.isAuthenticationUrl(formattedUrl)) {
+            if (AuthenticationHandler.isAuthenticationUrl(formattedUrl)) {
                 Log.d(TAG, "Authentication URL detected in loadUrlInWebView, opening in Custom Tab: $formattedUrl")
-                com.qb.browser.util.AuthenticationHandler.openInCustomTab(context, formattedUrl, bubbleId)
+                AuthenticationHandler.openInCustomTab(context, formattedUrl, bubbleId)
                 // Load a blank page in the WebView to avoid showing the authentication page
                 webViewContainer.loadUrl("about:blank")
             } else {
@@ -1708,7 +1709,7 @@ class BubbleView @JvmOverloads constructor(
                     return@launch
                 }
                 val summaryPoints = withContext(Dispatchers.Default) {
-                    val summarizationManager = com.qb.browser.manager.SummarizationManager.getInstance(context)
+                    val summarizationManager = SummarizationManager.getInstance(context)
                     summarizationManager.summarizeContent(cleanedHtml)
                 }
                 if (summaryPoints.isNotEmpty()) {
@@ -1759,7 +1760,7 @@ class BubbleView @JvmOverloads constructor(
         isSummarizationInProgress = true
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val summarizationManager = com.qb.browser.manager.SummarizationManager.getInstance(context)
+                val summarizationManager = SummarizationManager.getInstance(context)
                 val doc = org.jsoup.Jsoup.parse(htmlContent)
                 doc.select("script, style, noscript, iframe, object, embed, header, footer, nav, aside").remove()
                 val cleanedText = doc.text()

@@ -1,4 +1,4 @@
-package com.qb.browser.util
+package com.qb.browser.manager
 
 import android.content.Context
 import android.webkit.WebResourceResponse
@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream
 import java.net.URL
 import java.util.HashSet
 import java.util.concurrent.ConcurrentHashMap
+import com.qb.browser.util.ErrorHandler
 
 /**
  * AdBlocker utility to block ads and trackers

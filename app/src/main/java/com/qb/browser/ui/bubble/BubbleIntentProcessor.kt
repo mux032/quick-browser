@@ -9,10 +9,10 @@ import java.util.UUID
 import java.util.regex.Pattern
 import com.qb.browser.Constants
 import com.qb.browser.data.WebPageDao
+import com.qb.browser.manager.AuthenticationHandler
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
-import com.qb.browser.util.AuthenticationHandler
 import com.qb.browser.util.ErrorHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

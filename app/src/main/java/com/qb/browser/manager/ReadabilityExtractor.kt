@@ -1,4 +1,4 @@
-package com.qb.browser.util
+package com.qb.browser.manager
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
@@ -34,8 +34,8 @@ class ReadabilityExtractor(private val context: Context) {
     /**
      * Extract readable content from a URL
      */
-    suspend fun extractFromUrl(url: String): ReadableContent? = 
-        withErrorHandling(
+    suspend fun extractFromUrl(url: String): ReadableContent? =
+        ErrorHandler.handleExceptions(
             tag = TAG,
             errorMessage = "Failed to extract content from URL: $url"
         ) {
@@ -43,15 +43,14 @@ class ReadabilityExtractor(private val context: Context) {
                 .userAgent(USER_AGENT)
                 .timeout(TIMEOUT_MS)
                 .get()
-            
             extractFromDocument(doc, url)
         }
     
     /**
      * Extract readable content from HTML string
      */
-    suspend fun extractFromHtml(html: String, baseUrl: String): ReadableContent? = 
-        withErrorHandling(
+    suspend fun extractFromHtml(html: String, baseUrl: String): ReadableContent? =
+        ErrorHandler.handleExceptions(
             tag = TAG,
             errorMessage = "Failed to extract content from HTML"
         ) {

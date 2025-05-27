@@ -5,7 +5,6 @@ import android.webkit.WebView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.qb.browser.util.WebViewClientEx
 
 /**
  * WebViewClient that automatically captures HTML content for summarization

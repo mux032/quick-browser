@@ -1,4 +1,4 @@
-package com.qb.browser.util
+package com.qb.browser.ui.bubble
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -8,6 +8,8 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.qb.browser.manager.SettingsManager
+import com.qb.browser.manager.AdBlocker
+import com.qb.browser.manager.AuthenticationHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

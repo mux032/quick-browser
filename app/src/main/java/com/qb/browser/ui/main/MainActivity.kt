@@ -73,6 +73,7 @@ import com.qb.browser.manager.BubbleManager
 import com.qb.browser.data.WebPageDao
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.qb.browser.manager.AuthenticationHandler
 
 class MainActivity : BaseActivity() {
     companion object {
@@ -255,7 +256,7 @@ class MainActivity : BaseActivity() {
         Log.d(TAG, "Handling authentication callback: $uri")
         
         // Use the AuthenticationHandler to handle the return
-        val handled = com.qb.browser.util.AuthenticationHandler.handleAuthenticationReturn(this, uri)
+        val handled = AuthenticationHandler.handleAuthenticationReturn(this, uri)
         
         if (handled) {
             Log.d(TAG, "Authentication callback handled successfully")
