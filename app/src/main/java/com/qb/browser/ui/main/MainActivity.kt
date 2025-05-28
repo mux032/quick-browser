@@ -137,18 +137,24 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Check if this is a link sharing intent before setting up the UI
-        if (isLinkSharingIntent(intent)) {
-            // Handle the intent without showing the main UI
-            handleLinkSharingIntent(intent)
-            return
-        }
+        Log.d(TAG, "onCreate called with intent: ${intent?.action}")
         
         // Apply theme before setting content view
         applyAppTheme()
         
+        // Always call super.onCreate() to avoid SuperNotCalledException
         super.onCreate(savedInstanceState)
+        
+        // Always set content view to ensure activity is properly initialized
         setContentView(R.layout.activity_main)
+        
+        // Check if this is a link sharing intent before setting up the rest of the UI
+        if (isLinkSharingIntent(intent)) {
+            Log.d(TAG, "Link sharing intent detected in onCreate, handling without full UI initialization")
+            // Handle the intent without initializing the full UI
+            handleLinkSharingIntent(intent)
+            return
+        }
 
         // Set up toolbar
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
@@ -228,6 +234,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onNewIntent(intent: Intent?) {
+        Log.d(TAG, "onNewIntent called with intent: ${intent?.action}")
         super.onNewIntent(intent)
         
         if (intent == null) return
@@ -240,13 +247,15 @@ class MainActivity : BaseActivity() {
             return
         }
         
+        // Always update the intent
+        setIntent(intent)
+        
         // If it's a link sharing intent, handle it without showing the UI
         if (isLinkSharingIntent(intent)) {
+            Log.d(TAG, "Link sharing intent detected in onNewIntent, handling without UI")
             handleLinkSharingIntent(intent)
             return
         }
-        
-        setIntent(intent)
     }
     
     /**
@@ -276,12 +285,14 @@ class MainActivity : BaseActivity() {
     }
     
     /**
-     * Handles link sharing intents by starting the bubble service and finishing the activity
+     * Handles link sharing intents by starting the bubble service and moving the activity to background
+     * This allows the activity to receive multiple share intents without crashing
      */
     private fun handleLinkSharingIntent(intent: Intent?) {
         if (intent == null) return
         
         Log.d(TAG, "handleLinkSharingIntent | Received intent: ${intent.action}, data: ${intent.extras}")
+        Log.d(TAG, "Activity will be moved to background instead of finishing to support multiple shares")
         
         when (intent.action) {
             Intent.ACTION_SEND -> {
@@ -290,8 +301,9 @@ class MainActivity : BaseActivity() {
                 if (sharedText != null) {
                     // Start bubble service with the URL
                     if (checkPermissionsAndStartBubbleWithUrl(sharedText)) {
-                        // Finish activity to avoid showing the main UI
-                        finish()
+                        // Move task to back instead of finishing the activity
+                        // This allows the activity to receive future share intents
+                        moveTaskToBack(true)
                     }
                 }
             }
@@ -301,8 +313,9 @@ class MainActivity : BaseActivity() {
                 if (url != null) {
                     // Start bubble service with the URL
                     if (checkPermissionsAndStartBubbleWithUrl(url)) {
-                        // Finish activity to avoid showing the main UI
-                        finish()
+                        // Move task to back instead of finishing the activity
+                        // This allows the activity to receive future share intents
+                        moveTaskToBack(true)
                     }
                 }
             }
@@ -392,9 +405,9 @@ class MainActivity : BaseActivity() {
             startBubbleServiceWithUrl(lastSharedUrl)
             // Clear the saved URL
             settingsManager.clearLastSharedUrl()
-            // Finish activity if it was started from a link sharing intent
+            // Move task to back if it was started from a link sharing intent
             if (isLinkSharingIntent(intent)) {
-                finish()
+                moveTaskToBack(true)
                 return
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
