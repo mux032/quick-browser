@@ -81,6 +81,12 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var expandedContainer: View
     private lateinit var contentContainer: FrameLayout
     private lateinit var webViewContainer: WebView
+    
+    // Resize handles
+    private lateinit var resizeHandleTopLeft: ImageView
+    private lateinit var resizeHandleTopRight: ImageView
+    private lateinit var resizeHandleBottomLeft: ImageView
+    private lateinit var resizeHandleBottomRight: ImageView
 
     // Touch handling state
     private var initialX = 0f
@@ -88,6 +94,17 @@ class BubbleView @JvmOverloads constructor(
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var isDragging = false
+    
+    // Resize state
+    private var isResizing = false
+    private var activeResizeHandle: ImageView? = null
+    private var initialWidth = 0
+    private var initialHeight = 0
+    
+    // Stored dimensions for the expanded container
+    private var storedWidth = 0
+    private var storedHeight = 0
+    private var hasStoredDimensions = false
     
     // Bubble state
     private var isBubbleExpanded = false
@@ -153,6 +170,12 @@ class BubbleView @JvmOverloads constructor(
         contentContainer = findViewById(R.id.content_container)
         webViewContainer = findViewById(R.id.web_view)
         
+        // Initialize resize handles
+        resizeHandleTopLeft = findViewById(R.id.resize_handle_top_left)
+        resizeHandleTopRight = findViewById(R.id.resize_handle_top_right)
+        resizeHandleBottomLeft = findViewById(R.id.resize_handle_bottom_left)
+        resizeHandleBottomRight = findViewById(R.id.resize_handle_bottom_right)
+        
         // Set up default favicon
         bubbleIcon.setImageResource(R.drawable.ic_globe)
         
@@ -161,6 +184,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Ensure summary views and FAB are initialized after layout is ready
         initializeSummaryViews()
+        
+        // Set up resize handle touch listeners
+        setupResizeHandles()
     }
     
     /**
@@ -242,6 +268,191 @@ class BubbleView @JvmOverloads constructor(
         findViewById<View>(R.id.btn_close).setOnClickListener { closeBubbleWithAnimation() }
         findViewById<View>(R.id.btn_open_full).setOnClickListener { openFullWebView() }
         findViewById<View>(R.id.btn_read_mode).setOnClickListener { toggleReadMode() }
+    }
+    
+    /**
+     * Set up resize handles with touch listeners
+     */
+    private fun setupResizeHandles() {
+        // Set up touch listeners for each resize handle
+        setupResizeHandleTouch(resizeHandleTopLeft)
+        setupResizeHandleTouch(resizeHandleTopRight)
+        setupResizeHandleTouch(resizeHandleBottomLeft)
+        setupResizeHandleTouch(resizeHandleBottomRight)
+    }
+    
+    /**
+     * Set up touch listener for a specific resize handle
+     */
+    private fun setupResizeHandleTouch(handle: ImageView) {
+        handle.setOnTouchListener { view, event ->
+            if (layoutParams !is WindowManager.LayoutParams) return@setOnTouchListener false
+            
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    // Start resizing
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    initialWidth = expandedContainer.width
+                    initialHeight = expandedContainer.height
+                    isResizing = true
+                    activeResizeHandle = handle
+                    return@setOnTouchListener true
+                }
+                
+                MotionEvent.ACTION_MOVE -> {
+                    if (isResizing) {
+                        // Calculate the change in position
+                        val dx = event.rawX - initialTouchX
+                        val dy = event.rawY - initialTouchY
+                        
+                        // Resize based on which handle is being dragged
+                        resizeBubble(handle, dx, dy)
+                        return@setOnTouchListener true
+                    }
+                }
+                
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // Stop resizing
+                    isResizing = false
+                    activeResizeHandle = null
+                    return@setOnTouchListener true
+                }
+            }
+            
+            return@setOnTouchListener false
+        }
+    }
+    
+    /**
+     * Resize the bubble based on which handle is being dragged
+     */
+    private fun resizeBubble(handle: ImageView, dx: Float, dy: Float) {
+        // Define minimum and maximum dimensions
+        val minWidth = resources.displayMetrics.widthPixels / 3  // Minimum 1/3 of screen width
+        val minHeight = resources.displayMetrics.heightPixels / 3 // Minimum 1/3 of screen height
+        val maxWidth = resources.displayMetrics.widthPixels - 50 // Maximum screen width minus margin
+        val maxHeight = resources.displayMetrics.heightPixels - 100 // Maximum screen height minus margin
+        
+        // Get current window position and dimensions
+        val windowParams = this.layoutParams as WindowManager.LayoutParams
+        val containerParams = expandedContainer.layoutParams
+        
+        // Store original values to calculate changes
+        val originalX = windowParams.x
+        val originalY = windowParams.y
+        val originalWidth = containerParams.width
+        val originalHeight = containerParams.height
+        
+        // Variables to track changes
+        var newWidth = originalWidth
+        var newHeight = originalHeight
+        var newX = originalX
+        var newY = originalY
+        
+        when (handle) {
+            resizeHandleBottomRight -> {
+                // Bottom-right corner: just resize width and height
+                newWidth = (initialWidth + dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
+                newHeight = (initialHeight + dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
+            }
+            
+            resizeHandleBottomLeft -> {
+                // Bottom-left corner: resize width inversely and height directly
+                val desiredWidth = (initialWidth - dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
+                newHeight = (initialHeight + dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
+                
+                // Calculate how much the width will actually change
+                val widthChange = originalWidth - desiredWidth
+                
+                // Only change width if we can also adjust the X position
+                if (originalX + widthChange >= 0) {
+                    newWidth = desiredWidth
+                    newX = originalX + widthChange
+                }
+            }
+            
+            resizeHandleTopRight -> {
+                // Top-right corner: resize width directly and height inversely
+                newWidth = (initialWidth + dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
+                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
+                
+                // Calculate how much the height will actually change
+                val heightChange = originalHeight - desiredHeight
+                
+                // Only change height if we can also adjust the Y position
+                if (originalY + heightChange >= 0) {
+                    newHeight = desiredHeight
+                    newY = originalY + heightChange
+                }
+            }
+            
+            resizeHandleTopLeft -> {
+                // Top-left corner: resize both width and height inversely
+                val desiredWidth = (initialWidth - dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
+                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
+                
+                // Calculate position changes
+                val widthChange = originalWidth - desiredWidth
+                val heightChange = originalHeight - desiredHeight
+                
+                // Apply width change if X position can be adjusted
+                if (originalX + widthChange >= 0) {
+                    newWidth = desiredWidth
+                    newX = originalX + widthChange
+                }
+                
+                // Apply height change if Y position can be adjusted
+                if (originalY + heightChange >= 0) {
+                    newHeight = desiredHeight
+                    newY = originalY + heightChange
+                }
+            }
+        }
+        
+        // Apply the new dimensions to the container
+        containerParams.width = newWidth
+        containerParams.height = newHeight
+        expandedContainer.layoutParams = containerParams
+        
+        // Store the new dimensions for future use
+        storedWidth = newWidth
+        storedHeight = newHeight
+        hasStoredDimensions = true
+        
+        // Update window position if it changed
+        if (newX != originalX || newY != originalY) {
+            windowParams.x = newX
+            windowParams.y = newY
+            try {
+                windowManager.updateViewLayout(this, windowParams)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating window layout", e)
+            }
+        }
+        
+        // Force layout update
+        expandedContainer.requestLayout()
+    }
+    
+    /**
+     * Show resize handles when bubble is expanded
+     */
+    private fun showResizeHandles() {
+        resizeHandleTopLeft.visibility = View.VISIBLE
+        resizeHandleTopRight.visibility = View.VISIBLE
+        resizeHandleBottomLeft.visibility = View.VISIBLE
+        resizeHandleBottomRight.visibility = View.VISIBLE
+    }
+    
+    /**
+     * Hide resize handles when bubble is collapsed
+     */
+    private fun hideResizeHandles() {
+        resizeHandleTopLeft.visibility = View.GONE
+        resizeHandleTopRight.visibility = View.GONE
+        resizeHandleBottomLeft.visibility = View.GONE
+        resizeHandleBottomRight.visibility = View.GONE
     }
     
     /**
@@ -767,6 +978,9 @@ class BubbleView @JvmOverloads constructor(
         // Set the dimensions for the expanded container
         resizeExpandedContainer()
         
+        // Show resize handles
+        showResizeHandles()
+        
         // Make WebView visible and ensure content is loaded
         loadContentInExpandedWebView()
     }
@@ -776,8 +990,22 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun resizeExpandedContainer() {
         val layoutParams = expandedContainer.layoutParams
-        layoutParams.width = resources.displayMetrics.widthPixels * 9 / 10  // 90% of screen width
-        layoutParams.height = resources.displayMetrics.heightPixels * 7 / 10 // 70% of screen height
+        
+        if (hasStoredDimensions && storedWidth > 0 && storedHeight > 0) {
+            // Use stored dimensions if available
+            layoutParams.width = storedWidth
+            layoutParams.height = storedHeight
+        } else {
+            // Use default dimensions
+            layoutParams.width = resources.displayMetrics.widthPixels * 9 / 10  // 90% of screen width
+            layoutParams.height = resources.displayMetrics.heightPixels * 7 / 10 // 70% of screen height
+            
+            // Store these default dimensions
+            storedWidth = layoutParams.width
+            storedHeight = layoutParams.height
+            hasStoredDimensions = true
+        }
+        
         expandedContainer.layoutParams = layoutParams
         
         // Force layout update
@@ -844,6 +1072,9 @@ class BubbleView @JvmOverloads constructor(
         bubbleAnimator.animateCollapse(expandedContainer)
         
         // Summarize button has been removed
+        
+        // Hide resize handles
+        hideResizeHandles()
         
         // Slight shrink animation on collapse
         bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), false)
@@ -1232,6 +1463,11 @@ class BubbleView @JvmOverloads constructor(
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (layoutParams !is WindowManager.LayoutParams) return super.onTouchEvent(event)
+        
+        // If we're currently resizing, let the resize handle touch listener handle it
+        if (isResizing) {
+            return true
+        }
         
         val params = layoutParams as WindowManager.LayoutParams
         val screenWidth = resources.displayMetrics.widthPixels

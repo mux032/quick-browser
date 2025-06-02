@@ -81,6 +81,54 @@
                     android:scrollbars="vertical"
                     android:scrollbarStyle="insideOverlay"
                     android:visibility="gone" />
+                    
+                <!-- Resize handles for the corners -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+                    
+                    <ImageView
+                        android:id="@+id/resize_handle_top_left"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="top|start"
+                        android:src="@drawable/resize_corner_top_left"
+                        android:contentDescription="@string/resize_handle"
+                        android:elevation="8dp"
+                        android:visibility="gone" />
+                        
+                    <ImageView
+                        android:id="@+id/resize_handle_top_right"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="top|end"
+                        android:src="@drawable/resize_corner_top_right"
+                        android:contentDescription="@string/resize_handle"
+                        android:elevation="8dp"
+                        android:visibility="gone" />
+                        
+                    <ImageView
+                        android:id="@+id/resize_handle_bottom_left"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="bottom|start"
+                        android:src="@drawable/resize_corner_bottom_left"
+                        android:contentDescription="@string/resize_handle"
+                        android:elevation="8dp"
+                        android:visibility="gone" />
+                        
+                    <ImageView
+                        android:id="@+id/resize_handle_bottom_right"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="bottom|end"
+                        android:src="@drawable/resize_corner_bottom_right"
+                        android:contentDescription="@string/resize_handle"
+                        android:elevation="8dp"
+                        android:visibility="gone" />
+                </FrameLayout>
 
                 <!-- Summary container that will be shown when summarize is clicked -->
                 <androidx.core.widget.NestedScrollView
