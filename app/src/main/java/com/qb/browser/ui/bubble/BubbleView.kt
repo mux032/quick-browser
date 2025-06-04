@@ -44,7 +44,6 @@ import com.qb.browser.manager.AdBlocker
 import com.qb.browser.manager.AuthenticationHandler
 import com.qb.browser.manager.ReadabilityExtractor
 import com.qb.browser.manager.SummarizationManager
-import com.qb.browser.ui.bubble.SummarizingWebViewClient
 import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

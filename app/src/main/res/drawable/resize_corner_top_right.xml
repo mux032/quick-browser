@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="48"
-    android:viewportHeight="48">
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
     
+    <!-- Black outline for better visibility -->
     <path
-        android:pathData="M48,48 L48,0 L0,0 A48,48 0 0,1 48,48 Z"
-        android:strokeWidth="6"
+        android:pathData="M28,16 A12,12 0 0,0 16,4"
+        android:strokeWidth="3"
         android:strokeColor="?attr/colorPrimary"
-        android:fillColor="#00000000"/>
+        android:strokeLineCap="round" />
+        
+    <!-- Simple bold white arc -->
+    <path
+        android:pathData="M28,16 A12,12 0 0,0 16,4"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
 </vector>
