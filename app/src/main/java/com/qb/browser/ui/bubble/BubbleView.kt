@@ -134,6 +134,8 @@ class BubbleView @JvmOverloads constructor(
     
     // Toolbar container
     private lateinit var toolbarContainer: View
+    private var isToolbarVisible = true
+    private var lastScrollY = 0
 
     companion object {
         private const val TAG = "BubbleView"
@@ -482,6 +484,65 @@ class BubbleView @JvmOverloads constructor(
         
         // Set up WebView
         setupWebView()
+        
+        // Set up scroll listener for toolbar animation
+        setupScrollListener()
+    }
+    
+    /**
+     * Set up scroll listener to show/hide toolbar based on scroll direction
+     */
+    private fun setupScrollListener() {
+        // Add JavaScript interface for scroll detection
+        webViewContainer.addJavascriptInterface(object {
+            @android.webkit.JavascriptInterface
+            fun onScrollDown() {
+                post {
+                    if (isToolbarVisible) {
+                        hideToolbar()
+                    }
+                }
+            }
+            
+            @android.webkit.JavascriptInterface
+            fun onScrollUp() {
+                post {
+                    if (!isToolbarVisible) {
+                        showToolbar()
+                    }
+                }
+            }
+        }, "ScrollDetector")
+    }
+    
+    /**
+     * Hide toolbar with animation
+     */
+    private fun hideToolbar() {
+        if (!isToolbarVisible) return // Already hidden
+        
+        isToolbarVisible = false
+        toolbarContainer.animate()
+            .translationY(toolbarContainer.height.toFloat() + 16f) // Add margin to fully hide
+            .setDuration(150) // Faster animation for hiding
+            .setInterpolator(android.view.animation.AccelerateInterpolator(1.5f)) // More aggressive acceleration
+            .withLayer() // Hardware acceleration for smoother animation
+            .start()
+    }
+    
+    /**
+     * Show toolbar with animation
+     */
+    private fun showToolbar() {
+        if (isToolbarVisible) return // Already visible
+        
+        isToolbarVisible = true
+        toolbarContainer.animate()
+            .translationY(0f)
+            .setDuration(200) // Slightly slower for showing
+            .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f)) // More aggressive deceleration
+            .withLayer() // Hardware acceleration for smoother animation
+            .start()
     }
 
     /**
@@ -631,7 +692,8 @@ class BubbleView @JvmOverloads constructor(
         webViewContainer.webChromeClient = createWebChromeClient()
         
         // Set up WebViewClient for page loading and error handling with summarization support
-        webViewContainer.webViewClient = SummarizingWebViewClient(
+        // and scroll detection for toolbar animation
+        webViewContainer.webViewClient = ScrollAwareWebViewClient(
             context,
             { newUrl ->
                 url = newUrl
@@ -639,6 +701,19 @@ class BubbleView @JvmOverloads constructor(
             { htmlContent ->
                 // HTML content received, but we're not using it for summarization anymore
                 Log.d(TAG, "HTML content received, length: ${htmlContent.length}")
+                cachedHtmlContent = htmlContent
+            },
+            // Scroll down callback
+            {
+                if (isToolbarVisible) {
+                    hideToolbar()
+                }
+            },
+            // Scroll up callback
+            {
+                if (!isToolbarVisible) {
+                    showToolbar()
+                }
             }
         )
     }
@@ -973,7 +1048,9 @@ class BubbleView @JvmOverloads constructor(
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
         
-        // Summarize button has been removed
+        // Reset toolbar state
+        isToolbarVisible = true
+        toolbarContainer.translationY = 0f
         
         // Bounce the bubble
         bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), true)
