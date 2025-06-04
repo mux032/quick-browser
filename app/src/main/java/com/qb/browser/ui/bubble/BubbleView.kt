@@ -120,7 +120,7 @@ class BubbleView @JvmOverloads constructor(
     private var webViewModel: WebViewModel? = null
 
     // Summary/Summarization UI and State
-    private lateinit var fabSummarize: ImageView // Use ImageView as FAB for consistency
+    private lateinit var btnSummarize: MaterialButton // Changed from fabSummarize to btnSummarize
     private lateinit var summaryContainer: FrameLayout
     private lateinit var summaryContent: LinearLayout
     private lateinit var summaryProgress: ProgressBar
@@ -131,6 +131,9 @@ class BubbleView @JvmOverloads constructor(
     // Read Mode UI and State
     private var isReadMode = false
     private lateinit var btnReadMode: MaterialButton
+    
+    // Toolbar container
+    private lateinit var toolbarContainer: View
 
     companion object {
         private const val TAG = "BubbleView"
@@ -268,6 +271,10 @@ class BubbleView @JvmOverloads constructor(
         findViewById<View>(R.id.btn_close).setOnClickListener { closeBubbleWithAnimation() }
         findViewById<View>(R.id.btn_open_full).setOnClickListener { openFullWebView() }
         findViewById<View>(R.id.btn_read_mode).setOnClickListener { toggleReadMode() }
+        findViewById<View>(R.id.btn_summarize).setOnClickListener { toggleSummaryMode() }
+        
+        // Initialize toolbar container reference
+        toolbarContainer = findViewById(R.id.toolbar_container)
     }
     
     /**
@@ -1806,7 +1813,7 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Initialize summary view and FAB
+     * Initialize summary views
      */
     private fun initializeSummaryViews() {
         // Inflate or find summary container and content
@@ -1825,24 +1832,10 @@ class BubbleView @JvmOverloads constructor(
             it.visibility = View.GONE
             (summaryContainer as? ViewGroup)?.addView(it)
         }
-        // Add FAB for summarization toggle
-        fabSummarize = findViewById(R.id.fab_summarize) ?: ImageView(context).also {
-            it.id = R.id.fab_summarize
-            it.setImageResource(R.drawable.ic_summarize)
-            it.contentDescription = context.getString(R.string.summarize)
-            val params = LayoutParams(
-                resources.getDimensionPixelSize(R.dimen.fab_size),
-                resources.getDimensionPixelSize(R.dimen.fab_size)
-            )
-            params.marginEnd = resources.getDimensionPixelSize(R.dimen.fab_margin)
-            params.bottomMargin = resources.getDimensionPixelSize(R.dimen.fab_margin)
-            params.gravity = android.view.Gravity.END or android.view.Gravity.BOTTOM
-            (expandedContainer as? ViewGroup)?.addView(it, params)
-        }
-        fabSummarize.setOnClickListener {
-            Toast.makeText(context, "FAB clicked", Toast.LENGTH_SHORT).show() // Debug: confirm click
-            toggleSummaryMode()
-        }
+        
+        // Initialize the summarize button from the toolbar
+        btnSummarize = findViewById(R.id.btn_summarize)
+        btnReadMode = findViewById(R.id.btn_read_mode)
         
         // Set background color for summary container and content
         summaryContainer.setBackgroundColor(android.graphics.Color.WHITE)
@@ -1867,8 +1860,9 @@ class BubbleView @JvmOverloads constructor(
         isSummaryMode = false
         webViewContainer.visibility = View.VISIBLE
         summaryContainer.visibility = View.GONE
-        fabSummarize.setImageResource(R.drawable.ic_summarize)
-        fabSummarize.contentDescription = context.getString(R.string.summarize)
+        btnSummarize.setIconResource(R.drawable.ic_summarize)
+        btnSummarize.setIconTint(ContextCompat.getColorStateList(context, R.color.colorPrimary))
+        btnSummarize.contentDescription = context.getString(R.string.summarize)
         Toast.makeText(context, R.string.showing_web_view, Toast.LENGTH_SHORT).show()
     }
 
@@ -1885,8 +1879,9 @@ class BubbleView @JvmOverloads constructor(
         summaryContainer.visibility = View.VISIBLE
         summaryProgress.visibility = View.VISIBLE
         summaryContent.removeAllViews()
-        fabSummarize.setImageResource(R.drawable.ic_web_page)
-        fabSummarize.contentDescription = context.getString(R.string.show_web_view)
+        btnSummarize.setIconResource(R.drawable.ic_web_page)
+        btnSummarize.setIconTint(ContextCompat.getColorStateList(context, R.color.colorPrimary))
+        btnSummarize.contentDescription = context.getString(R.string.show_web_view)
         Toast.makeText(context, R.string.summarizing, Toast.LENGTH_SHORT).show()
         summarizeContent()
     }
