@@ -423,6 +423,18 @@ class BubbleView @JvmOverloads constructor(
         containerParams.height = newHeight
         expandedContainer.layoutParams = containerParams
         
+        // Update the WebView dimensions to match the container
+        val webViewParams = webViewContainer.layoutParams
+        webViewParams.width = newWidth
+        webViewParams.height = newHeight
+        webViewContainer.layoutParams = webViewParams
+        
+        // Also update content container to match
+        val contentParams = contentContainer.layoutParams
+        contentParams.width = newWidth
+        contentParams.height = newHeight
+        contentContainer.layoutParams = contentParams
+        
         // Store the new dimensions for future use
         storedWidth = newWidth
         storedHeight = newHeight
@@ -441,6 +453,8 @@ class BubbleView @JvmOverloads constructor(
         
         // Force layout update
         expandedContainer.requestLayout()
+        webViewContainer.requestLayout()
+        contentContainer.requestLayout()
     }
     
     /**
@@ -1091,8 +1105,22 @@ class BubbleView @JvmOverloads constructor(
         
         expandedContainer.layoutParams = layoutParams
         
+        // Update WebView dimensions to match the container
+        val webViewParams = webViewContainer.layoutParams
+        webViewParams.width = layoutParams.width
+        webViewParams.height = layoutParams.height
+        webViewContainer.layoutParams = webViewParams
+        
+        // Update content container dimensions to match
+        val contentParams = contentContainer.layoutParams
+        contentParams.width = layoutParams.width
+        contentParams.height = layoutParams.height
+        contentContainer.layoutParams = contentParams
+        
         // Force layout update
         expandedContainer.requestLayout()
+        webViewContainer.requestLayout()
+        contentContainer.requestLayout()
     }
     
     /**
