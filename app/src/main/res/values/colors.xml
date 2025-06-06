@@ -37,6 +37,7 @@
     <color name="tab_background">#EEEEEE</color>
     <color name="tab_text">#424242</color>
     <color name="selected_tab">#E8F0FE</color>
+    <color name="crimson_red">#DC143C</color>
     
     <!-- Launcher icon colors -->
     <color name="launcher_background">#FFFFFF</color>

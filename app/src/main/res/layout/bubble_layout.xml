@@ -231,7 +231,7 @@
                         android:layout_height="40dp"
                         android:contentDescription="@string/close_bubble"
                         app:icon="@drawable/ic_close"
-                        app:iconTint="@color/colorPrimary"
+                        app:iconTint="@color/crimson_red"
                         app:iconPadding="0dp"
                         android:insetLeft="0dp"
                         android:insetTop="0dp"
