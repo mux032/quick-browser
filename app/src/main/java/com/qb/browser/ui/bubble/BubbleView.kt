@@ -458,13 +458,9 @@ class BubbleView @JvmOverloads constructor(
         }
         
         // Calculate zoom level based on window width relative to screen width
-        // Start with 100% zoom at full width, reduce at a slower rate as window gets smaller
         val screenWidth = resources.displayMetrics.widthPixels
-        
-        // Use a square root function to make the zoom reduction more gradual
-        // This creates a curve where zoom reduces more slowly at first
         val widthRatio = newWidth.toFloat() / screenWidth
-        val calculatedZoomPercent = (Math.sqrt(widthRatio.toDouble()) * 100).toFloat().coerceIn(75f, 100f)
+        val calculatedZoomPercent = calculateSmoothZoomLevel(widthRatio)
         
         // Only update the zoom if it's significantly different from the current zoom
         // This prevents constant small adjustments that might disrupt the user experience
@@ -493,6 +489,34 @@ class BubbleView @JvmOverloads constructor(
         resizeHandleBottomRight.visibility = View.VISIBLE
     }
     
+    /**
+     * Calculate a smooth zoom level based on the width ratio of the bubble to screen
+     * 
+     * This function uses a sigmoid function to create an extremely smooth S-curve:
+     * - Provides a very natural, gradual transition between zoom levels
+     * - Creates a mathematically elegant curve with no sudden changes
+     * - Maintains higher zoom levels until the window gets quite small
+     * - Ensures zoom never goes below 75% even for very small windows
+     * 
+     * @param widthRatio The ratio of bubble width to screen width (0.0-1.0)
+     * @return The calculated zoom percentage (75-100)
+     */
+    private fun calculateSmoothZoomLevel(widthRatio: Float): Float {
+        // Sigmoid function parameters
+        val steepness = 10.0 // Controls how steep the S-curve is (higher = steeper transition)
+        val midpoint = 0.6 // The width ratio at which the sigmoid is centered (inflection point)
+        val minZoom = 75f // Minimum zoom level
+        val maxZoom = 100f // Maximum zoom level
+        val zoomRange = maxZoom - minZoom
+        
+        // Apply sigmoid function: f(x) = 1 / (1 + e^(-steepness * (x - midpoint)))
+        // This creates a smooth S-curve that transitions gradually between 0 and 1
+        val sigmoidValue = 1.0 / (1.0 + Math.exp(-steepness * (widthRatio - midpoint)))
+        
+        // Map the sigmoid output (0-1) to our zoom range (75-100)
+        return (minZoom + (sigmoidValue * zoomRange).toFloat()).coerceIn(minZoom, maxZoom)
+    }
+
     /**
      * Apply dynamic zoom level to the WebView content based on window size
      * 
@@ -1191,10 +1215,9 @@ class BubbleView @JvmOverloads constructor(
             currentZoomPercent
         } else {
             // Calculate initial zoom level based on window width relative to screen width
-            // Use the same square root function for more gradual zoom reduction
             val screenWidth = resources.displayMetrics.widthPixels
             val widthRatio = layoutParams.width.toFloat() / screenWidth
-            (Math.sqrt(widthRatio.toDouble()) * 100).toFloat().coerceIn(75f, 100f)
+            calculateSmoothZoomLevel(widthRatio)
         }
         
         // Apply the dynamic zoom level using JavaScript
