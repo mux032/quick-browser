@@ -458,9 +458,13 @@ class BubbleView @JvmOverloads constructor(
         }
         
         // Calculate zoom level based on window width relative to screen width
-        // Start with 100% zoom at full width, reduce proportionally as window gets smaller
+        // Start with 100% zoom at full width, reduce at a slower rate as window gets smaller
         val screenWidth = resources.displayMetrics.widthPixels
-        val calculatedZoomPercent = ((newWidth.toFloat() / screenWidth) * 100).coerceIn(75f, 100f)
+        
+        // Use a square root function to make the zoom reduction more gradual
+        // This creates a curve where zoom reduces more slowly at first
+        val widthRatio = newWidth.toFloat() / screenWidth
+        val calculatedZoomPercent = (Math.sqrt(widthRatio.toDouble()) * 100).toFloat().coerceIn(75f, 100f)
         
         // Only update the zoom if it's significantly different from the current zoom
         // This prevents constant small adjustments that might disrupt the user experience
@@ -1187,8 +1191,10 @@ class BubbleView @JvmOverloads constructor(
             currentZoomPercent
         } else {
             // Calculate initial zoom level based on window width relative to screen width
+            // Use the same square root function for more gradual zoom reduction
             val screenWidth = resources.displayMetrics.widthPixels
-            ((layoutParams.width.toFloat() / screenWidth) * 100).coerceIn(75f, 100f)
+            val widthRatio = layoutParams.width.toFloat() / screenWidth
+            (Math.sqrt(widthRatio.toDouble()) * 100).toFloat().coerceIn(75f, 100f)
         }
         
         // Apply the dynamic zoom level using JavaScript
