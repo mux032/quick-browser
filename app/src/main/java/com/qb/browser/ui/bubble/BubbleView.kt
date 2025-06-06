@@ -111,6 +111,9 @@ class BubbleView @JvmOverloads constructor(
     private var isActive = false
     private var isShowingAllBubbles = false
     
+    // Current zoom level (100% by default)
+    private var currentZoomPercent = 100f
+    
     // Services and utilities
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -451,6 +454,22 @@ class BubbleView @JvmOverloads constructor(
             }
         }
         
+        // Calculate zoom level based on window width relative to screen width
+        // Start with 100% zoom at full width, reduce proportionally as window gets smaller
+        val screenWidth = resources.displayMetrics.widthPixels
+        val calculatedZoomPercent = ((newWidth.toFloat() / screenWidth) * 100).coerceIn(75f, 100f)
+        
+        // Only update the zoom if it's significantly different from the current zoom
+        // This prevents constant small adjustments that might disrupt the user experience
+        val zoomPercent = if (Math.abs(calculatedZoomPercent - currentZoomPercent) > 2f) {
+            calculatedZoomPercent
+        } else {
+            currentZoomPercent
+        }
+        
+        // Apply the dynamic zoom level using JavaScript
+        applyDynamicZoom(zoomPercent)
+        
         // Force layout update
         expandedContainer.requestLayout()
         webViewContainer.requestLayout()
@@ -465,6 +484,47 @@ class BubbleView @JvmOverloads constructor(
         resizeHandleTopRight.visibility = View.VISIBLE
         resizeHandleBottomLeft.visibility = View.VISIBLE
         resizeHandleBottomRight.visibility = View.VISIBLE
+    }
+    
+    /**
+     * Apply dynamic zoom level to the WebView content based on window size
+     * 
+     * @param zoomPercent The zoom percentage to apply (75-100)
+     */
+    private fun applyDynamicZoom(zoomPercent: Float) {
+        // Store the current zoom level for persistence when bubble is collapsed/expanded
+        currentZoomPercent = zoomPercent
+        
+        // Convert percentage to decimal (e.g., 75% -> 0.75)
+        val zoomFactor = zoomPercent / 100f
+        
+        // Calculate the inverse width percentage to maintain content width
+        // For example, if zoom is 75%, width should be 133.33% (100/0.75)
+        val widthPercent = if (zoomFactor > 0) (100f / zoomFactor) else 100f
+        
+        // Apply zoom via JavaScript
+        webViewContainer.evaluateJavascript("""
+            (function() {
+                // Set viewport to control initial scale
+                var meta = document.querySelector('meta[name="viewport"]');
+                if (!meta) {
+                    meta = document.createElement('meta');
+                    meta.name = 'viewport';
+                    document.head.appendChild(meta);
+                }
+                meta.content = 'width=device-width, initial-scale=${zoomFactor}, maximum-scale=1.0, user-scalable=yes';
+                
+                // Apply multiple zoom techniques for better compatibility
+                document.body.style.zoom = "${zoomPercent}%";
+                document.body.style.transformOrigin = "0 0";
+                document.body.style.transform = "scale(${zoomFactor})";
+                document.body.style.width = "${widthPercent}%";
+                
+                return "Zoom applied: ${zoomPercent}%";
+            })()
+        """.trimIndent(), null)
+        
+        Log.d(TAG, "Applied dynamic zoom: $zoomPercent%")
     }
     
     /**
@@ -1117,6 +1177,20 @@ class BubbleView @JvmOverloads constructor(
         contentParams.height = layoutParams.height
         contentContainer.layoutParams = contentParams
         
+        // If we have a stored zoom level from previous resize operations, use it
+        // Otherwise, calculate based on window width
+        val zoomPercent = if (currentZoomPercent != 100f) {
+            // Use the previously stored zoom level
+            currentZoomPercent
+        } else {
+            // Calculate initial zoom level based on window width relative to screen width
+            val screenWidth = resources.displayMetrics.widthPixels
+            ((layoutParams.width.toFloat() / screenWidth) * 100).coerceIn(75f, 100f)
+        }
+        
+        // Apply the dynamic zoom level using JavaScript
+        applyDynamicZoom(zoomPercent)
+        
         // Force layout update
         expandedContainer.requestLayout()
         webViewContainer.requestLayout()
@@ -1159,9 +1233,16 @@ class BubbleView @JvmOverloads constructor(
                     
                     // Log the reload attempt
                     Log.d(TAG, "Reloaded URL in expanded bubble: $formattedUrl")
+                    
+                    // Apply the stored zoom level after a short delay to ensure the page has loaded
+                    postDelayed({
+                        applyDynamicZoom(currentZoomPercent)
+                    }, 500)
                 }
             } else {
                 // If the page is already loaded, make sure it's visible
+                // Also reapply the stored zoom level
+                applyDynamicZoom(currentZoomPercent)
                 webViewContainer.invalidate()
                 Log.d(TAG, "WebView already has content loaded: $currentUrl")
             }

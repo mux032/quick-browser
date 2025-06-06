@@ -31,9 +31,12 @@ class ScrollAwareWebViewClient(
                     // Delay summarization to prioritize user interaction
                     kotlinx.coroutines.delay(1000)
                     
-                    // JavaScript evaluation must be done on the main thread
-                    // We're still in the main coroutine scope here
-                    webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })()") { html ->
+                    // Get HTML content for summarization
+                    webView.evaluateJavascript("""
+                        (function() {
+                            return document.documentElement.outerHTML;
+                        })()
+                    """.trimIndent()) { html ->
                         if (html != null && html.length > 50) {
                             // Process the HTML on a background thread
                             coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
