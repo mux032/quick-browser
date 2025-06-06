@@ -226,66 +226,42 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_close"
-                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                        style="@style/Widget.QBrowser.Button.CircularIcon"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:contentDescription="@string/close_bubble"
                         app:icon="@drawable/ic_close"
                         app:iconTint="@color/crimson_red"
-                        app:iconPadding="0dp"
-                        android:insetLeft="0dp"
-                        android:insetTop="0dp"
-                        android:insetRight="0dp"
-                        android:insetBottom="0dp"
-                        android:padding="8dp"
                         android:layout_marginEnd="2dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_read_mode"
-                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                        style="@style/Widget.QBrowser.Button.CircularIcon"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:contentDescription="@string/read_mode"
                         app:icon="@drawable/ic_read_mode"
                         app:iconTint="@color/colorPrimary"
-                        app:iconPadding="0dp"
-                        android:insetLeft="0dp"
-                        android:insetTop="0dp"
-                        android:insetRight="0dp"
-                        android:insetBottom="0dp"
-                        android:padding="8dp"
                         android:layout_marginEnd="2dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_summarize"
-                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                        style="@style/Widget.QBrowser.Button.CircularIcon"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:contentDescription="@string/summarize"
                         app:icon="@drawable/ic_summarize"
                         app:iconTint="@color/colorPrimary"
-                        app:iconPadding="0dp"
-                        android:insetLeft="0dp"
-                        android:insetTop="0dp"
-                        android:insetRight="0dp"
-                        android:insetBottom="0dp"
-                        android:padding="8dp"
                         android:layout_marginEnd="2dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_open_full"
-                        style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                        style="@style/Widget.QBrowser.Button.CircularIcon"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:contentDescription="@string/open_in_full_view"
                         app:icon="@drawable/ic_share"
-                        app:iconTint="@color/colorPrimary"
-                        app:iconPadding="0dp"
-                        android:insetLeft="0dp"
-                        android:insetTop="0dp"
-                        android:insetRight="0dp"
-                        android:insetBottom="0dp"
-                        android:padding="8dp" />
+                        app:iconTint="@color/colorPrimary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
