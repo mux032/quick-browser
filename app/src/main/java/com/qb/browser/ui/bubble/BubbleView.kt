@@ -279,6 +279,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Initialize toolbar container reference
         toolbarContainer = findViewById(R.id.toolbar_container)
+        
+        // Set up toolbar drag functionality
+        setupToolbarDrag()
     }
     
     /**
@@ -1711,8 +1714,9 @@ class BubbleView @JvmOverloads constructor(
         // Check if we've moved enough to consider it a drag
         if (!isDragging && hypot(dx, dy) > touchSlop) {
             isDragging = true
-            // Collapse if expanded when starting to drag
-            if (isBubbleExpanded) {
+            // Only collapse if expanded when starting to drag from the bubble itself
+            // (not from the toolbar, which has its own drag handler)
+            if (isBubbleExpanded && event.y < expandedContainer.top) {
                 toggleBubbleExpanded()
             }
         }
@@ -1733,6 +1737,59 @@ class BubbleView @JvmOverloads constructor(
             performClick()
         } else {
             windowManager.updateViewLayout(this, params)
+        }
+    }
+    
+    /**
+     * Set up toolbar drag functionality to allow dragging the expanded bubble
+     * when the toolbar is touched and dragged
+     */
+    private fun setupToolbarDrag() {
+        toolbarContainer.setOnTouchListener { _, event ->
+            if (layoutParams !is WindowManager.LayoutParams || !isBubbleExpanded) return@setOnTouchListener false
+            
+            val params = layoutParams as WindowManager.LayoutParams
+            val screenWidth = resources.displayMetrics.widthPixels
+            val screenHeight = resources.displayMetrics.heightPixels
+            
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = params.x.toFloat()
+                    initialY = params.y.toFloat()
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    isDragging = false
+                    true
+                }
+                
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.rawX - initialTouchX
+                    val dy = event.rawY - initialTouchY
+                    
+                    // Check if we've moved enough to consider it a drag
+                    if (!isDragging && hypot(dx, dy) > touchSlop) {
+                        isDragging = true
+                    }
+                    
+                    if (isDragging) {
+                        // Keep bubble within screen bounds
+                        params.x = max(0, min(screenWidth - width, (initialX + dx).toInt()))
+                        params.y = max(0, min(screenHeight - height, (initialY + dy).toInt()))
+                        windowManager.updateViewLayout(this, params)
+                    }
+                    true
+                }
+                
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (isDragging) {
+                        windowManager.updateViewLayout(this, params)
+                    }
+                    isDragging = false
+                    true
+                }
+                
+                else -> false
+            }
         }
     }
     
