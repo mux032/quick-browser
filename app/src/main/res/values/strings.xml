@@ -19,6 +19,9 @@
     <string name="reader_mode_loaded">Reader mode loaded</string>
     <string name="failed_to_load_reader_mode">Failed to load reader mode</string>
     <string name="resize_handle">Resize handle</string>
+    <string name="site_icon">Site icon</string>
+    <string name="minimize_bubble">Minimize bubble</string>
+    <string name="enter_url_hint">Enter URL or search...</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

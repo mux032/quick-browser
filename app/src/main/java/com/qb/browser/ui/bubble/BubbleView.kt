@@ -14,6 +14,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewConfiguration
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -22,6 +24,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.EditText
 import android.widget.Toast
 import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.core.content.ContextCompat
@@ -79,6 +82,11 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var rootView: View
     private lateinit var bubbleIcon: ImageView
     private lateinit var progressBar: ProgressBar
+    private lateinit var bubbleContainer: View
+    private lateinit var urlBarContainer: View
+    private lateinit var urlBarIcon: ImageView
+    private lateinit var urlBarText: EditText
+    private lateinit var btnMinimize: MaterialButton
     private lateinit var expandedContainer: View
     private lateinit var contentContainer: FrameLayout
     private lateinit var webViewContainer: WebView
@@ -179,6 +187,11 @@ class BubbleView @JvmOverloads constructor(
         // Find and initialize view references
         bubbleIcon = findViewById(R.id.bubble_icon)
         progressBar = findViewById(R.id.progress_circular)
+        bubbleContainer = findViewById(R.id.bubble_container)
+        urlBarContainer = findViewById(R.id.url_bar_container)
+        urlBarIcon = findViewById(R.id.url_bar_icon)
+        urlBarText = findViewById(R.id.url_bar_text)
+        btnMinimize = findViewById(R.id.btn_minimize)
         expandedContainer = findViewById(R.id.expanded_container)
         contentContainer = findViewById(R.id.content_container)
         webViewContainer = findViewById(R.id.web_view)
@@ -264,6 +277,10 @@ class BubbleView @JvmOverloads constructor(
                     webPage.favicon?.let { favicon ->
                         Log.d(TAG, "Updating bubble icon with favicon for URL: $url")
                         updateBubbleIcon(favicon)
+                        // Also update URL bar icon if bubble is expanded
+                        if (isBubbleExpanded) {
+                            urlBarIcon.setImageBitmap(favicon)
+                        }
                     }
                 }
             }
@@ -287,6 +304,15 @@ class BubbleView @JvmOverloads constructor(
         findViewById<View>(R.id.btn_summarize).setOnClickListener { toggleSummaryMode() }
         findViewById<View>(R.id.btn_settings).setOnClickListener { toggleSettingsPanel() }
         
+        // URL bar minimize button listener
+        btnMinimize.setOnClickListener { 
+            toggleBubbleExpanded()
+            notifyBubbleActivated()
+        }
+        
+        // URL bar input handling
+        setupUrlBarInput()
+        
         // Initialize toolbar container reference
         toolbarContainer = findViewById(R.id.toolbar_container)
         
@@ -295,6 +321,98 @@ class BubbleView @JvmOverloads constructor(
         
         // Set up settings panel controls
         setupSettingsControls()
+    }
+    
+    /**
+     * Set up URL bar input handling
+     */
+    private fun setupUrlBarInput() {
+        // Handle URL input submission
+        urlBarText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_GO) {
+                val inputUrl = urlBarText.text.toString().trim()
+                if (inputUrl.isNotEmpty()) {
+                    loadNewUrl(inputUrl)
+                    hideKeyboard()
+                }
+                true
+            } else {
+                false
+            }
+        }
+        
+        // Handle focus changes to show/hide keyboard appropriately
+        urlBarText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                showKeyboard()
+            } else {
+                hideKeyboard()
+            }
+        }
+        
+        // Handle click to show keyboard and select all text
+        urlBarText.setOnClickListener {
+            urlBarText.requestFocus()
+            urlBarText.selectAll()
+            showKeyboard()
+        }
+    }
+    
+    /**
+     * Load a new URL in the WebView
+     */
+    private fun loadNewUrl(inputUrl: String) {
+        val formattedUrl = formatUrl(inputUrl)
+        url = formattedUrl
+        webViewContainer.loadUrl(formattedUrl)
+        updateUrlBar()
+    }
+    
+    /**
+     * Show the soft keyboard
+     */
+    private fun showKeyboard() {
+        urlBarText.post {
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(urlBarText, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+    
+    /**
+     * Hide the soft keyboard
+     */
+    private fun hideKeyboard() {
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(urlBarText.windowToken, 0)
+        urlBarText.clearFocus()
+    }
+    
+    /**
+     * Enable window focus to allow keyboard input
+     */
+    private fun enableWindowFocus() {
+        try {
+            val params = layoutParams as? WindowManager.LayoutParams ?: return
+            params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            windowManager.updateViewLayout(this, params)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error enabling window focus", e)
+        }
+    }
+    
+    /**
+     * Disable window focus to prevent accidental keyboard
+     */
+    private fun disableWindowFocus() {
+        try {
+            val params = layoutParams as? WindowManager.LayoutParams ?: return
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            windowManager.updateViewLayout(this, params)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error disabling window focus", e)
+        }
     }
     
     /**
@@ -911,6 +1029,10 @@ class BubbleView @JvmOverloads constructor(
             context,
             { newUrl ->
                 url = newUrl
+                // Update URL bar if bubble is expanded
+                if (isBubbleExpanded) {
+                    updateUrlBar()
+                }
             },
             { htmlContent ->
                 // HTML content received, but we're not using it for summarization anymore
@@ -1100,6 +1222,11 @@ class BubbleView @JvmOverloads constructor(
                     // Update the current URL
                     this@BubbleView.url = url
                     
+                    // Update URL bar if bubble is expanded
+                    if (isBubbleExpanded) {
+                        updateUrlBar()
+                    }
+                    
                     // We don't need to call loadUrl here, as returning false will let the WebView handle it
                     // This ensures proper handling of all navigation states, history, etc.
                     
@@ -1258,6 +1385,16 @@ class BubbleView @JvmOverloads constructor(
      * Expand the bubble to show web content
      */
     private fun expandBubble() {
+        // Hide bubble container and show URL bar
+        bubbleContainer.visibility = View.GONE
+        urlBarContainer.visibility = View.VISIBLE
+        
+        // Update URL bar with current URL
+        updateUrlBar()
+        
+        // Enable input focus for keyboard
+        enableWindowFocus()
+        
         // Show expanded container with animation
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
@@ -1265,9 +1402,6 @@ class BubbleView @JvmOverloads constructor(
         // Reset toolbar state
         isToolbarVisible = true
         toolbarContainer.translationY = 0f
-        
-        // Bounce the bubble
-        bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), true)
         
         // Configure container visibility
         webViewContainer.visibility = View.VISIBLE
@@ -1281,6 +1415,22 @@ class BubbleView @JvmOverloads constructor(
         
         // Make WebView visible and ensure content is loaded
         loadContentInExpandedWebView()
+    }
+    
+    /**
+     * Update the URL bar with current URL and favicon
+     */
+    private fun updateUrlBar() {
+        // Set the URL text
+        urlBarText.setText(url)
+        
+        // Update the favicon in the URL bar
+        webViewModel?.webPages?.value?.get(url)?.favicon?.let { favicon ->
+            urlBarIcon.setImageBitmap(favicon)
+        } ?: run {
+            // Use default globe icon if no favicon available
+            urlBarIcon.setImageResource(R.drawable.ic_globe)
+        }
     }
     
     /**
@@ -1402,6 +1552,16 @@ class BubbleView @JvmOverloads constructor(
      * Collapse the bubble to show only the icon
      */
     private fun collapseBubble() {
+        // Show bubble container and hide URL bar
+        bubbleContainer.visibility = View.VISIBLE
+        urlBarContainer.visibility = View.GONE
+        
+        // Disable input focus to prevent accidental keyboard
+        disableWindowFocus()
+        
+        // Hide keyboard if visible
+        hideKeyboard()
+        
         // Hide expanded container with animation
         bubbleAnimator.animateCollapse(expandedContainer)
         
@@ -1414,7 +1574,7 @@ class BubbleView @JvmOverloads constructor(
         hideResizeHandles()
         
         // Slight shrink animation on collapse
-        bubbleAnimator.animateBounce(rootView.findViewById(R.id.bubble_container), false)
+        bubbleAnimator.animateBounce(bubbleContainer, false)
         
         // Keep WebView loaded but invisible
         webViewContainer.visibility = View.INVISIBLE

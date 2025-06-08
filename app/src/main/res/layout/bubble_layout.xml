@@ -54,12 +54,87 @@
             </androidx.cardview.widget.CardView>
         </FrameLayout>
 
+        <!-- URL Bar - shown when bubble is expanded -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/url_bar_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="2dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="3dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeWidth="0.5dp"
+            app:strokeColor="#E0E0E0"
+            android:visibility="gone">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="8dp">
+                
+                <!-- Site icon -->
+                <ImageView
+                    android:id="@+id/url_bar_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/ic_globe"
+                    android:contentDescription="@string/site_icon" />
+                
+                <!-- URL text -->
+                <EditText
+                    android:id="@+id/url_bar_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="13sp"
+                    android:textColor="#000000"
+                    android:textColorHint="?android:attr/textColorSecondary"
+                    android:singleLine="true"
+                    android:ellipsize="middle"
+                    android:background="@android:color/transparent"
+                    android:hint="@string/enter_url_hint"
+                    android:inputType="textUri"
+                    android:imeOptions="actionGo"
+                    android:selectAllOnFocus="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:clickable="true"
+                    android:minHeight="0dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:text="https://example.com" />
+                
+                <!-- Minimize button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_minimize"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginStart="6dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    app:icon="@drawable/ic_minimize"
+                    app:iconSize="14dp"
+                    app:iconTint="?android:attr/textColorSecondary"
+                    android:contentDescription="@string/minimize_bubble" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Expanded Bubble Content -->
         <androidx.cardview.widget.CardView
             android:id="@+id/expanded_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="8dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
             android:visibility="gone">
