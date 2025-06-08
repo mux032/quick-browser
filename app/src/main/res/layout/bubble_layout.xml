@@ -202,6 +202,71 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Settings panel that appears above the toolbar -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/settings_panel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="80dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="@android:color/white"
+                app:strokeWidth="0.5dp"
+                app:strokeColor="#E0E0E0"
+                android:visibility="gone">
+                
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    
+                    <!-- Ad blocking toggle -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+                        
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/block_ads"
+                            android:textColor="#000000" />
+                            
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/ad_block_switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp" />
+                    </LinearLayout>
+                    
+                    <!-- JavaScript toggle -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/enable_javascript"
+                            android:textColor="#000000" />
+                            
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/javascript_switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            
             <!-- Pill-shaped toolbar at the bottom -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/toolbar_container"
@@ -261,6 +326,16 @@
                         android:layout_height="40dp"
                         android:contentDescription="@string/open_in_full_view"
                         app:icon="@drawable/ic_share"
+                        app:iconTint="@color/colorPrimary"
+                        android:layout_marginEnd="2dp" />
+                        
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_settings"
+                        style="@style/Widget.QBrowser.Button.CircularIcon"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:contentDescription="@string/settings"
+                        app:icon="@drawable/ic_settings"
                         app:iconTint="@color/colorPrimary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

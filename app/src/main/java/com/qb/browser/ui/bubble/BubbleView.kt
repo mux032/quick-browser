@@ -5,6 +5,7 @@ import android.view.ContextThemeWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
@@ -22,6 +23,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.ViewModelProvider
@@ -138,6 +140,10 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var toolbarContainer: View
     private var isToolbarVisible = true
     private var lastScrollY = 0
+    
+    // Settings panel
+    private lateinit var settingsPanel: View
+    private var isSettingsPanelVisible = false
 
     companion object {
         private const val TAG = "BubbleView"
@@ -191,6 +197,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Ensure summary views and FAB are initialized after layout is ready
         initializeSummaryViews()
+        
+        // Initialize settings panel
+        settingsPanel = findViewById(R.id.settings_panel)
         
         // Set up resize handle touch listeners
         setupResizeHandles()
@@ -276,12 +285,16 @@ class BubbleView @JvmOverloads constructor(
         findViewById<View>(R.id.btn_open_full).setOnClickListener { openFullWebView() }
         findViewById<View>(R.id.btn_read_mode).setOnClickListener { toggleReadMode() }
         findViewById<View>(R.id.btn_summarize).setOnClickListener { toggleSummaryMode() }
+        findViewById<View>(R.id.btn_settings).setOnClickListener { toggleSettingsPanel() }
         
         // Initialize toolbar container reference
         toolbarContainer = findViewById(R.id.toolbar_container)
         
         // Set up toolbar drag functionality
         setupToolbarDrag()
+        
+        // Set up settings panel controls
+        setupSettingsControls()
     }
     
     /**
@@ -648,6 +661,103 @@ class BubbleView @JvmOverloads constructor(
             .withLayer() // Hardware acceleration for smoother animation
             .start()
     }
+    
+    /**
+     * Toggle settings panel visibility
+     */
+    private fun toggleSettingsPanel() {
+        if (isSettingsPanelVisible) {
+            hideSettingsPanel()
+        } else {
+            showSettingsPanel()
+        }
+    }
+    
+    /**
+     * Show settings panel with animation
+     */
+    private fun showSettingsPanel() {
+        if (isSettingsPanelVisible) return // Already visible
+        
+        // Update settings values to current state
+        updateSettingsValues()
+        
+        // Show panel with animation
+        isSettingsPanelVisible = true
+        settingsPanel.visibility = View.VISIBLE
+        settingsPanel.alpha = 0f
+        settingsPanel.scaleX = 0.8f
+        settingsPanel.scaleY = 0.8f
+        
+        settingsPanel.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(200)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .withLayer()
+            .start()
+    }
+    
+    /**
+     * Hide settings panel with animation
+     */
+    private fun hideSettingsPanel() {
+        if (!isSettingsPanelVisible) return // Already hidden
+        
+        isSettingsPanelVisible = false
+        
+        settingsPanel.animate()
+            .alpha(0f)
+            .scaleX(0.8f)
+            .scaleY(0.8f)
+            .setDuration(150)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withLayer()
+            .withEndAction {
+                settingsPanel.visibility = View.GONE
+            }
+            .start()
+    }
+    
+    /**
+     * Set up settings panel controls
+     */
+    private fun setupSettingsControls() {
+        // Set up ad blocking switch
+        val adBlockSwitch = findViewById<SwitchMaterial>(R.id.ad_block_switch)
+        adBlockSwitch.isChecked = settingsManager.isAdBlockEnabled()
+        adBlockSwitch.setOnCheckedChangeListener { _, isChecked ->
+            settingsManager.setAdBlockEnabled(isChecked)
+            // Reload page to apply ad blocking changes
+            if (webViewContainer.visibility == View.VISIBLE) {
+                webViewContainer.reload()
+            }
+        }
+        
+        // Set up JavaScript switch
+        val javascriptSwitch = findViewById<SwitchMaterial>(R.id.javascript_switch)
+        javascriptSwitch.isChecked = settingsManager.isJavaScriptEnabled()
+        javascriptSwitch.setOnCheckedChangeListener { _, isChecked ->
+            settingsManager.setJavaScriptEnabled(isChecked)
+            webViewContainer.settings.javaScriptEnabled = isChecked
+            // Reload page to apply JavaScript changes
+            if (webViewContainer.visibility == View.VISIBLE) {
+                webViewContainer.reload()
+            }
+        }
+    }
+    
+    /**
+     * Update settings values to reflect current state
+     */
+    private fun updateSettingsValues() {
+        // Update switches
+        findViewById<SwitchMaterial>(R.id.ad_block_switch).isChecked = settingsManager.isAdBlockEnabled()
+        findViewById<SwitchMaterial>(R.id.javascript_switch).isChecked = settingsManager.isJavaScriptEnabled()
+    }
+    
+
 
     /**
      * Configure the WebView with appropriate settings and clients
@@ -1295,7 +1405,10 @@ class BubbleView @JvmOverloads constructor(
         // Hide expanded container with animation
         bubbleAnimator.animateCollapse(expandedContainer)
         
-        // Summarize button has been removed
+        // Hide settings panel if visible
+        if (isSettingsPanelVisible) {
+            hideSettingsPanel()
+        }
         
         // Hide resize handles
         hideResizeHandles()
@@ -1684,6 +1797,7 @@ class BubbleView @JvmOverloads constructor(
      * - Moving the bubble during drag
      * - Collapsing the bubble if expanded when dragging starts
      * - Saving the bubble position when dragging ends
+     * - Hiding settings panel when clicking outside of it
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (layoutParams !is WindowManager.LayoutParams) return super.onTouchEvent(event)
@@ -1691,6 +1805,16 @@ class BubbleView @JvmOverloads constructor(
         // If we're currently resizing, let the resize handle touch listener handle it
         if (isResizing) {
             return true
+        }
+        
+        // Hide settings panel if visible and user clicks outside of it
+        if (isSettingsPanelVisible && event.action == MotionEvent.ACTION_DOWN) {
+            // Check if the touch is outside the settings panel
+            val settingsPanelRect = Rect()
+            settingsPanel.getGlobalVisibleRect(settingsPanelRect)
+            if (!settingsPanelRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
+                hideSettingsPanel()
+            }
         }
         
         val params = layoutParams as WindowManager.LayoutParams

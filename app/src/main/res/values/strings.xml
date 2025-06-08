@@ -51,9 +51,12 @@
     <!-- Settings Screen -->
     <string name="browser_settings">Browser Settings</string>
     <string name="enable_javascript">Enable JavaScript</string>
+    <string name="block_ads">Block ads</string>
     <string name="block_ads_and_trackers">Block ads and trackers</string>
     <string name="appearance">Appearance</string>
     <string name="night_mode">Night Mode</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="zoom">Zoom</string>
     <string name="theme_color">Theme Color</string>
     <string name="choose_theme_color">Choose Theme Color</string>
     <string name="theme_color_changed">Theme color changed to %1$s</string>
