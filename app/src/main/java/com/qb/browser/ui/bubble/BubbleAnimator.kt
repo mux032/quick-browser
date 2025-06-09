@@ -69,6 +69,130 @@ class BubbleAnimator(private val context: Context) {
     }
     
     /**
+     * Animate collapsing expanded container to bubble with smooth transition
+     * This creates a gradual transition similar to expansion but in reverse
+     */
+    fun animateCollapseTobubble(
+        expandedContainer: View,
+        urlBarContainer: View,
+        bubbleContainer: View,
+        onEnd: (() -> Unit)? = null
+    ) {
+        // Phase 1: Start collapsing the expanded container
+        val collapseAnimSet = AnimatorSet()
+        val alphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
+        val scaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 1f, 0.3f)
+        val scaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 1f, 0.3f)
+        
+        collapseAnimSet.playTogether(alphaAnim, scaleXAnim, scaleYAnim)
+        collapseAnimSet.duration = ANIMATION_DURATION_MEDIUM
+        collapseAnimSet.interpolator = AccelerateInterpolator()
+        
+        collapseAnimSet.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationStart(animation: Animator) {
+                // Hide URL bar immediately when animation starts to prevent flash
+                urlBarContainer.visibility = View.GONE
+            }
+            
+            override fun onAnimationEnd(animation: Animator) {
+                // Hide expanded container completely
+                expandedContainer.visibility = View.GONE
+                
+                // Reset expanded container properties for next time
+                expandedContainer.scaleX = 1f
+                expandedContainer.scaleY = 1f
+                expandedContainer.alpha = 1f
+                
+                // Phase 2: Show bubble container with scale-up animation
+                bubbleContainer.alpha = 0f
+                bubbleContainer.scaleX = 0.3f
+                bubbleContainer.scaleY = 0.3f
+                bubbleContainer.visibility = View.VISIBLE
+                
+                // Animate bubble appearing with smooth scale-up effect
+                val bubbleAppearAnim = AnimatorSet()
+                val bubbleAlphaAnim = ObjectAnimator.ofFloat(bubbleContainer, "alpha", 0f, 1f)
+                val bubbleScaleXAnim = ObjectAnimator.ofFloat(bubbleContainer, "scaleX", 0.3f, 1f)
+                val bubbleScaleYAnim = ObjectAnimator.ofFloat(bubbleContainer, "scaleY", 0.3f, 1f)
+                
+                bubbleAppearAnim.playTogether(bubbleAlphaAnim, bubbleScaleXAnim, bubbleScaleYAnim)
+                bubbleAppearAnim.duration = ANIMATION_DURATION_MEDIUM
+                bubbleAppearAnim.interpolator = OvershootInterpolator(1.2f)
+                
+                bubbleAppearAnim.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        onEnd?.invoke()
+                    }
+                })
+                
+                bubbleAppearAnim.start()
+            }
+        })
+        
+        collapseAnimSet.start()
+    }
+    
+    /**
+     * Animate expanding from bubble to expanded container with smooth transition
+     * This creates a gradual transition similar to collapse but in reverse
+     */
+    fun animateExpandFromBubble(
+        bubbleContainer: View,
+        urlBarContainer: View,
+        expandedContainer: View,
+        onEnd: (() -> Unit)? = null
+    ) {
+        // Phase 1: Start shrinking the bubble container
+        val bubbleCollapseAnim = AnimatorSet()
+        val bubbleAlphaAnim = ObjectAnimator.ofFloat(bubbleContainer, "alpha", 1f, 0f)
+        val bubbleScaleXAnim = ObjectAnimator.ofFloat(bubbleContainer, "scaleX", 1f, 0.3f)
+        val bubbleScaleYAnim = ObjectAnimator.ofFloat(bubbleContainer, "scaleY", 1f, 0.3f)
+        
+        bubbleCollapseAnim.playTogether(bubbleAlphaAnim, bubbleScaleXAnim, bubbleScaleYAnim)
+        bubbleCollapseAnim.duration = ANIMATION_DURATION_MEDIUM
+        bubbleCollapseAnim.interpolator = AccelerateInterpolator()
+        
+        bubbleCollapseAnim.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                // Hide bubble container and show URL bar
+                bubbleContainer.visibility = View.GONE
+                urlBarContainer.visibility = View.VISIBLE
+                
+                // Reset bubble container properties for next time
+                bubbleContainer.scaleX = 1f
+                bubbleContainer.scaleY = 1f
+                bubbleContainer.alpha = 1f
+                
+                // Phase 2: Show expanded container with scale-up animation
+                expandedContainer.alpha = 0f
+                expandedContainer.scaleX = 0.3f
+                expandedContainer.scaleY = 0.3f
+                expandedContainer.visibility = View.VISIBLE
+                
+                // Animate expanded container appearing with smooth scale-up effect
+                val expandAnimSet = AnimatorSet()
+                val expandAlphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 0f, 1f)
+                val expandScaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 0.3f, 1f)
+                val expandScaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 0.3f, 1f)
+                
+                expandAnimSet.playTogether(expandAlphaAnim, expandScaleXAnim, expandScaleYAnim)
+                expandAnimSet.duration = ANIMATION_DURATION_MEDIUM
+                expandAnimSet.interpolator = OvershootInterpolator(1.1f)
+                
+                expandAnimSet.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        onEnd?.invoke()
+                    }
+                })
+                
+                expandAnimSet.start()
+            }
+        })
+        
+        bubbleCollapseAnim.start()
+    }
+    
+    /**
      * Animate bubble appearing with a scale up effect
      */
     fun animateAppear(view: View, onEnd: (() -> Unit)? = null) {

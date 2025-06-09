@@ -1384,22 +1384,11 @@ class BubbleView @JvmOverloads constructor(
      * Expand the bubble to show web content
      */
     private fun expandBubble() {
-        // Hide bubble container and show URL bar
-        bubbleContainer.visibility = View.GONE
-        urlBarContainer.visibility = View.VISIBLE
-        
         // Update URL bar with current URL
         updateUrlBar()
         
         // Enable input focus for keyboard
         enableWindowFocus()
-        
-        // Show expanded container with animation
-        expandedContainer.visibility = View.VISIBLE
-        bubbleAnimator.animateExpand(expandedContainer)
-        
-        // Show resize handles when expanded container is visible
-        resizeHandlesContainer.visibility = View.VISIBLE
         
         // Reset toolbar state
         isToolbarVisible = true
@@ -1412,11 +1401,20 @@ class BubbleView @JvmOverloads constructor(
         // Set the dimensions for the expanded container
         resizeExpandedContainer()
         
-        // Show resize handles
-        showResizeHandles()
-        
-        // Make WebView visible and ensure content is loaded
-        loadContentInExpandedWebView()
+        // Start the expand animation with proper sequencing
+        bubbleAnimator.animateExpandFromBubble(
+            bubbleContainer = bubbleContainer,
+            urlBarContainer = urlBarContainer,
+            expandedContainer = expandedContainer,
+            onEnd = {
+                // Show resize handles after expansion is complete
+                showResizeHandles()
+                resizeHandlesContainer.visibility = View.VISIBLE
+                
+                // Make WebView visible and ensure content is loaded
+                loadContentInExpandedWebView()
+            }
+        )
     }
     
     /**
@@ -1554,36 +1552,35 @@ class BubbleView @JvmOverloads constructor(
      * Collapse the bubble to show only the icon
      */
     private fun collapseBubble() {
-        // Show bubble container and hide URL bar
-        bubbleContainer.visibility = View.VISIBLE
-        urlBarContainer.visibility = View.GONE
-        
         // Disable input focus to prevent accidental keyboard
         disableWindowFocus()
         
         // Hide keyboard if visible
         hideKeyboard()
         
-        // Hide expanded container with animation
-        bubbleAnimator.animateCollapse(expandedContainer)
-        
         // Hide settings panel if visible
         if (isSettingsPanelVisible) {
             hideSettingsPanel()
         }
         
-        // Hide resize handles
+        // Hide resize handles immediately
         hideResizeHandles()
         
-        // Slight shrink animation on collapse
-        bubbleAnimator.animateBounce(bubbleContainer, false)
-        
-        // Keep WebView loaded but invisible
+        // Keep WebView loaded but make it invisible immediately to prevent flash
         webViewContainer.visibility = View.INVISIBLE
         webViewContainer.alpha = 0f
         
-        // Don't destroy WebView content - just hide it
-        // This ensures the content stays loaded in the background
+        // Start the collapse animation with proper sequencing
+        bubbleAnimator.animateCollapseTobubble(
+            expandedContainer = expandedContainer,
+            urlBarContainer = urlBarContainer,
+            bubbleContainer = bubbleContainer,
+            onEnd = {
+                // Final cleanup after animation completes
+                // Don't destroy WebView content - just hide it
+                // This ensures the content stays loaded in the background
+            }
+        )
     }
 
     /**
