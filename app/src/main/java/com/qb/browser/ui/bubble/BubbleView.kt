@@ -92,6 +92,7 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var webViewContainer: WebView
     
     // Resize handles
+    private lateinit var resizeHandlesContainer: FrameLayout
     private lateinit var resizeHandleTopLeft: ImageView
     private lateinit var resizeHandleTopRight: ImageView
     private lateinit var resizeHandleBottomLeft: ImageView
@@ -197,6 +198,7 @@ class BubbleView @JvmOverloads constructor(
         webViewContainer = findViewById(R.id.web_view)
         
         // Initialize resize handles
+        resizeHandlesContainer = findViewById(R.id.resize_handles_container)
         resizeHandleTopLeft = findViewById(R.id.resize_handle_top_left)
         resizeHandleTopRight = findViewById(R.id.resize_handle_top_right)
         resizeHandleBottomLeft = findViewById(R.id.resize_handle_bottom_left)
@@ -693,10 +695,7 @@ class BubbleView @JvmOverloads constructor(
      * Hide resize handles when bubble is collapsed
      */
     private fun hideResizeHandles() {
-        resizeHandleTopLeft.visibility = View.GONE
-        resizeHandleTopRight.visibility = View.GONE
-        resizeHandleBottomLeft.visibility = View.GONE
-        resizeHandleBottomRight.visibility = View.GONE
+        resizeHandlesContainer.visibility = View.GONE
     }
     
     /**
@@ -1398,6 +1397,9 @@ class BubbleView @JvmOverloads constructor(
         // Show expanded container with animation
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
+        
+        // Show resize handles when expanded container is visible
+        resizeHandlesContainer.visibility = View.VISIBLE
         
         // Reset toolbar state
         isToolbarVisible = true
@@ -2303,6 +2305,10 @@ class BubbleView @JvmOverloads constructor(
         isActive = true
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
+        
+        // Show resize handles when expanded container is visible
+        resizeHandlesContainer.visibility = View.VISIBLE
+        
         // Show the regular web view (not the summary view)
         webViewContainer.visibility = View.VISIBLE
         loadUrlInWebView()
@@ -2314,6 +2320,9 @@ class BubbleView @JvmOverloads constructor(
     fun setInactive() {
         isActive = false
         expandedContainer.visibility = View.GONE
+        
+        // Hide resize handles when expanded container is hidden
+        resizeHandlesContainer.visibility = View.GONE
     }
 
     /**
