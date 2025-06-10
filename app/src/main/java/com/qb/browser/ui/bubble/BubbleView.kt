@@ -1586,33 +1586,50 @@ class BubbleView @JvmOverloads constructor(
     /**
      * Close the bubble with animation
      * 
-     * If the bubble is expanded, it will first collapse and then disappear.
-     * Otherwise, it will disappear directly.
+     * Directly animates the bubble disappearing, regardless of its current state.
      */
     private fun closeBubbleWithAnimation() {
+        // Hide resize handles immediately to prevent them from showing during animation
         if (isBubbleExpanded) {
-            // First collapse if expanded, then disappear
-            bubbleAnimator.animateCollapse(expandedContainer, onEnd = {
-                animateBubbleDisappearance()
-            })
-        } else {
-            // Animate bubble disappearance directly
-            animateBubbleDisappearance()
+            hideResizeHandles()
         }
+        
+        // Hide settings panel if visible
+        if (isSettingsPanelVisible) {
+            hideSettingsPanel()
+        }
+        
+        // Hide WebView immediately to prevent flash during animation
+        if (isBubbleExpanded) {
+            webViewContainer.visibility = View.INVISIBLE
+            webViewContainer.alpha = 0f
+        }
+        
+        // Animate the entire bubble view disappearing directly
+        animateBubbleDisappearance()
     }
     
     /**
      * Animate the bubble disappearing and notify listeners
      */
     private fun animateBubbleDisappearance() {
-        // First hide the bubble icon to prevent flicker
-        val bubbleContainer = findViewById<View>(R.id.bubble_container)
-        bubbleContainer.visibility = View.INVISIBLE
-        
-        // Then animate the entire view disappearing
-        bubbleAnimator.animateDisappear(this, onEnd = {
-            onCloseListener?.invoke()
-        })
+        if (isBubbleExpanded) {
+            // For expanded bubbles, animate the expanded UI elements scaling down gracefully
+            bubbleAnimator.animateExpandedBubbleClose(
+                urlBarContainer = urlBarContainer,
+                expandedContainer = expandedContainer,
+                bubbleContainer = bubbleContainer,
+                onEnd = {
+                    onCloseListener?.invoke()
+                }
+            )
+        } else {
+            // For collapsed bubbles, just animate the bubble icon disappearing
+            bubbleContainer.visibility = View.INVISIBLE
+            bubbleAnimator.animateDisappear(this, onEnd = {
+                onCloseListener?.invoke()
+            })
+        }
     }
     
     /**

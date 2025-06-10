@@ -369,6 +369,61 @@ class BubbleAnimator(private val context: Context) {
         animSet.start()
     }
     
+    /**
+     * Animate expanded bubble closing with graceful scale-down effect
+     * This provides visual feedback that the bubble was intentionally closed, not crashed
+     */
+    fun animateExpandedBubbleClose(
+        urlBarContainer: View,
+        expandedContainer: View,
+        bubbleContainer: View,
+        onEnd: (() -> Unit)? = null
+    ) {
+        // Create simultaneous animations for both URL bar and expanded container
+        val urlBarAnimSet = AnimatorSet()
+        val urlBarAlphaAnim = ObjectAnimator.ofFloat(urlBarContainer, "alpha", 1f, 0f)
+        val urlBarScaleXAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleX", 1f, 0f)
+        val urlBarScaleYAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleY", 1f, 0f)
+        
+        urlBarAnimSet.playTogether(urlBarAlphaAnim, urlBarScaleXAnim, urlBarScaleYAnim)
+        urlBarAnimSet.duration = ANIMATION_DURATION_MEDIUM
+        urlBarAnimSet.interpolator = AccelerateInterpolator()
+        
+        val expandedAnimSet = AnimatorSet()
+        val expandedAlphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
+        val expandedScaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 1f, 0f)
+        val expandedScaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 1f, 0f)
+        
+        expandedAnimSet.playTogether(expandedAlphaAnim, expandedScaleXAnim, expandedScaleYAnim)
+        expandedAnimSet.duration = ANIMATION_DURATION_MEDIUM
+        expandedAnimSet.interpolator = AccelerateInterpolator()
+        
+        // Start both animations simultaneously
+        val masterAnimSet = AnimatorSet()
+        masterAnimSet.playTogether(urlBarAnimSet, expandedAnimSet)
+        
+        masterAnimSet.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                // Hide the containers after animation completes
+                urlBarContainer.visibility = View.GONE
+                expandedContainer.visibility = View.GONE
+                bubbleContainer.visibility = View.INVISIBLE
+                
+                // Reset properties for potential future use
+                urlBarContainer.alpha = 1f
+                urlBarContainer.scaleX = 1f
+                urlBarContainer.scaleY = 1f
+                expandedContainer.alpha = 1f
+                expandedContainer.scaleX = 1f
+                expandedContainer.scaleY = 1f
+                
+                onEnd?.invoke()
+            }
+        })
+        
+        masterAnimSet.start()
+    }
+    
     companion object {
         const val ANIMATION_DURATION_SHORT = 150L
         const val ANIMATION_DURATION_MEDIUM = 300L

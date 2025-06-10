@@ -157,6 +157,7 @@
                     app:cardBackgroundColor="@android:color/white"
                     app:strokeWidth="0.5dp"
                     app:strokeColor="#E0E0E0"
+                    app:contentPadding="0dp"
                     android:visibility="gone">
 
                     <!-- Main Content Area -->
