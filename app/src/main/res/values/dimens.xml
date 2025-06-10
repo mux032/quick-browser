@@ -2,4 +2,8 @@
 <resources>
     <dimen name="fab_size">56dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+    
+    <!-- Bubble expanded container default dimensions -->
+    <dimen name="bubble_expanded_default_width">260dp</dimen>
+    <dimen name="bubble_expanded_default_height">440dp</dimen>
 </resources>

@@ -1434,7 +1434,8 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Resize the expanded container to take appropriate screen space
+     * Resize the expanded container to take appropriate screen space.
+     * Initial dimensions are defined in dimens.xml and can be customized there.
      */
     private fun resizeExpandedContainer() {
         val layoutParams = expandedContainer.layoutParams
@@ -1444,9 +1445,9 @@ class BubbleView @JvmOverloads constructor(
             layoutParams.width = storedWidth
             layoutParams.height = storedHeight
         } else {
-            // Use default dimensions
-            layoutParams.width = resources.displayMetrics.widthPixels * 9 / 10  // 90% of screen width
-            layoutParams.height = resources.displayMetrics.heightPixels * 7 / 10 // 70% of screen height
+            // Use default dimensions from resources
+            layoutParams.width = resources.getDimensionPixelSize(R.dimen.bubble_expanded_default_width)
+            layoutParams.height = resources.getDimensionPixelSize(R.dimen.bubble_expanded_default_height)
             
             // Store these default dimensions
             storedWidth = layoutParams.width
