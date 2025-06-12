@@ -129,19 +129,24 @@
                             android:paddingBottom="2dp"
                             android:text="https://example.com" />
                         
-                        <!-- Minimize button -->
+                        <!-- Settings button -->
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_minimize"
+                            android:id="@+id/btn_url_bar_settings"
                             style="@style/Widget.Material3.Button.IconButton"
-                            android:layout_width="26dp"
-                            android:layout_height="26dp"
-                            android:layout_marginStart="8dp"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
                             android:minWidth="0dp"
                             android:minHeight="0dp"
-                            app:icon="@drawable/ic_minimize"
-                            app:iconSize="16dp"
+                            android:padding="4dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            app:icon="@drawable/ic_more_vert"
+                            app:iconSize="18dp"
                             app:iconTint="?android:attr/textColorSecondary"
-                            android:contentDescription="@string/minimize_bubble" />
+                            android:contentDescription="@string/settings" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -252,19 +257,23 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Settings panel that appears above the toolbar -->
+                    <!-- Settings panel that appears below the URL bar -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/settings_panel"
-                        android:layout_width="wrap_content"
+                        android:layout_width="180dp"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="bottom|center_horizontal"
-                        android:layout_marginBottom="80dp"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="8dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginEnd="8dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="12dp"
                         app:cardBackgroundColor="@android:color/white"
                         app:strokeWidth="0.5dp"
                         app:strokeColor="#E0E0E0"
-                        android:visibility="gone">
+                        android:visibility="gone"
+                        android:alpha="0"
+                        android:scaleX="0.8"
+                        android:scaleY="0.8">
                         
                         <LinearLayout
                             android:layout_width="wrap_content"
@@ -285,7 +294,8 @@
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
                                     android:text="@string/block_ads"
-                                    android:textColor="#000000" />
+                                    android:textColor="#000000"
+                                    android:textSize="13sp" />
                                     
                                 <com.google.android.material.switchmaterial.SwitchMaterial
                                     android:id="@+id/ad_block_switch"
@@ -306,7 +316,8 @@
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
                                     android:text="@string/enable_javascript"
-                                    android:textColor="#000000" />
+                                    android:textColor="#000000"
+                                    android:textSize="13sp" />
                                     
                                 <com.google.android.material.switchmaterial.SwitchMaterial
                                     android:id="@+id/javascript_switch"
@@ -378,15 +389,7 @@
                                 app:icon="@drawable/ic_share"
                                 app:iconTint="@color/colorPrimary"
                                 android:layout_marginEnd="2dp" />
-                                
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_settings"
-                                style="@style/Widget.QBrowser.Button.CircularIcon"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:contentDescription="@string/settings"
-                                app:icon="@drawable/ic_settings"
-                                app:iconTint="@color/colorPrimary" />
+
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 

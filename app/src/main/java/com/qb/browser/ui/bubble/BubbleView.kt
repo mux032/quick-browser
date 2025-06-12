@@ -86,7 +86,7 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var urlBarContainer: View
     private lateinit var urlBarIcon: ImageView
     private lateinit var urlBarText: EditText
-    private lateinit var btnMinimize: MaterialButton
+    private lateinit var btnUrlBarSettings: MaterialButton
     private lateinit var expandedContainer: View
     private lateinit var contentContainer: FrameLayout
     private lateinit var webViewContainer: WebView
@@ -192,7 +192,7 @@ class BubbleView @JvmOverloads constructor(
         urlBarContainer = findViewById(R.id.url_bar_container)
         urlBarIcon = findViewById(R.id.url_bar_icon)
         urlBarText = findViewById(R.id.url_bar_text)
-        btnMinimize = findViewById(R.id.btn_minimize)
+        btnUrlBarSettings = findViewById(R.id.btn_url_bar_settings)
         expandedContainer = findViewById(R.id.expanded_container)
         contentContainer = findViewById(R.id.content_container)
         webViewContainer = findViewById(R.id.web_view)
@@ -299,17 +299,55 @@ class BubbleView @JvmOverloads constructor(
             notifyBubbleActivated()
         }
         
-        // Action button listeners
-        findViewById<View>(R.id.btn_close).setOnClickListener { closeBubbleWithAnimation() }
-        findViewById<View>(R.id.btn_open_full).setOnClickListener { openFullWebView() }
-        findViewById<View>(R.id.btn_read_mode).setOnClickListener { toggleReadMode() }
-        findViewById<View>(R.id.btn_summarize).setOnClickListener { toggleSummaryMode() }
-        findViewById<View>(R.id.btn_settings).setOnClickListener { toggleSettingsPanel() }
+        // Action button listeners - close settings first, then perform action
+        findViewById<View>(R.id.btn_close).setOnClickListener { 
+            dismissSettingsIfVisible()
+            closeBubbleWithAnimation() 
+        }
+        findViewById<View>(R.id.btn_open_full).setOnClickListener { 
+            dismissSettingsIfVisible()
+            openFullWebView() 
+        }
+        findViewById<View>(R.id.btn_read_mode).setOnClickListener { 
+            dismissSettingsIfVisible()
+            toggleReadMode() 
+        }
+        findViewById<View>(R.id.btn_summarize).setOnClickListener { 
+            dismissSettingsIfVisible()
+            toggleSummaryMode() 
+        }
+
         
-        // URL bar minimize button listener
-        btnMinimize.setOnClickListener { 
-            toggleBubbleExpanded()
-            notifyBubbleActivated()
+        // URL bar settings button listener
+        btnUrlBarSettings.setOnClickListener { 
+            toggleSettingsPanel()
+        }
+        
+        // Note: Click-outside-to-close is handled in onTouchEvent for better reliability
+        
+        // Prevent settings panel from closing when clicking on it
+        settingsPanel.setOnTouchListener { _, event ->
+            // Consume touch events to prevent them from propagating to parent views
+            // This ensures settings panel stays open when interacting with its content
+            true
+        }
+        
+        // Handle clicks on expanded container - close settings when clicking inside container
+        // but outside of specific interactive elements
+        expandedContainer.setOnTouchListener { _, event ->
+            if (isSettingsPanelVisible && event.action == MotionEvent.ACTION_DOWN) {
+                val touchX = event.rawX.toInt()
+                val touchY = event.rawY.toInt()
+                
+                // Check if touch is not on settings panel
+                val settingsPanelRect = Rect()
+                settingsPanel.getGlobalVisibleRect(settingsPanelRect)
+                
+                if (!settingsPanelRect.contains(touchX, touchY)) {
+                    dismissSettingsIfVisible()
+                }
+            }
+            false // Don't consume the event, let child views handle it
         }
         
         // URL bar input handling
@@ -352,8 +390,9 @@ class BubbleView @JvmOverloads constructor(
             }
         }
         
-        // Handle click to show keyboard and select all text
+        // Handle click to show keyboard and select all text - close settings first
         urlBarText.setOnClickListener {
+            dismissSettingsIfVisible()
             urlBarText.requestFocus()
             urlBarText.selectAll()
             showKeyboard()
@@ -806,6 +845,10 @@ class BubbleView @JvmOverloads constructor(
         settingsPanel.scaleX = 0.8f
         settingsPanel.scaleY = 0.8f
         
+        // Set pivot to top-right corner for dropdown effect
+        settingsPanel.pivotX = settingsPanel.width * 0.9f
+        settingsPanel.pivotY = 0f
+        
         settingsPanel.animate()
             .alpha(1f)
             .scaleX(1f)
@@ -824,6 +867,10 @@ class BubbleView @JvmOverloads constructor(
         
         isSettingsPanelVisible = false
         
+        // Set pivot to top-right corner for dropdown effect
+        settingsPanel.pivotX = settingsPanel.width * 0.9f
+        settingsPanel.pivotY = 0f
+        
         settingsPanel.animate()
             .alpha(0f)
             .scaleX(0.8f)
@@ -835,6 +882,16 @@ class BubbleView @JvmOverloads constructor(
                 settingsPanel.visibility = View.GONE
             }
             .start()
+    }
+    
+    /**
+     * Helper method to safely dismiss settings panel if it's visible
+     * This encapsulates the common pattern used throughout the class
+     */
+    private fun dismissSettingsIfVisible() {
+        if (isSettingsPanelVisible) {
+            hideSettingsPanel()
+        }
     }
     
     /**
@@ -891,6 +948,14 @@ class BubbleView @JvmOverloads constructor(
             
             // Set up WebView clients
             setupWebViewClients()
+            
+            // Set up touch listener for WebView to handle settings dismissal
+            webViewContainer.setOnTouchListener { _, event ->
+                if (isSettingsPanelVisible && event.action == MotionEvent.ACTION_DOWN) {
+                    dismissSettingsIfVisible()
+                }
+                false // Don't consume the event, let WebView handle it normally
+            }
             
             // Make WebView ready to load content in the background with alpha=0
             webViewContainer.alpha = 0f
@@ -1986,12 +2051,32 @@ class BubbleView @JvmOverloads constructor(
         
         // Hide settings panel if visible and user clicks outside of it
         if (isSettingsPanelVisible && event.action == MotionEvent.ACTION_DOWN) {
-            // Check if the touch is outside the settings panel
+            val touchX = event.rawX.toInt()
+            val touchY = event.rawY.toInt()
+            
+            // Get rect for settings panel
             val settingsPanelRect = Rect()
             settingsPanel.getGlobalVisibleRect(settingsPanelRect)
-            if (!settingsPanelRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
-                hideSettingsPanel()
+            
+            // Get rect for settings button
+            val settingsButtonRect = Rect()
+            btnUrlBarSettings.getGlobalVisibleRect(settingsButtonRect)
+            
+            // Check if touch is inside settings panel - if so, keep settings open
+            if (settingsPanelRect.contains(touchX, touchY)) {
+                return super.onTouchEvent(event) // Allow normal interaction with settings
             }
+            
+            // Check if touch is on settings button - let button handle toggle
+            if (settingsButtonRect.contains(touchX, touchY)) {
+                return super.onTouchEvent(event) // Let button handle the click
+            }
+            
+            // For any other click (expanded container, web content, toolbar, URL bar), hide settings
+            hideSettingsPanel()
+            
+            // Don't consume the event - let the underlying view handle it normally
+            // This allows URL bar, toolbar buttons, and web content to work after settings close
         }
         
         val params = layoutParams as WindowManager.LayoutParams
