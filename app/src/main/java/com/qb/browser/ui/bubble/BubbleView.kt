@@ -2140,8 +2140,27 @@ class BubbleView @JvmOverloads constructor(
             // Keep bubble within screen bounds
             params.x = max(0, min(screenWidth - width, (initialX + dx).toInt()))
             params.y = max(0, min(screenHeight - height, (initialY + dy).toInt()))
+            
+            // Check if the bubble is moved to the bottom edge
+            if (params.y >= screenHeight - height) {
+                closeBubble() // Close the bubble when it reaches the bottom edge
+                return
+            }
+
             windowManager.updateViewLayout(this, params)
         }
+    }
+    
+    /**
+     * Close the bubble
+     */
+    private fun closeBubble() {
+        // Logic to close the bubble
+        isActive = false
+        expandedContainer.visibility = View.GONE
+        bubbleContainer.visibility = View.GONE
+        resizeHandlesContainer.visibility = View.GONE
+        onCloseListener?.invoke()
     }
     
     /**
