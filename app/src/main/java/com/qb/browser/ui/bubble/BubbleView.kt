@@ -128,9 +128,7 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var summaryContainer: FrameLayout
     private lateinit var summaryContent: LinearLayout
     private lateinit var summaryProgress: ProgressBar
-    private var isSummaryMode = false
-    private var isSummarizationInProgress = false
-    private var cachedHtmlContent: String? = null
+    private lateinit var summaryManager: BubbleSummaryManager
     
     // Read Mode UI and State
     private var isReadMode = false
@@ -212,6 +210,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Initialize settings panel manager
         settingsPanelManager = BubbleSettingsPanel(context, settingsManager)
+        
+        // Initialize summary manager
+        summaryManager = BubbleSummaryManager(context)
         
         // Note: Resize handle setup is now handled by BubbleTouchHandler
     }
@@ -310,7 +311,7 @@ class BubbleView @JvmOverloads constructor(
         }
         findViewById<View>(R.id.btn_summarize).setOnClickListener { 
             settingsPanelManager.dismissIfVisible(settingsPanel)
-            toggleSummaryMode() 
+            summaryManager.toggleSummaryMode() 
         }
 
         
@@ -622,6 +623,9 @@ class BubbleView @JvmOverloads constructor(
             // Initialize settings panel manager with WebView
             setupSettingsPanelManager()
             
+            // Initialize summary manager with WebView
+            setupSummaryManager()
+            
             // Set up touch listener for WebView to handle settings dismissal
             webViewContainer.setOnTouchListener { _, event ->
                 settingsPanelManager.handleTouchEvent(event, settingsPanel)
@@ -661,6 +665,40 @@ class BubbleView @JvmOverloads constructor(
             override fun onSettingsPanelVisibilityChanged(isVisible: Boolean) {
                 // Update any UI state that depends on settings panel visibility
                 Log.d(TAG, "Settings panel ${if (isVisible) "shown" else "hidden"} for bubble $bubbleId")
+            }
+        })
+    }
+    
+    /**
+     * Set up the summary manager with proper initialization and listener
+     */
+    private fun setupSummaryManager() {
+        // Initialize the summary manager with WebView and UI components
+        summaryManager.initialize(
+            summaryContainer,
+            summaryContent,
+            summaryProgress,
+            btnSummarize,
+            webViewContainer
+        )
+        
+        // Set up listener for summary events
+        summaryManager.setListener(object : BubbleSummaryManager.SummaryManagerListener {
+            override fun onSummaryModeChanged(isSummaryMode: Boolean) {
+                // Update any UI state that depends on summary mode
+                Log.d(TAG, "Summary mode ${if (isSummaryMode) "enabled" else "disabled"} for bubble $bubbleId")
+            }
+            
+            override fun onSummarizationStarted() {
+                Log.d(TAG, "Summarization started for bubble $bubbleId")
+            }
+            
+            override fun onSummarizationCompleted(success: Boolean) {
+                Log.d(TAG, "Summarization ${if (success) "completed successfully" else "failed"} for bubble $bubbleId")
+            }
+            
+            override fun onSummarizationError(message: String) {
+                Log.e(TAG, "Summarization error for bubble $bubbleId: $message")
             }
         })
     }
@@ -794,9 +832,10 @@ class BubbleView @JvmOverloads constructor(
                 }
             },
             { htmlContent ->
-                // HTML content received, but we're not using it for summarization anymore
+                // HTML content received, cache it for summarization
                 Log.d(TAG, "HTML content received, length: ${htmlContent.length}")
-                cachedHtmlContent = htmlContent
+                summaryManager.cacheHtmlContent(htmlContent)
+                summaryManager.startBackgroundSummarization(htmlContent)
             },
             // Scroll down callback
             {
@@ -1322,6 +1361,9 @@ class BubbleView @JvmOverloads constructor(
         // Hide settings panel if visible
         settingsPanelManager.dismissIfVisible(settingsPanel)
         
+        // Exit summary mode if active
+        summaryManager.forceExitSummaryMode()
+        
         // Hide resize handles immediately
         hideResizeHandles()
         
@@ -1355,6 +1397,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Hide settings panel if visible
         settingsPanelManager.dismissIfVisible(settingsPanel)
+        
+        // Exit summary mode if active
+        summaryManager.forceExitSummaryMode()
         
         // Hide WebView immediately to prevent flash during animation
         if (isBubbleExpanded) {
@@ -2129,167 +2174,5 @@ class BubbleView @JvmOverloads constructor(
         summaryContent.setBackgroundColor(android.graphics.Color.WHITE)
     }
 
-    /**
-     * Toggle between web view and summary view
-     */
-    private fun toggleSummaryMode() {
-        if (isSummaryMode) {
-            showWebViewOnly()
-        } else {
-            showSummaryView()
-        }
-    }
 
-    /**
-     * Show only the web view, hide summary
-     */
-    private fun showWebViewOnly() {
-        isSummaryMode = false
-        webViewContainer.visibility = View.VISIBLE
-        summaryContainer.visibility = View.GONE
-        btnSummarize.setIconResource(R.drawable.ic_summarize)
-        btnSummarize.setIconTint(ContextCompat.getColorStateList(context, R.color.colorPrimary))
-        btnSummarize.contentDescription = context.getString(R.string.summarize)
-        Toast.makeText(context, R.string.showing_web_view, Toast.LENGTH_SHORT).show()
-    }
-
-    /**
-     * Show the summary view and hide the web view
-     */
-    private fun showSummaryView() {
-        if (webViewContainer.visibility != View.VISIBLE) {
-            Toast.makeText(context, R.string.summary_error, Toast.LENGTH_SHORT).show()
-            return
-        }
-        isSummaryMode = true
-        webViewContainer.visibility = View.GONE
-        summaryContainer.visibility = View.VISIBLE
-        summaryProgress.visibility = View.VISIBLE
-        summaryContent.removeAllViews()
-        btnSummarize.setIconResource(R.drawable.ic_web_page)
-        btnSummarize.setIconTint(ContextCompat.getColorStateList(context, R.color.colorPrimary))
-        btnSummarize.contentDescription = context.getString(R.string.show_web_view)
-        Toast.makeText(context, R.string.summarizing, Toast.LENGTH_SHORT).show()
-        summarizeContent()
-    }
-
-    /**
-     * Summarize the current page content
-     */
-    private fun summarizeContent() {
-        try {
-            if (cachedHtmlContent != null && cachedHtmlContent!!.length > 100) {
-                processSummarization(cachedHtmlContent!!)
-            } else {
-                webViewContainer.evaluateJavascript("(function() { return document.documentElement.outerHTML; })()") { html ->
-                    try {
-                        if (html != null && html.length > 50) {
-                            val unescapedHtml = html.substring(1, html.length - 1)
-                                .replace("\\\"", "\"")
-                                .replace("\\n", "\n")
-                                .replace("\\\\", "\\")
-                            cachedHtmlContent = unescapedHtml
-                            processSummarization(unescapedHtml)
-                        } else {
-                            showSummaryError(context.getString(R.string.summary_error))
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error processing HTML for summary", e)
-                        showSummaryError(context.getString(R.string.summary_error))
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in summarizeContent", e)
-            showSummaryError(context.getString(R.string.summary_error))
-        }
-    }
-
-    /**
-     * Process the HTML content for summarization
-     */
-    private fun processSummarization(htmlContent: String) {
-        isSummarizationInProgress = true
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val cleanedHtml = withContext(Dispatchers.IO) {
-                    try {
-                        val doc = org.jsoup.Jsoup.parse(htmlContent)
-                        doc.select("script, style, noscript, iframe, object, embed, header, footer, nav, aside").remove()
-                        doc.text()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error cleaning HTML", e)
-                        null
-                    }
-                }
-                if (cleanedHtml == null || cleanedHtml.length < 100) {
-                    showSummaryError(context.getString(R.string.summary_not_article))
-                    return@launch
-                }
-                val summaryPoints = withContext(Dispatchers.Default) {
-                    val summarizationManager = SummarizationManager.getInstance(context)
-                    summarizationManager.summarizeContent(cleanedHtml)
-                }
-                if (summaryPoints.isNotEmpty()) {
-                    displaySummaryPoints(summaryPoints)
-                } else {
-                    showSummaryError(context.getString(R.string.summary_not_article))
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error processing summarization", e)
-                showSummaryError(context.getString(R.string.summary_error))
-            } finally {
-                isSummarizationInProgress = false
-            }
-        }
-    }
-
-    /**
-     * Display the summary points in the UI
-     */
-    private fun displaySummaryPoints(points: List<String>) {
-        summaryProgress.visibility = View.GONE
-        for (point in points) {
-            val bulletPoint = TextView(context)
-            bulletPoint.text = "• $point"
-            bulletPoint.setPadding(16, 16, 16, 16)
-            bulletPoint.textSize = 16f
-            summaryContent.addView(bulletPoint)
-        }
-    }
-
-    /**
-     * Show an error in the summary view
-     */
-    private fun showSummaryError(message: String) {
-        summaryProgress.visibility = View.GONE
-        val errorText = TextView(context)
-        errorText.text = message
-        errorText.setPadding(16, 16, 16, 16)
-        errorText.textSize = 16f
-        summaryContent.addView(errorText)
-    }
-
-    /**
-     * Start background summarization of the HTML content
-     */
-    private fun startBackgroundSummarization(htmlContent: String) {
-        if (isSummarizationInProgress || htmlContent.length < 100) return
-        isSummarizationInProgress = true
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val summarizationManager = SummarizationManager.getInstance(context)
-                val doc = org.jsoup.Jsoup.parse(htmlContent)
-                doc.select("script, style, noscript, iframe, object, embed, header, footer, nav, aside").remove()
-                val cleanedText = doc.text()
-                if (cleanedText.length > 100) {
-                    summarizationManager.summarizeContent(cleanedText)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Background summarization failed", e)
-            } finally {
-                isSummarizationInProgress = false
-            }
-        }
-    }
 }
