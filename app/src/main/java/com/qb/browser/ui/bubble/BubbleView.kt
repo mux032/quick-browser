@@ -131,8 +131,8 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var summaryManager: BubbleSummaryManager
     
     // Read Mode UI and State
-    private var isReadMode = false
     private lateinit var btnReadMode: MaterialButton
+    private lateinit var readModeManager: BubbleReadModeManager
     
     // Toolbar container
     private lateinit var toolbarContainer: View
@@ -213,6 +213,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Initialize summary manager
         summaryManager = BubbleSummaryManager(context)
+        
+        // Initialize read mode manager
+        readModeManager = BubbleReadModeManager(context, settingsManager)
         
         // Note: Resize handle setup is now handled by BubbleTouchHandler
     }
@@ -307,7 +310,7 @@ class BubbleView @JvmOverloads constructor(
         }
         findViewById<View>(R.id.btn_read_mode).setOnClickListener { 
             settingsPanelManager.dismissIfVisible(settingsPanel)
-            toggleReadMode() 
+            readModeManager.toggleReadMode() 
         }
         findViewById<View>(R.id.btn_summarize).setOnClickListener { 
             settingsPanelManager.dismissIfVisible(settingsPanel)
@@ -382,6 +385,9 @@ class BubbleView @JvmOverloads constructor(
         url = formattedUrl
         webViewContainer.loadUrl(formattedUrl)
         updateUrlBar()
+        
+        // Update read mode manager with new URL
+        readModeManager.updateCurrentUrl(formattedUrl)
     }
     
     /**
@@ -626,6 +632,9 @@ class BubbleView @JvmOverloads constructor(
             // Initialize summary manager with WebView
             setupSummaryManager()
             
+            // Initialize read mode manager with WebView
+            setupReadModeManager()
+            
             // Set up touch listener for WebView to handle settings dismissal
             webViewContainer.setOnTouchListener { _, event ->
                 settingsPanelManager.handleTouchEvent(event, settingsPanel)
@@ -699,6 +708,45 @@ class BubbleView @JvmOverloads constructor(
             
             override fun onSummarizationError(message: String) {
                 Log.e(TAG, "Summarization error for bubble $bubbleId: $message")
+            }
+        })
+    }
+    
+    /**
+     * Set up the read mode manager with proper initialization and listener
+     */
+    private fun setupReadModeManager() {
+        // Initialize the read mode manager with WebView and UI components
+        readModeManager.initialize(
+            btnReadMode,
+            webViewContainer,
+            progressBar,
+            url
+        )
+        
+        // Set up listener for read mode events
+        readModeManager.setListener(object : BubbleReadModeManager.ReadModeManagerListener {
+            override fun onReadModeChanged(isReadMode: Boolean) {
+                Log.d(TAG, "Read mode ${if (isReadMode) "enabled" else "disabled"} for bubble $bubbleId")
+            }
+            
+            override fun onReadModeLoadingStarted() {
+                Log.d(TAG, "Read mode loading started for bubble $bubbleId")
+            }
+            
+            override fun onReadModeLoadingCompleted(success: Boolean) {
+                Log.d(TAG, "Read mode loading ${if (success) "completed" else "failed"} for bubble $bubbleId")
+            }
+            
+            override fun onReadModeError(message: String) {
+                Log.e(TAG, "Read mode error for bubble $bubbleId: $message")
+            }
+            
+            override fun onBubbleExpandRequested() {
+                // Expand bubble if not already expanded
+                if (!isBubbleExpanded) {
+                    toggleBubbleExpanded()
+                }
             }
         })
     }
@@ -830,6 +878,8 @@ class BubbleView @JvmOverloads constructor(
                 if (isBubbleExpanded) {
                     updateUrlBar()
                 }
+                // Update read mode manager with new URL
+                readModeManager.updateCurrentUrl(newUrl)
             },
             { htmlContent ->
                 // HTML content received, cache it for summarization
@@ -1364,6 +1414,9 @@ class BubbleView @JvmOverloads constructor(
         // Exit summary mode if active
         summaryManager.forceExitSummaryMode()
         
+        // Exit read mode if active
+        readModeManager.forceExitReadMode()
+        
         // Hide resize handles immediately
         hideResizeHandles()
         
@@ -1400,6 +1453,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Exit summary mode if active
         summaryManager.forceExitSummaryMode()
+        
+        // Exit read mode if active
+        readModeManager.forceExitReadMode()
         
         // Hide WebView immediately to prevent flash during animation
         if (isBubbleExpanded) {
@@ -1456,280 +1512,7 @@ class BubbleView @JvmOverloads constructor(
         }
     }
     
-    /**
-     * Open the web page in read mode directly in the bubble's WebView
-     */
-    // Store original content URL
-    private var originalContent: String? = null
-    
-    private fun toggleReadMode() {
-        isReadMode = !isReadMode
-        if (isReadMode) {
-            // Save current URL before switching to reader mode
-            originalContent = webViewContainer.url
-            openReadMode()
-        } else {
-            // Restore WebView settings for normal mode
-            webViewContainer.settings.apply {
-                javaScriptEnabled = true
-                builtInZoomControls = true
-                displayZoomControls = false
-                textZoom = 100
-            }
-            
-            // Return to normal web view using cached content if available
-            originalContent?.let { savedUrl ->
-                webViewContainer.loadUrl(savedUrl)
-            } ?: webViewContainer.loadUrl(url) // Fallback to current URL if cache is empty
-            
-            // Announce mode change for accessibility
-            webViewContainer.announceForAccessibility(context.getString(R.string.web_view_mode))
-        }
-        updateReadModeButton()
-    }
 
-    private fun updateReadModeButton() {
-        btnReadMode = findViewById(R.id.btn_read_mode)
-        btnReadMode.setIconResource(if (isReadMode) R.drawable.ic_globe else R.drawable.ic_read_mode)
-    }
-
-    private fun openReadMode() {
-        try {
-            progressBar.visibility = View.VISIBLE
-            progressBar.isIndeterminate = true
-            val contentExtractor = ReadabilityExtractor(context)
-            val coroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
-            coroutineScope.launch {
-                try {
-                    val readableContent = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        contentExtractor.extractFromUrl(url)
-                    }
-                    val isNightMode = settingsManager.isDarkThemeEnabled()
-                    if (readableContent == null) {
-                        handleReadModeError()
-                        return@launch
-                    }
-                    val styledHtml = createStyledHtml(readableContent, isNightMode)
-                    withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        if (!isBubbleExpanded) {
-                            toggleBubbleExpanded()
-                        }
-                        // Cache the original content
-                        originalContent?.let { webViewContainer.loadUrl(it) }
-                        
-                        
-                        // Load the reader mode content
-                        webViewContainer.settings.apply {
-                            // Disable JavaScript for reader mode
-                            javaScriptEnabled = false
-                            // Enable built-in zoom
-                            builtInZoomControls = true
-                            displayZoomControls = false
-                            // Enable text size adjustment
-                            textZoom = 100
-                        }
-                        
-                        
-                        webViewContainer.loadDataWithBaseURL(url, styledHtml, "text/html", "UTF-8", null)
-                        progressBar.visibility = View.GONE
-                        progressBar.isIndeterminate = false
-                        webViewContainer.alpha = 1f
-                        
-                        
-                        // Announce reader mode for accessibility
-                        webViewContainer.announceForAccessibility(context.getString(R.string.reader_mode_loaded))
-                        android.widget.Toast.makeText(context, R.string.reader_mode_loaded, android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error extracting content for read mode", e)
-                    handleReadModeError()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to open read mode", e)
-            handleReadModeError()
-        }
-    }
-    
-    private fun handleReadModeError() {
-        progressBar.visibility = View.GONE
-        progressBar.isIndeterminate = false
-        android.widget.Toast.makeText(context, R.string.failed_to_load_reader_mode, android.widget.Toast.LENGTH_SHORT).show()
-        // Reset read mode state on error
-        isReadMode = false
-        updateReadModeButton()
-        // Restore original content if available
-        originalContent?.let { webViewContainer.loadUrl(it) }
-    }
-    
-    /**
-     * Create styled HTML for reader mode
-     */
-    private fun createStyledHtml(content: ReadabilityExtractor.ReadableContent, isNightMode: Boolean): String {
-        val backgroundColor = if (isNightMode) "#121212" else "#FAFAFA"
-        val textColor = if (isNightMode) "#E0E0E0" else "#212121"
-        val linkColor = if (isNightMode) "#90CAF9" else "#1976D2"
-        val secondaryTextColor = if (isNightMode) "#B0B0B0" else "#666666"
-        
-        return """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    :root {
-                        --content-width: 100%;
-                        --body-padding: clamp(16px, 5%, 32px);
-                        --content-max-width: 800px;
-                    }
-                    
-                    body {
-                        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                        line-height: 1.8;
-                        color: $textColor;
-                        background-color: $backgroundColor;
-                        padding: var(--body-padding);
-                        margin: 0 auto;
-                        max-width: var(--content-max-width);
-                        text-rendering: optimizeLegibility;
-                        -webkit-font-smoothing: antialiased;
-                    }
-                    
-                    article {
-                        width: var(--content-width);
-                        margin: 0 auto;
-                    }
-                    
-                    h1, h2, h3, h4, h5, h6 {
-                        line-height: 1.3;
-                        margin: 1.5em 0 0.5em;
-                        font-weight: 600;
-                    }
-                    
-                    h1 {
-                        font-size: clamp(1.5em, 5vw, 2em);
-                        letter-spacing: -0.02em;
-                    }
-                    
-                    p {
-                        margin: 1.5em 0;
-                        font-size: clamp(1em, 2vw, 1.2em);
-                    }
-                    
-                    a {
-                        color: ${linkColor};
-                        text-decoration: none;
-                        border-bottom: 1px solid ${linkColor}40;
-                        transition: border-bottom-color 0.2s;
-                    }
-                    
-                    a:hover {
-                        border-bottom-color: ${linkColor};
-                    }
-                    
-                    img {
-                        max-width: 100%;
-                        height: auto;
-                        margin: 1.5em 0;
-                        border-radius: 4px;
-                    }
-                    
-                    blockquote {
-                        margin: 2em 0;
-                        padding: 1em 2em;
-                        border-left: 4px solid ${linkColor}40;
-                        background-color: ${linkColor}10;
-                        font-style: italic;
-                        color: ${secondaryTextColor};
-                    }
-                    
-                    code {
-                        font-family: 'SF Mono', Consolas, Monaco, 'Andale Mono', monospace;
-                        background-color: ${textColor}10;
-                        padding: 0.2em 0.4em;
-                        border-radius: 3px;
-                        font-size: 0.9em;
-                    }
-                    
-                    pre {
-                        background-color: ${textColor}10;
-                        padding: 1em;
-                        border-radius: 4px;
-                        overflow-x: auto;
-                        font-size: 0.9em;
-                    }
-                    
-                    ul, ol {
-                        padding-left: 1.5em;
-                        margin: 1.5em 0;
-                    }
-                    
-                    li {
-                        margin: 0.5em 0;
-                    }
-                    
-                    hr {
-                        border: none;
-                        border-top: 1px solid ${textColor}20;
-                        margin: 2em 0;
-                    }
-                    
-                    .meta {
-                        color: ${secondaryTextColor};
-                        font-size: 0.9em;
-                        margin-bottom: 2em;
-                    }
-                    
-                    @media (prefers-reduced-motion: reduce) {
-                        * {
-                            animation-duration: 0.01ms !important;
-                            animation-iteration-count: 1 !important;
-                            transition-duration: 0.01ms !important;
-                            scroll-behavior: auto !important;
-                        }
-                    }
-                        margin-bottom: 8px;
-                    }
-                    .byline {
-                        font-size: 0.9em;
-                        color: ${if (isNightMode) "#AAAAAA" else "#757575"};
-                        margin-bottom: 24px;
-                    }
-                    img {
-                        max-width: 100%;
-                        height: auto;
-                        margin: 16px 0;
-                    }
-                    p {
-                        margin-bottom: 16px;
-                    }
-                    a {
-                        color: $linkColor;
-                        text-decoration: none;
-                    }
-                    blockquote {
-                        border-left: 4px solid ${if (isNightMode) "#616161" else "#BDBDBD"};
-                        padding-left: 16px;
-                        margin-left: 0;
-                        font-style: italic;
-                    }
-                    pre, code {
-                        background-color: ${if (isNightMode) "#1E1E1E" else "#F5F5F5"};
-                        padding: 16px;
-                        border-radius: 4px;
-                        overflow: auto;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>${content.title}</h1>
-                ${if (!content.byline.isNullOrEmpty()) "<div class=\"byline\">${content.byline}</div>" else ""}
-                ${content.content}
-            </body>
-            </html>
-        """.trimIndent()
-    }
     
     /**
      * Helper method to launch activities with extras
