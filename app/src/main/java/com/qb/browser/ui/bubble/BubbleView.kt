@@ -76,7 +76,7 @@ class BubbleView @JvmOverloads constructor(
     var url: String,  // Changed from val to var to allow URL updates when navigating
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr) {
+) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate {
     
     // UI components
     private lateinit var rootView: View
@@ -98,18 +98,8 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var resizeHandleBottomLeft: ImageView
     private lateinit var resizeHandleBottomRight: ImageView
 
-    // Touch handling state
-    private var initialX = 0f
-    private var initialY = 0f
-    private var initialTouchX = 0f
-    private var initialTouchY = 0f
-    private var isDragging = false
-    
-    // Resize state
-    private var isResizing = false
-    private var activeResizeHandle: ImageView? = null
-    private var initialWidth = 0
-    private var initialHeight = 0
+    // Touch handling state - moved to BubbleTouchHandler
+    // Resize state - moved to BubbleTouchHandler
     
     // Stored dimensions for the expanded container
     private var storedWidth = 0
@@ -130,6 +120,7 @@ class BubbleView @JvmOverloads constructor(
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val settingsManager = SettingsManager.getInstance(context)
     private val bubbleAnimator = BubbleAnimator(context)
+    private val touchHandler = BubbleTouchHandler(context, this)
     private var webViewModel: WebViewModel? = null
 
     // Summary/Summarization UI and State
@@ -173,6 +164,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Set up content based on bubble type
         setupContent()
+        
+        // Initialize touch handler after all views are set up
+        touchHandler.initialize(this)
     }
     
     /**
@@ -216,8 +210,7 @@ class BubbleView @JvmOverloads constructor(
         // Initialize settings panel
         settingsPanel = findViewById(R.id.settings_panel)
         
-        // Set up resize handle touch listeners
-        setupResizeHandles()
+        // Note: Resize handle setup is now handled by BubbleTouchHandler
     }
     
     /**
@@ -356,8 +349,7 @@ class BubbleView @JvmOverloads constructor(
         // Initialize toolbar container reference
         toolbarContainer = findViewById(R.id.toolbar_container)
         
-        // Set up toolbar drag functionality
-        setupToolbarDrag()
+        // Note: Toolbar drag functionality is now handled by BubbleTouchHandler
         
         // Set up settings panel controls
         setupSettingsControls()
@@ -456,200 +448,9 @@ class BubbleView @JvmOverloads constructor(
         }
     }
     
-    /**
-     * Set up resize handles with touch listeners
-     */
-    private fun setupResizeHandles() {
-        // Set up touch listeners for each resize handle
-        setupResizeHandleTouch(resizeHandleTopLeft)
-        setupResizeHandleTouch(resizeHandleTopRight)
-        setupResizeHandleTouch(resizeHandleBottomLeft)
-        setupResizeHandleTouch(resizeHandleBottomRight)
-    }
+    // Resize handle setup is now handled by BubbleTouchHandler
     
-    /**
-     * Set up touch listener for a specific resize handle
-     */
-    private fun setupResizeHandleTouch(handle: ImageView) {
-        handle.setOnTouchListener { view, event ->
-            if (layoutParams !is WindowManager.LayoutParams) return@setOnTouchListener false
-            
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    // Start resizing
-                    initialTouchX = event.rawX
-                    initialTouchY = event.rawY
-                    initialWidth = expandedContainer.width
-                    initialHeight = expandedContainer.height
-                    isResizing = true
-                    activeResizeHandle = handle
-                    return@setOnTouchListener true
-                }
-                
-                MotionEvent.ACTION_MOVE -> {
-                    if (isResizing) {
-                        // Calculate the change in position
-                        val dx = event.rawX - initialTouchX
-                        val dy = event.rawY - initialTouchY
-                        
-                        // Resize based on which handle is being dragged
-                        resizeBubble(handle, dx, dy)
-                        return@setOnTouchListener true
-                    }
-                }
-                
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // Stop resizing
-                    isResizing = false
-                    activeResizeHandle = null
-                    return@setOnTouchListener true
-                }
-            }
-            
-            return@setOnTouchListener false
-        }
-    }
-    
-    /**
-     * Resize the bubble based on which handle is being dragged
-     */
-    private fun resizeBubble(handle: ImageView, dx: Float, dy: Float) {
-        // Define minimum and maximum dimensions
-        val minWidth = resources.displayMetrics.widthPixels / 3  // Minimum 1/3 of screen width
-        val minHeight = resources.displayMetrics.heightPixels / 3 // Minimum 1/3 of screen height
-        val maxWidth = resources.displayMetrics.widthPixels - 50 // Maximum screen width minus margin
-        val maxHeight = resources.displayMetrics.heightPixels - 100 // Maximum screen height minus margin
-        
-        // Get current window position and dimensions
-        val windowParams = this.layoutParams as WindowManager.LayoutParams
-        val containerParams = expandedContainer.layoutParams
-        
-        // Store original values to calculate changes
-        val originalX = windowParams.x
-        val originalY = windowParams.y
-        val originalWidth = containerParams.width
-        val originalHeight = containerParams.height
-        
-        // Variables to track changes
-        var newWidth = originalWidth
-        var newHeight = originalHeight
-        var newX = originalX
-        var newY = originalY
-        
-        when (handle) {
-            resizeHandleBottomRight -> {
-                // Bottom-right corner: just resize width and height
-                newWidth = (initialWidth + dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
-                newHeight = (initialHeight + dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
-            }
-            
-            resizeHandleBottomLeft -> {
-                // Bottom-left corner: resize width inversely and height directly
-                val desiredWidth = (initialWidth - dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
-                newHeight = (initialHeight + dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
-                
-                // Calculate how much the width will actually change
-                val widthChange = originalWidth - desiredWidth
-                
-                // Only change width if we can also adjust the X position
-                if (originalX + widthChange >= 0) {
-                    newWidth = desiredWidth
-                    newX = originalX + widthChange
-                }
-            }
-            
-            resizeHandleTopRight -> {
-                // Top-right corner: resize width directly and height inversely
-                newWidth = (initialWidth + dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
-                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
-                
-                // Calculate how much the height will actually change
-                val heightChange = originalHeight - desiredHeight
-                
-                // Only change height if we can also adjust the Y position
-                if (originalY + heightChange >= 0) {
-                    newHeight = desiredHeight
-                    newY = originalY + heightChange
-                }
-            }
-            
-            resizeHandleTopLeft -> {
-                // Top-left corner: resize both width and height inversely
-                val desiredWidth = (initialWidth - dx).toInt().coerceIn(minWidth.toInt(), maxWidth.toInt())
-                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight.toInt(), maxHeight.toInt())
-                
-                // Calculate position changes
-                val widthChange = originalWidth - desiredWidth
-                val heightChange = originalHeight - desiredHeight
-                
-                // Apply width change if X position can be adjusted
-                if (originalX + widthChange >= 0) {
-                    newWidth = desiredWidth
-                    newX = originalX + widthChange
-                }
-                
-                // Apply height change if Y position can be adjusted
-                if (originalY + heightChange >= 0) {
-                    newHeight = desiredHeight
-                    newY = originalY + heightChange
-                }
-            }
-        }
-        
-        // Apply the new dimensions to the container
-        containerParams.width = newWidth
-        containerParams.height = newHeight
-        expandedContainer.layoutParams = containerParams
-        
-        // Update the WebView dimensions to match the container
-        val webViewParams = webViewContainer.layoutParams
-        webViewParams.width = newWidth
-        webViewParams.height = newHeight
-        webViewContainer.layoutParams = webViewParams
-        
-        // Also update content container to match
-        val contentParams = contentContainer.layoutParams
-        contentParams.width = newWidth
-        contentParams.height = newHeight
-        contentContainer.layoutParams = contentParams
-        
-        // Store the new dimensions for future use
-        storedWidth = newWidth
-        storedHeight = newHeight
-        hasStoredDimensions = true
-        
-        // Update window position if it changed
-        if (newX != originalX || newY != originalY) {
-            windowParams.x = newX
-            windowParams.y = newY
-            try {
-                windowManager.updateViewLayout(this, windowParams)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating window layout", e)
-            }
-        }
-        
-        // Calculate zoom level based on window width relative to screen width
-        val screenWidth = resources.displayMetrics.widthPixels
-        val widthRatio = newWidth.toFloat() / screenWidth
-        val calculatedZoomPercent = calculateSmoothZoomLevel(widthRatio)
-        
-        // Only update the zoom if it's significantly different from the current zoom
-        // This prevents constant small adjustments that might disrupt the user experience
-        val zoomPercent = if (Math.abs(calculatedZoomPercent - currentZoomPercent) > 2f) {
-            calculatedZoomPercent
-        } else {
-            currentZoomPercent
-        }
-        
-        // Apply the dynamic zoom level using JavaScript
-        applyDynamicZoom(zoomPercent)
-        
-        // Force layout update
-        expandedContainer.requestLayout()
-        webViewContainer.requestLayout()
-        contentContainer.requestLayout()
-    }
+    // Resize functionality moved to BubbleTouchHandler
     
     /**
      * Show resize handles when bubble is expanded
@@ -2032,127 +1833,18 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Handle touch events for dragging with snap to edges
+     * Handle touch events for dragging the bubble and handling click events.
      * 
-     * This method handles:
-     * - Detecting the start of a drag operation
-     * - Moving the bubble during drag
-     * - Collapsing the bubble if expanded when dragging starts
-     * - Saving the bubble position when dragging ends
-     * - Hiding settings panel when clicking outside of it
+     * This method delegates to BubbleTouchHandler for all touch handling logic.
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (layoutParams !is WindowManager.LayoutParams) return super.onTouchEvent(event)
-        
-        // If we're currently resizing, let the resize handle touch listener handle it
-        if (isResizing) {
-            return true
-        }
-        
-        // Hide settings panel if visible and user clicks outside of it
-        if (isSettingsPanelVisible && event.action == MotionEvent.ACTION_DOWN) {
-            val touchX = event.rawX.toInt()
-            val touchY = event.rawY.toInt()
-            
-            // Get rect for settings panel
-            val settingsPanelRect = Rect()
-            settingsPanel.getGlobalVisibleRect(settingsPanelRect)
-            
-            // Get rect for settings button
-            val settingsButtonRect = Rect()
-            btnUrlBarSettings.getGlobalVisibleRect(settingsButtonRect)
-            
-            // Check if touch is inside settings panel - if so, keep settings open
-            if (settingsPanelRect.contains(touchX, touchY)) {
-                return super.onTouchEvent(event) // Allow normal interaction with settings
-            }
-            
-            // Check if touch is on settings button - let button handle toggle
-            if (settingsButtonRect.contains(touchX, touchY)) {
-                return super.onTouchEvent(event) // Let button handle the click
-            }
-            
-            // For any other click (expanded container, web content, toolbar, URL bar), hide settings
-            hideSettingsPanel()
-            
-            // Don't consume the event - let the underlying view handle it normally
-            // This allows URL bar, toolbar buttons, and web content to work after settings close
-        }
-        
-        val params = layoutParams as WindowManager.LayoutParams
-        val screenWidth = resources.displayMetrics.widthPixels
-        val screenHeight = resources.displayMetrics.heightPixels
-        
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-                handleTouchDown(event, params)
-                return true
-            }
-            
-            MotionEvent.ACTION_MOVE -> {
-                handleTouchMove(event, params, screenWidth, screenHeight)
-                return isDragging
-            }
-            
-            MotionEvent.ACTION_UP -> {
-                handleTouchUp(params)
-                return true
-            }
-        }
-        
-        return super.onTouchEvent(event)
+        // Delegate to touch handler
+        val handled = touchHandler.handleTouchEvent(event)
+        return if (handled) true else super.onTouchEvent(event)
     }
     
     /**
-     * Handle the touch down event
-     */
-    private fun handleTouchDown(event: MotionEvent, params: WindowManager.LayoutParams) {
-        initialX = params.x.toFloat()
-        initialY = params.y.toFloat()
-        initialTouchX = event.rawX
-        initialTouchY = event.rawY
-        isDragging = false
-    }
-    
-    /**
-     * Handle the touch move event
-     */
-    private fun handleTouchMove(
-        event: MotionEvent, 
-        params: WindowManager.LayoutParams,
-        screenWidth: Int,
-        screenHeight: Int
-    ) {
-        val dx = event.rawX - initialTouchX
-        val dy = event.rawY - initialTouchY
-        
-        // Check if we've moved enough to consider it a drag
-        if (!isDragging && hypot(dx, dy) > touchSlop) {
-            isDragging = true
-            // Only collapse if expanded when starting to drag from the bubble itself
-            // (not from the toolbar, which has its own drag handler)
-            if (isBubbleExpanded && event.y < expandedContainer.top) {
-                toggleBubbleExpanded()
-            }
-        }
-        
-        if (isDragging) {
-            // Keep bubble within screen bounds
-            params.x = max(0, min(screenWidth - width, (initialX + dx).toInt()))
-            params.y = max(0, min(screenHeight - height, (initialY + dy).toInt()))
-            
-            // Check if the bubble is moved to the bottom edge
-            if (params.y >= screenHeight - height) {
-                closeBubble() // Close the bubble when it reaches the bottom edge
-                return
-            }
-
-            windowManager.updateViewLayout(this, params)
-        }
-    }
-    
-    /**
-     * Close the bubble
+     * Close the bubble (called by touch handler)
      */
     private fun closeBubble() {
         // Logic to close the bubble
@@ -2164,75 +1856,99 @@ class BubbleView @JvmOverloads constructor(
     }
     
     /**
-     * Handle the touch up event
-     */
-    private fun handleTouchUp(params: WindowManager.LayoutParams) {
-        if (!isDragging) {
-            performClick()
-        } else {
-            windowManager.updateViewLayout(this, params)
-        }
-    }
-    
-    /**
-     * Set up toolbar drag functionality to allow dragging the expanded bubble
-     * when the toolbar is touched and dragged
-     */
-    private fun setupToolbarDrag() {
-        toolbarContainer.setOnTouchListener { _, event ->
-            if (layoutParams !is WindowManager.LayoutParams || !isBubbleExpanded) return@setOnTouchListener false
-            
-            val params = layoutParams as WindowManager.LayoutParams
-            val screenWidth = resources.displayMetrics.widthPixels
-            val screenHeight = resources.displayMetrics.heightPixels
-            
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    initialX = params.x.toFloat()
-                    initialY = params.y.toFloat()
-                    initialTouchX = event.rawX
-                    initialTouchY = event.rawY
-                    isDragging = false
-                    true
-                }
-                
-                MotionEvent.ACTION_MOVE -> {
-                    val dx = event.rawX - initialTouchX
-                    val dy = event.rawY - initialTouchY
-                    
-                    // Check if we've moved enough to consider it a drag
-                    if (!isDragging && hypot(dx, dy) > touchSlop) {
-                        isDragging = true
-                    }
-                    
-                    if (isDragging) {
-                        // Keep bubble within screen bounds
-                        params.x = max(0, min(screenWidth - width, (initialX + dx).toInt()))
-                        params.y = max(0, min(screenHeight - height, (initialY + dy).toInt()))
-                        windowManager.updateViewLayout(this, params)
-                    }
-                    true
-                }
-                
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (isDragging) {
-                        windowManager.updateViewLayout(this, params)
-                    }
-                    isDragging = false
-                    true
-                }
-                
-                else -> false
-            }
-        }
-    }
-    
-    /**
      * Override performClick for accessibility
      */
     override fun performClick(): Boolean {
         super.performClick()
         return true
+    }
+    
+    // ======================================
+    // BubbleTouchDelegate Implementation
+    // ======================================
+    
+    override fun onBubbleDragged(x: Int, y: Int) {
+        // Handle bubble drag position updates if needed
+        // This is called when the bubble position changes during drag
+    }
+    
+    override fun onBubbleClicked() {
+        toggleBubbleExpanded()
+        notifyBubbleActivated()
+    }
+    
+    override fun onBubbleClosed() {
+        closeBubble()
+    }
+    
+    override fun onBubbleToggleExpanded() {
+        toggleBubbleExpanded()
+    }
+    
+    override fun hideBubbleSettingsPanel() {
+        if (isSettingsPanelVisible) {
+            dismissSettingsIfVisible()
+        }
+    }
+    
+    override fun isSettingsPanelVisible(): Boolean {
+        return this.isSettingsPanelVisible
+    }
+    
+    override fun isBubbleExpanded(): Boolean {
+        return this.isBubbleExpanded
+    }
+    
+    override fun getExpandedContainer(): View {
+        return expandedContainer
+    }
+    
+    override fun getSettingsPanel(): View {
+        return settingsPanel
+    }
+    
+    override fun getSettingsButton(): MaterialButton {
+        return btnUrlBarSettings
+    }
+    
+    override fun getToolbarContainer(): View {
+        return toolbarContainer
+    }
+    
+    override fun getResizeHandles(): List<ImageView> {
+        return listOf(
+            resizeHandleTopLeft,
+            resizeHandleTopRight, 
+            resizeHandleBottomLeft,
+            resizeHandleBottomRight
+        )
+    }
+    
+    override fun getContentContainer(): FrameLayout {
+        return contentContainer
+    }
+    
+    override fun getWebViewContainer(): View {
+        return webViewContainer
+    }
+    
+    override fun updateDimensions(width: Int, height: Int) {
+        storedWidth = width
+        storedHeight = height
+        hasStoredDimensions = true
+    }
+    
+    override fun applyBubbleDynamicZoom(zoomPercent: Float) {
+        // Call the existing private method
+        applyDynamicZoom(zoomPercent)
+    }
+    
+    override fun calculateBubbleZoomLevel(widthRatio: Float): Float {
+        return calculateSmoothZoomLevel(widthRatio)
+    }
+    
+    override fun getCurrentZoomPercent(): Float {
+        return currentZoomPercent
     }
 
     /**
