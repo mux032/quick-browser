@@ -76,27 +76,13 @@ class BubbleView @JvmOverloads constructor(
     var url: String,  // Changed from val to var to allow URL updates when navigating
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate, BubbleStateManager.Companion.StateChangeListener, BubbleWebViewManagerInterface {
+) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate, BubbleStateManager.Companion.StateChangeListener, BubbleWebViewManagerInterface, BubbleUIManager.UIInteractionListener {
     
-    // UI components
-    private lateinit var rootView: View
-    private lateinit var bubbleIcon: ImageView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var bubbleContainer: View
-    private lateinit var urlBarContainer: View
-    private lateinit var urlBarIcon: ImageView
-    private lateinit var urlBarText: EditText
-    private lateinit var btnUrlBarSettings: MaterialButton
-    private lateinit var expandedContainer: View
-    private lateinit var contentContainer: FrameLayout
+    // UI Manager - handles all UI components and interactions
+    private lateinit var uiManager: BubbleUIManager
+    
+    // WebView needs to remain separate as it's managed by WebViewManager
     private lateinit var webViewContainer: WebView
-    
-    // Resize handles
-    private lateinit var resizeHandlesContainer: FrameLayout
-    private lateinit var resizeHandleTopLeft: ImageView
-    private lateinit var resizeHandleTopRight: ImageView
-    private lateinit var resizeHandleBottomLeft: ImageView
-    private lateinit var resizeHandleBottomRight: ImageView
 
     // Touch handling state - moved to BubbleTouchHandler
     // Resize state - moved to BubbleTouchHandler
@@ -143,76 +129,71 @@ class BubbleView @JvmOverloads constructor(
      * Initialize the bubble view, set up UI components and event listeners
      */
     init {
-        // Initialize UI components
-        initializeViews()
-        
-        // Set up WebViewModel for favicon and title management
-        post { initializeWebViewModel() }
-        
-        // Set up click listeners for bubble actions
-        setupClickListeners()
-        
-        // Set up content based on bubble type
-        setupContent()
-        
-        // Initialize touch handler after all views are set up
-        touchHandler.initialize(this)
+        try {
+            Log.d(TAG, "Initializing BubbleView for bubble: $bubbleId")
+            
+            // Initialize UI Manager first - this inflates the layout
+            uiManager = BubbleUIManager(context, this, bubbleId)
+            uiManager.initialize(this)
+            
+            // Initialize remaining views that are not managed by UIManager
+            // This must happen after UIManager initialization since it depends on inflated layout
+            initializeViews()
+            
+            // Set up WebViewModel for favicon and title management
+            post { initializeWebViewModel() }
+            
+            // Set up content based on bubble type
+            setupContent()
+            
+            // Initialize touch handler after all views are set up
+            touchHandler.initialize(this)
+            
+            Log.d(TAG, "BubbleView initialization completed for bubble: $bubbleId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing BubbleView for bubble: $bubbleId", e)
+            throw e
+        }
     }
     
     /**
-     * Initialize all view components from the layout
+     * Initialize remaining view components not handled by UIManager
      * 
      * @return Unit
      */
     private fun initializeViews() {
-        // Use application context with theme for inflation
-        val themedContext = ContextThemeWrapper(context.applicationContext, R.style.Theme_QBrowser)
-        rootView = LayoutInflater.from(themedContext).inflate(R.layout.bubble_layout, this, true)
-        
-        // Find and initialize view references
-        bubbleIcon = findViewById(R.id.bubble_icon)
-        progressBar = findViewById(R.id.progress_circular)
-        bubbleContainer = findViewById(R.id.bubble_container)
-        urlBarContainer = findViewById(R.id.url_bar_container)
-        urlBarIcon = findViewById(R.id.url_bar_icon)
-        urlBarText = findViewById(R.id.url_bar_text)
-        btnUrlBarSettings = findViewById(R.id.btn_url_bar_settings)
-        expandedContainer = findViewById(R.id.expanded_container)
-        contentContainer = findViewById(R.id.content_container)
-        webViewContainer = findViewById(R.id.web_view)
-        
-        // Initialize resize handles
-        resizeHandlesContainer = findViewById(R.id.resize_handles_container)
-        resizeHandleTopLeft = findViewById(R.id.resize_handle_top_left)
-        resizeHandleTopRight = findViewById(R.id.resize_handle_top_right)
-        resizeHandleBottomLeft = findViewById(R.id.resize_handle_bottom_left)
-        resizeHandleBottomRight = findViewById(R.id.resize_handle_bottom_right)
-        
-        // Set up default favicon
-        bubbleIcon.setImageResource(R.drawable.ic_globe)
-        
-        // Set up progress indicator
-        progressBar.progress = 0   
-        
-        // Ensure summary views and FAB are initialized after layout is ready
-        initializeSummaryViews()
-        
-        // Initialize settings panel
-        settingsPanel = findViewById(R.id.settings_panel)
-        
-        // Initialize settings panel manager
-        settingsPanelManager = BubbleSettingsPanel(context, settingsManager, bubbleAnimator)
-        
-        // Initialize summary manager
-        summaryManager = BubbleSummaryManager(context, bubbleAnimator)
-        
-        // Initialize read mode manager
-        readModeManager = BubbleReadModeManager(context, settingsManager)
-        
-        // Initialize WebView manager
-        webViewManager = BubbleWebViewManager(context, bubbleId, this)
-        
-        // Note: Resize handle setup is now handled by BubbleTouchHandler
+        try {
+            Log.d(TAG, "Initializing remaining views for bubble: $bubbleId")
+            
+            // WebView container (managed separately due to WebViewManager requirements)
+            webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
+            
+            // Ensure summary views and FAB are initialized after layout is ready
+            initializeSummaryViews()
+            
+            // Initialize settings panel
+            settingsPanel = findViewById(R.id.settings_panel) ?: throw IllegalStateException("Settings panel not found in layout")
+            
+            // Initialize settings panel manager
+            settingsPanelManager = BubbleSettingsPanel(context, settingsManager, bubbleAnimator)
+            
+            // Initialize summary manager
+            summaryManager = BubbleSummaryManager(context, bubbleAnimator)
+            
+            // Initialize read mode manager
+            readModeManager = BubbleReadModeManager(context, settingsManager)
+            
+            // Initialize WebView manager
+            webViewManager = BubbleWebViewManager(context, bubbleId, this)
+            
+            Log.d(TAG, "Remaining views initialized successfully for bubble: $bubbleId")
+            
+            // Note: All basic UI components are now handled by BubbleUIManager
+            // Note: Resize handle setup is now handled by BubbleTouchHandler
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing remaining views for bubble: $bubbleId", e)
+            throw e
+        }
     }
     
     /**
@@ -273,10 +254,10 @@ class BubbleView @JvmOverloads constructor(
                 pages[url]?.let { webPage ->
                     webPage.favicon?.let { favicon ->
                         Log.d(TAG, "Updating bubble icon with favicon for URL: $url")
-                        updateBubbleIcon(favicon)
+                        uiManager.updateBubbleIcon(favicon)
                         // Also update URL bar icon if bubble is expanded
                         if (stateManager.isBubbleExpanded) {
-                            urlBarIcon.setImageBitmap(favicon)
+                            uiManager.updateUrlBarIcon(favicon)
                         }
                     }
                 }
@@ -284,97 +265,9 @@ class BubbleView @JvmOverloads constructor(
         }
     }
     
-    /**
-     * Set up click listeners for all interactive elements
-     */
-    private fun setupClickListeners() {
-        // Main bubble click listener
-        setOnClickListener {
-            toggleBubbleExpanded()
-            notifyBubbleActivated()
-        }
-        
-        // Action button listeners - close settings first, then perform action
-        findViewById<View>(R.id.btn_close).setOnClickListener { 
-            settingsPanelManager.dismissIfVisible(settingsPanel)
-            closeBubbleWithAnimation() 
-        }
-        findViewById<View>(R.id.btn_open_full).setOnClickListener { 
-            settingsPanelManager.dismissIfVisible(settingsPanel)
-            openFullWebView() 
-        }
-        findViewById<View>(R.id.btn_read_mode).setOnClickListener { 
-            settingsPanelManager.dismissIfVisible(settingsPanel)
-            readModeManager.toggleReadMode() 
-        }
-        findViewById<View>(R.id.btn_summarize).setOnClickListener { 
-            settingsPanelManager.dismissIfVisible(settingsPanel)
-            summaryManager.toggleSummaryMode() 
-        }
-
-        
-        // URL bar settings button listener
-        btnUrlBarSettings.setOnClickListener { 
-            if (settingsPanelManager.isVisible()) {
-                settingsPanelManager.hide(settingsPanel)
-            } else {
-                settingsPanelManager.show(settingsPanel, btnUrlBarSettings)
-            }
-        }
-        
-        // Note: Click-outside-to-close is handled in onTouchEvent for better reliability
-        
-        // Handle clicks on expanded container - close settings when clicking inside container
-        // but outside of specific interactive elements
-        expandedContainer.setOnTouchListener { _, event ->
-            settingsPanelManager.handleTouchEvent(event, settingsPanel)
-            false // Don't consume the event, let child views handle it
-        }
-        
-        // URL bar input handling
-        setupUrlBarInput()
-        
-        // Initialize toolbar container reference
-        toolbarContainer = findViewById(R.id.toolbar_container)
-        
-        // Note: Toolbar drag functionality is now handled by BubbleTouchHandler
-    }
+    // Note: Click listeners are now handled by BubbleUIManager
     
-    /**
-     * Set up URL bar input handling
-     */
-    private fun setupUrlBarInput() {
-        // Handle URL input submission
-        urlBarText.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_GO) {
-                val inputUrl = urlBarText.text.toString().trim()
-                if (inputUrl.isNotEmpty()) {
-                    loadNewUrl(inputUrl)
-                    hideKeyboard()
-                }
-                true
-            } else {
-                false
-            }
-        }
-        
-        // Handle focus changes to show/hide keyboard appropriately
-        urlBarText.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                showKeyboard()
-            } else {
-                hideKeyboard()
-            }
-        }
-        
-        // Handle click to show keyboard and select all text - close settings first
-        urlBarText.setOnClickListener {
-            settingsPanelManager.dismissIfVisible(settingsPanel)
-            urlBarText.requestFocus()
-            urlBarText.selectAll()
-            showKeyboard()
-        }
-    }
+    // Note: URL bar input handling is now managed by BubbleUIManager
     
     /**
      * Load a new URL in the WebView
@@ -389,52 +282,7 @@ class BubbleView @JvmOverloads constructor(
         readModeManager.updateCurrentUrl(formattedUrl)
     }
     
-    /**
-     * Show the soft keyboard
-     */
-    private fun showKeyboard() {
-        urlBarText.post {
-            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(urlBarText, InputMethodManager.SHOW_IMPLICIT)
-        }
-    }
-    
-    /**
-     * Hide the soft keyboard
-     */
-    private fun hideKeyboard() {
-        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(urlBarText.windowToken, 0)
-        urlBarText.clearFocus()
-    }
-    
-    /**
-     * Enable window focus to allow keyboard input
-     */
-    private fun enableWindowFocus() {
-        try {
-            val params = layoutParams as? WindowManager.LayoutParams ?: return
-            params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
-            params.flags = params.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-            windowManager.updateViewLayout(this, params)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error enabling window focus", e)
-        }
-    }
-    
-    /**
-     * Disable window focus to prevent accidental keyboard
-     */
-    private fun disableWindowFocus() {
-        try {
-            val params = layoutParams as? WindowManager.LayoutParams ?: return
-            params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-            params.flags = params.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-            windowManager.updateViewLayout(this, params)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error disabling window focus", e)
-        }
-    }
+    // Note: Keyboard and window focus methods are now handled by BubbleUIManager
     
     // Resize handle setup is now handled by BubbleTouchHandler
     
@@ -445,10 +293,10 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun showResizeHandles() {
         val handles = listOf(
-            resizeHandleTopLeft,
-            resizeHandleTopRight,
-            resizeHandleBottomLeft,
-            resizeHandleBottomRight
+            uiManager.getResizeHandleTopLeft(),
+            uiManager.getResizeHandleTopRight(),
+            uiManager.getResizeHandleBottomLeft(),
+            uiManager.getResizeHandleBottomRight()
         )
         
         bubbleAnimator.animateResizeHandlesShow(handles)
@@ -500,14 +348,14 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun hideResizeHandles() {
         val handles = listOf(
-            resizeHandleTopLeft,
-            resizeHandleTopRight,
-            resizeHandleBottomLeft,
-            resizeHandleBottomRight
+            uiManager.getResizeHandleTopLeft(),
+            uiManager.getResizeHandleTopRight(),
+            uiManager.getResizeHandleBottomLeft(),
+            uiManager.getResizeHandleBottomRight()
         )
         
         bubbleAnimator.animateResizeHandlesHide(handles) {
-            resizeHandlesContainer.visibility = View.GONE
+            uiManager.getResizeHandlesContainer().visibility = View.GONE
         }
     }
     
@@ -541,7 +389,7 @@ class BubbleView @JvmOverloads constructor(
             Log.d(TAG, "Setting up WebViewManager for bubble: $bubbleId with URL: $url")
             
             // Initialize the manager with WebView components
-            webViewManager.initialize(webViewContainer, progressBar, webViewModel)
+            webViewManager.initialize(webViewContainer, uiManager.getProgressBar(), webViewModel)
             
             // Initialize settings panel manager with WebView
             setupSettingsPanelManager()
@@ -582,7 +430,7 @@ class BubbleView @JvmOverloads constructor(
         if (!stateManager.isToolbarVisible) return // Already hidden
         
         stateManager.setToolbarVisible(false)
-        bubbleAnimator.animateToolbarSlide(toolbarContainer, false)
+        bubbleAnimator.animateToolbarSlide(uiManager.getToolbarContainer(), false)
     }
     
     /**
@@ -592,7 +440,7 @@ class BubbleView @JvmOverloads constructor(
         if (stateManager.isToolbarVisible) return // Already visible
         
         stateManager.setToolbarVisible(true)
-        bubbleAnimator.animateToolbarSlide(toolbarContainer, true)
+        bubbleAnimator.animateToolbarSlide(uiManager.getToolbarContainer(), true)
     }
     
 
@@ -665,9 +513,9 @@ class BubbleView @JvmOverloads constructor(
     private fun setupReadModeManager() {
         // Initialize the read mode manager with WebView and UI components
         readModeManager.initialize(
-            btnReadMode,
+            findViewById(R.id.btn_read_mode), // btnReadMode is handled by separate managers, not UIManager
             webViewContainer,
-            progressBar,
+            uiManager.getProgressBar(),
             url
         )
         
@@ -739,11 +587,11 @@ class BubbleView @JvmOverloads constructor(
         updateUrlBar()
         
         // Enable input focus for keyboard
-        enableWindowFocus()
+        uiManager.enableWindowFocus()
         
         // Reset toolbar state
         stateManager.setToolbarVisible(true)
-        toolbarContainer.translationY = 0f
+        uiManager.getToolbarContainer().translationY = 0f
         
         // Configure container visibility
         webViewContainer.visibility = View.VISIBLE
@@ -754,13 +602,13 @@ class BubbleView @JvmOverloads constructor(
         
         // Start the expand animation with proper sequencing
         bubbleAnimator.animateExpandFromBubble(
-            bubbleContainer = bubbleContainer,
-            urlBarContainer = urlBarContainer,
-            expandedContainer = expandedContainer,
+            bubbleContainer = uiManager.getBubbleContainer(),
+            urlBarContainer = uiManager.getUrlBarContainer(),
+            expandedContainer = uiManager.getExpandedContainer(),
             onEnd = {
                 // Show resize handles after expansion is complete
                 showResizeHandles()
-                resizeHandlesContainer.visibility = View.VISIBLE
+                uiManager.getResizeHandlesContainer().visibility = View.VISIBLE
                 
                 // Make WebView visible and ensure content is loaded
                 loadContentInExpandedWebView()
@@ -773,14 +621,14 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun updateUrlBar() {
         // Set the URL text
-        urlBarText.setText(url)
+        uiManager.updateUrlBarText(url)
         
         // Update the favicon in the URL bar
         webViewModel?.webPages?.value?.get(url)?.favicon?.let { favicon ->
-            urlBarIcon.setImageBitmap(favicon)
+            uiManager.updateUrlBarIcon(favicon)
         } ?: run {
             // Use default globe icon if no favicon available
-            urlBarIcon.setImageResource(R.drawable.ic_globe)
+            uiManager.updateUrlBarIcon(null)
         }
     }
     
@@ -789,7 +637,7 @@ class BubbleView @JvmOverloads constructor(
      * Initial dimensions are defined in dimens.xml and can be customized there.
      */
     private fun resizeExpandedContainer() {
-        val layoutParams = expandedContainer.layoutParams
+        val layoutParams = uiManager.getExpandedContainer().layoutParams
         
         if (stateManager.hasStoredDimensions && stateManager.storedWidth > 0 && stateManager.storedHeight > 0) {
             // Use stored dimensions if available
@@ -804,7 +652,7 @@ class BubbleView @JvmOverloads constructor(
             stateManager.updateDimensions(layoutParams.width, layoutParams.height)
         }
         
-        expandedContainer.layoutParams = layoutParams
+        uiManager.getExpandedContainer().layoutParams = layoutParams
         
         // Update WebView dimensions to match the container
         val webViewParams = webViewContainer.layoutParams
@@ -813,10 +661,10 @@ class BubbleView @JvmOverloads constructor(
         webViewContainer.layoutParams = webViewParams
         
         // Update content container dimensions to match
-        val contentParams = contentContainer.layoutParams
+        val contentParams = uiManager.getContentContainer().layoutParams
         contentParams.width = layoutParams.width
         contentParams.height = layoutParams.height
-        contentContainer.layoutParams = contentParams
+        uiManager.getContentContainer().layoutParams = contentParams
         
         // If we have a stored zoom level from previous resize operations, use it
         // Otherwise, calculate based on window width
@@ -834,9 +682,9 @@ class BubbleView @JvmOverloads constructor(
         applyDynamicZoom(zoomPercent)
         
         // Force layout update
-        expandedContainer.requestLayout()
+        uiManager.getExpandedContainer().requestLayout()
         webViewContainer.requestLayout()
-        contentContainer.requestLayout()
+        uiManager.getContentContainer().requestLayout()
     }
     
     /**
@@ -892,10 +740,10 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun collapseBubble() {
         // Disable input focus to prevent accidental keyboard
-        disableWindowFocus()
+        uiManager.disableWindowFocus()
         
         // Hide keyboard if visible
-        hideKeyboard()
+        uiManager.hideKeyboard()
         
         // Hide settings panel if visible
         settingsPanelManager.dismissIfVisible(settingsPanel)
@@ -915,9 +763,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Start the collapse animation with proper sequencing
         bubbleAnimator.animateCollapseTobubble(
-            expandedContainer = expandedContainer,
-            urlBarContainer = urlBarContainer,
-            bubbleContainer = bubbleContainer,
+            expandedContainer = uiManager.getExpandedContainer(),
+            urlBarContainer = uiManager.getUrlBarContainer(),
+            bubbleContainer = uiManager.getBubbleContainer(),
             onEnd = {
                 // Final cleanup after animation completes
                 // Don't destroy WebView content - just hide it
@@ -963,16 +811,16 @@ class BubbleView @JvmOverloads constructor(
         if (stateManager.isBubbleExpanded) {
             // For expanded bubbles, animate the expanded UI elements scaling down gracefully
             bubbleAnimator.animateExpandedBubbleClose(
-                urlBarContainer = urlBarContainer,
-                expandedContainer = expandedContainer,
-                bubbleContainer = bubbleContainer,
+                urlBarContainer = uiManager.getUrlBarContainer(),
+                expandedContainer = uiManager.getExpandedContainer(),
+                bubbleContainer = uiManager.getBubbleContainer(),
                 onEnd = {
                     stateManager.triggerClose()
                 }
             )
         } else {
             // For collapsed bubbles, just animate the bubble icon disappearing
-            bubbleContainer.visibility = View.INVISIBLE
+            uiManager.getBubbleContainer().visibility = View.INVISIBLE
             bubbleAnimator.animateDisappear(this, onEnd = {
                 stateManager.triggerClose()
             })
@@ -1056,9 +904,9 @@ class BubbleView @JvmOverloads constructor(
     private fun closeBubble() {
         // Logic to close the bubble
         stateManager.setActive(false)
-        expandedContainer.visibility = View.GONE
-        bubbleContainer.visibility = View.GONE
-        resizeHandlesContainer.visibility = View.GONE
+        uiManager.getExpandedContainer().visibility = View.GONE
+        uiManager.getBubbleContainer().visibility = View.GONE
+        uiManager.getResizeHandlesContainer().visibility = View.GONE
         stateManager.triggerClose()
     }
     
@@ -1105,7 +953,7 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun getExpandedContainer(): View {
-        return expandedContainer
+        return uiManager.getExpandedContainer()
     }
     
     override fun getSettingsPanel(): View {
@@ -1113,24 +961,24 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun getSettingsButton(): MaterialButton {
-        return btnUrlBarSettings
+        return uiManager.getBtnUrlBarSettings()
     }
     
     override fun getToolbarContainer(): View {
-        return toolbarContainer
+        return uiManager.getToolbarContainer()
     }
     
     override fun getResizeHandles(): List<ImageView> {
         return listOf(
-            resizeHandleTopLeft,
-            resizeHandleTopRight, 
-            resizeHandleBottomLeft,
-            resizeHandleBottomRight
+            uiManager.getResizeHandleTopLeft(),
+            uiManager.getResizeHandleTopRight(), 
+            uiManager.getResizeHandleBottomLeft(),
+            uiManager.getResizeHandleBottomRight()
         )
     }
     
     override fun getContentContainer(): FrameLayout {
-        return contentContainer
+        return uiManager.getContentContainer()
     }
     
     override fun getWebViewContainer(): View {
@@ -1197,14 +1045,14 @@ class BubbleView @JvmOverloads constructor(
         try {
             // Run on UI thread to update the ImageView
             post {
-                bubbleIcon.setImageBitmap(favicon)
+                uiManager.updateBubbleIcon(favicon)
                 Log.d(TAG, "Bubble icon updated with favicon for bubble: $bubbleId")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error updating bubble icon", e)
             // Fallback to default icon if there's an error
             post {
-                bubbleIcon.setImageResource(R.drawable.ic_globe)
+                uiManager.updateBubbleIcon(null)
             }
         }
     }
@@ -1304,12 +1152,12 @@ class BubbleView @JvmOverloads constructor(
     fun updateProgress(progress: Int) {
         if (progress !in 0..100) return
         
-        progressBar.progress = progress
+        uiManager.updateProgress(progress)
         
         when {
             // Show progress bar when loading (1-99%)
             progress in 1..99 -> {
-                progressBar.visibility = View.VISIBLE
+                uiManager.setProgressVisible(true)
                 updateProgressColor(progress)
                 
                 // Log progress for debugging at 20% intervals
@@ -1318,7 +1166,7 @@ class BubbleView @JvmOverloads constructor(
                 }
             }
             // Hide when complete or not started
-            else -> progressBar.visibility = View.GONE
+            else -> uiManager.setProgressVisible(false)
         }
     }
     
@@ -1333,7 +1181,7 @@ class BubbleView @JvmOverloads constructor(
             progress < 70 -> ContextCompat.getColor(context, R.color.colorPrimary)
             else -> ContextCompat.getColor(context, android.R.color.holo_green_light)
         }
-        progressBar.progressDrawable?.setColorFilter(color, PorterDuff.Mode.SRC_IN)
+        uiManager.getProgressBar().progressDrawable?.setColorFilter(color, PorterDuff.Mode.SRC_IN)
     }
 
     /**
@@ -1341,11 +1189,11 @@ class BubbleView @JvmOverloads constructor(
      */
     fun setActive() {
         stateManager.setActive(true)
-        expandedContainer.visibility = View.VISIBLE
-        bubbleAnimator.animateExpand(expandedContainer)
+        uiManager.getExpandedContainer().visibility = View.VISIBLE
+        bubbleAnimator.animateExpand(uiManager.getExpandedContainer())
         
         // Show resize handles when expanded container is visible
-        resizeHandlesContainer.visibility = View.VISIBLE
+        uiManager.getResizeHandlesContainer().visibility = View.VISIBLE
         
         // Show the regular web view (not the summary view)
         webViewContainer.visibility = View.VISIBLE
@@ -1357,10 +1205,10 @@ class BubbleView @JvmOverloads constructor(
      */
     fun setInactive() {
         stateManager.setActive(false)
-        expandedContainer.visibility = View.GONE
+        uiManager.getExpandedContainer().visibility = View.GONE
         
         // Hide resize handles when expanded container is hidden
-        resizeHandlesContainer.visibility = View.GONE
+        uiManager.getResizeHandlesContainer().visibility = View.GONE
     }
 
     /**
@@ -1422,7 +1270,7 @@ class BubbleView @JvmOverloads constructor(
         summaryContainer = findViewById(R.id.summary_container) ?: FrameLayout(context).also {
             it.id = R.id.summary_container
             it.visibility = View.GONE
-            (expandedContainer as? ViewGroup)?.addView(it)
+            (uiManager.getExpandedContainer() as? ViewGroup)?.addView(it)
         }
         summaryContent = findViewById(R.id.summary_content) ?: LinearLayout(context).also {
             it.id = R.id.summary_content
@@ -1458,11 +1306,11 @@ class BubbleView @JvmOverloads constructor(
         Log.d(TAG, "Active state changed for bubble $bubbleId: $isActive")
         // Handle active state UI updates
         if (isActive) {
-            expandedContainer.visibility = View.VISIBLE
-            resizeHandlesContainer.visibility = View.VISIBLE
+            uiManager.getExpandedContainer().visibility = View.VISIBLE
+            uiManager.getResizeHandlesContainer().visibility = View.VISIBLE
         } else {
-            expandedContainer.visibility = View.GONE
-            resizeHandlesContainer.visibility = View.GONE
+            uiManager.getExpandedContainer().visibility = View.GONE
+            uiManager.getResizeHandlesContainer().visibility = View.GONE
         }
     }
     
@@ -1552,6 +1400,58 @@ class BubbleView @JvmOverloads constructor(
     
     override fun onWebViewProgressChanged(progress: Int) {
         updateProgress(progress)
+    }
+    
+    // ================== UIInteractionListener Implementation ==================
+    
+    override fun onToggleBubbleExpanded() {
+        toggleBubbleExpanded()
+        notifyBubbleActivated()
+    }
+    
+    override fun onCloseBubble() {
+        settingsPanelManager.dismissIfVisible(settingsPanel)
+        closeBubbleWithAnimation()
+    }
+    
+    override fun onOpenFullWebView() {
+        settingsPanelManager.dismissIfVisible(settingsPanel)
+        openFullWebView()
+    }
+    
+    override fun onToggleReadMode() {
+        settingsPanelManager.dismissIfVisible(settingsPanel)
+        readModeManager.toggleReadMode()
+    }
+    
+    override fun onToggleSummaryMode() {
+        settingsPanelManager.dismissIfVisible(settingsPanel)
+        summaryManager.toggleSummaryMode()
+    }
+    
+    override fun onSettingsButtonClicked() {
+        if (settingsPanelManager.isVisible()) {
+            settingsPanelManager.hide(settingsPanel)
+        } else {
+            settingsPanelManager.show(settingsPanel, uiManager.getBtnUrlBarSettings())
+        }
+    }
+    
+    override fun onUrlSubmitted(url: String) {
+        loadNewUrl(url)
+        uiManager.hideKeyboard()
+    }
+    
+    override fun onUrlBarFocusChanged(hasFocus: Boolean) {
+        if (hasFocus) {
+            uiManager.showKeyboard()
+        } else {
+            uiManager.hideKeyboard()
+        }
+    }
+    
+    override fun onUrlBarClicked() {
+        settingsPanelManager.dismissIfVisible(settingsPanel)
     }
 
 
