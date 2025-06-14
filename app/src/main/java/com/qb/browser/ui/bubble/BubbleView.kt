@@ -76,7 +76,7 @@ class BubbleView @JvmOverloads constructor(
     var url: String,  // Changed from val to var to allow URL updates when navigating
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate, BubbleStateManager.Companion.StateChangeListener {
+) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate, BubbleStateManager.Companion.StateChangeListener, BubbleWebViewManagerInterface {
     
     // UI components
     private lateinit var rootView: View
@@ -113,6 +113,9 @@ class BubbleView @JvmOverloads constructor(
     private val bubbleAnimator = BubbleAnimator(context)
     private val touchHandler = BubbleTouchHandler(context, this)
     private var webViewModel: WebViewModel? = null
+    
+    // WebView Manager - handles all WebView-related functionality
+    private lateinit var webViewManager: BubbleWebViewManager
 
     // Summary/Summarization UI and State
     private lateinit var btnSummarize: MaterialButton // Changed from fabSummarize to btnSummarize
@@ -205,6 +208,9 @@ class BubbleView @JvmOverloads constructor(
         
         // Initialize read mode manager
         readModeManager = BubbleReadModeManager(context, settingsManager)
+        
+        // Initialize WebView manager
+        webViewManager = BubbleWebViewManager(context, bubbleId, this)
         
         // Note: Resize handle setup is now handled by BubbleTouchHandler
     }
@@ -485,36 +491,8 @@ class BubbleView @JvmOverloads constructor(
         // Store the current zoom level for persistence when bubble is collapsed/expanded
         stateManager.setZoomPercent(zoomPercent)
         
-        // Convert percentage to decimal (e.g., 75% -> 0.75)
-        val zoomFactor = zoomPercent / 100f
-        
-        // Calculate the inverse width percentage to maintain content width
-        // For example, if zoom is 75%, width should be 133.33% (100/0.75)
-        val widthPercent = if (zoomFactor > 0) (100f / zoomFactor) else 100f
-        
-        // Apply zoom via JavaScript
-        webViewContainer.evaluateJavascript("""
-            (function() {
-                // Set viewport to control initial scale
-                var meta = document.querySelector('meta[name="viewport"]');
-                if (!meta) {
-                    meta = document.createElement('meta');
-                    meta.name = 'viewport';
-                    document.head.appendChild(meta);
-                }
-                meta.content = 'width=device-width, initial-scale=${zoomFactor}, maximum-scale=1.0, user-scalable=yes';
-                
-                // Apply multiple zoom techniques for better compatibility
-                document.body.style.zoom = "${zoomPercent}%";
-                document.body.style.transformOrigin = "0 0";
-                document.body.style.transform = "scale(${zoomFactor})";
-                document.body.style.width = "${widthPercent}%";
-                
-                return "Zoom applied: ${zoomPercent}%";
-            })()
-        """.trimIndent(), null)
-        
-        Log.d(TAG, "Applied dynamic zoom: $zoomPercent%")
+        // Apply zoom via WebViewManager
+        webViewManager.applyDynamicZoom(zoomPercent.toInt())
     }
     
     /**
@@ -551,38 +529,51 @@ class BubbleView @JvmOverloads constructor(
         // Show WebView for all bubbles
         webViewContainer.visibility = View.VISIBLE
         
-        // Set up WebView
-        setupWebView()
-        
-        // Set up scroll listener for toolbar animation
-        setupScrollListener()
+        // Set up WebView using the WebViewManager
+        setupWebViewManager()
     }
     
     /**
-     * Set up scroll listener to show/hide toolbar based on scroll direction
+     * Set up WebView manager with proper initialization and callbacks
      */
-    private fun setupScrollListener() {
-        // Add JavaScript interface for scroll detection
-        webViewContainer.addJavascriptInterface(object {
-            @android.webkit.JavascriptInterface
-            fun onScrollDown() {
-                post {
-                    if (stateManager.isToolbarVisible) {
-                        stateManager.setToolbarVisible(false)
-                    }
-                }
+    private fun setupWebViewManager() {
+        try {
+            Log.d(TAG, "Setting up WebViewManager for bubble: $bubbleId with URL: $url")
+            
+            // Initialize the manager with WebView components
+            webViewManager.initialize(webViewContainer, progressBar, webViewModel)
+            
+            // Initialize settings panel manager with WebView
+            setupSettingsPanelManager()
+            
+            // Initialize summary manager with WebView
+            setupSummaryManager()
+            
+            // Initialize read mode manager with WebView
+            setupReadModeManager()
+            
+            // Set up touch listener for WebView to handle settings dismissal
+            webViewContainer.setOnTouchListener { _, event ->
+                settingsPanelManager.handleTouchEvent(event, settingsPanel)
+                false // Don't consume the event, let WebView handle it normally
             }
             
-            @android.webkit.JavascriptInterface
-            fun onScrollUp() {
-                post {
-                    if (!stateManager.isToolbarVisible) {
-                        stateManager.setToolbarVisible(true)
-                    }
-                }
+            // Make WebView ready to load content in the background with alpha=0
+            webViewContainer.alpha = 0f
+            
+            // Load the initial URL
+            if (url.isNotEmpty()) {
+                post { webViewManager.loadUrl(url) }
             }
-        }, "ScrollDetector")
+            
+            Log.d(TAG, "WebViewManager setup complete for bubble: $bubbleId")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting up WebViewManager for bubble $bubbleId", e)
+        }
     }
+    
+    // Note: Scroll listener functionality is now handled by BubbleWebViewManager
     
     /**
      * Hide toolbar with animation
@@ -606,47 +597,7 @@ class BubbleView @JvmOverloads constructor(
     
 
 
-    /**
-     * Configure the WebView with appropriate settings and clients
-     */
-    private fun setupWebView() {
-        try {
-            Log.d(TAG, "Setting up WebView for bubble: $bubbleId with URL: $url")
-            
-            // Set WebView background to white for better visibility
-            webViewContainer.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
-            
-            // Configure WebView settings
-            configureWebViewSettings()
-            
-            // Set up WebView clients
-            setupWebViewClients()
-            
-            // Initialize settings panel manager with WebView
-            setupSettingsPanelManager()
-            
-            // Initialize summary manager with WebView
-            setupSummaryManager()
-            
-            // Initialize read mode manager with WebView
-            setupReadModeManager()
-            
-            // Set up touch listener for WebView to handle settings dismissal
-            webViewContainer.setOnTouchListener { _, event ->
-                settingsPanelManager.handleTouchEvent(event, settingsPanel)
-                false // Don't consume the event, let WebView handle it normally
-            }
-            
-            // Make WebView ready to load content in the background with alpha=0
-            webViewContainer.alpha = 0f
-            
-            // Load the URL in the background
-        post { loadInitialUrl() }
-
-    } catch (e: Exception) {
-            Log.e(TAG, "Error setting up WebView for bubble $bubbleId", e)
-        }
-    }
+    // Note: setupWebView() method removed - functionality moved to BubbleWebViewManager
     
     /**
      * Set up the settings panel manager with proper initialization and listener
@@ -747,467 +698,22 @@ class BubbleView @JvmOverloads constructor(
         })
     }
     
-    /**
-     * Configure WebView settings based on user preferences
-     * 
-     * @return Unit
-     */
-    private fun configureWebViewSettings() {
-        // Apply basic settings
-        configureBasicWebViewSettings()
-        
-        // Configure security settings
-        configureSecuritySettings()
-        
-        // Configure performance settings
-        configurePerformanceSettings()
-        
-        // Configure content settings
-        configureContentSettings()
-    }
+    // Note: WebView configuration methods removed - functionality moved to BubbleWebViewManager
+    // - configureWebViewSettings()
+    // - configureBasicWebViewSettings() 
+    // - configureSecuritySettings()
+    // - configurePerformanceSettings()
+    // - configureContentSettings()
+    // - setupWebViewClients()
+    // - createWebChromeClient()
     
-    /**
-     * Configure basic WebView settings like zoom and viewport
-     * 
-     * @return Unit
-     */
-    private fun configureBasicWebViewSettings() {
-        webViewContainer.settings.apply {
-            // Viewport settings
-            loadWithOverviewMode = true
-            useWideViewPort = true
-            
-            // Zoom settings
-            builtInZoomControls = true
-            displayZoomControls = false
-            setSupportZoom(true)
-            
-            // Default encoding
-            defaultTextEncodingName = "UTF-8"
-        }
-    }
+    // Note: handleReceivedFavicon() and handleReceivedTitle() methods removed
+    // - functionality moved to BubbleWebViewManager
     
-    /**
-     * Configure security-related WebView settings
-     * 
-     * @return Unit
-     */
-    private fun configureSecuritySettings() {
-        webViewContainer.settings.apply {
-            // JavaScript settings based on user preferences
-            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
-            javaScriptCanOpenWindowsAutomatically = settingsManager.isJavaScriptEnabled()
-            
-            // Mixed content - consider using a more restrictive setting
-            // MIXED_CONTENT_NEVER_ALLOW is more secure
-            mixedContentMode = if (settingsManager.isSecureMode()) {
-                android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            } else {
-                android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            }
-            
-            // File access - restrict based on security settings
-            allowContentAccess = !settingsManager.isSecureMode()
-            allowFileAccess = !settingsManager.isSecureMode()
-        }
-    }
-    
-    /**
-     * Configure performance-related WebView settings
-     * 
-     * @return Unit
-     */
-    private fun configurePerformanceSettings() {
-        // Enable hardware acceleration if device supports it
-        try {
-            @Suppress("DEPRECATION")
-            webViewContainer.settings.setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
-            webViewContainer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error setting hardware acceleration", e)
-            webViewContainer.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-        }
-    }
-    
-    /**
-     * Configure content-related WebView settings
-     * 
-     * @return Unit
-     */
-    private fun configureContentSettings() {
-        webViewContainer.settings.apply {
-            // Storage settings
-            domStorageEnabled = true
-            databaseEnabled = true
-            cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-            
-            // Content settings
-            loadsImagesAutomatically = true
-            blockNetworkImage = false
-            blockNetworkLoads = false
-            
-            // Media settings
-            mediaPlaybackRequiresUserGesture = false
-            
-            // Location settings
-            setGeolocationEnabled(true)
-            
-            // Window settings
-            setSupportMultipleWindows(true)
-        }
-    }
-    
-    /**
-     * Set up WebChromeClient and WebViewClient for the WebView
-     */
-    private fun setupWebViewClients() {
-        // Set up WebChromeClient for progress, favicon and title handling
-        webViewContainer.webChromeClient = createWebChromeClient()
-        
-        // Set up WebViewClient for page loading and error handling with summarization support
-        // and scroll detection for toolbar animation
-        webViewContainer.webViewClient = ScrollAwareWebViewClient(
-            context,
-            { newUrl ->
-                url = newUrl
-                // Update URL bar if bubble is expanded
-                if (stateManager.isBubbleExpanded) {
-                    updateUrlBar()
-                }
-                // Update read mode manager with new URL
-                readModeManager.updateCurrentUrl(newUrl)
-            },
-            { htmlContent ->
-                // HTML content received, cache it for summarization
-                Log.d(TAG, "HTML content received, length: ${htmlContent.length}")
-                summaryManager.cacheHtmlContent(htmlContent)
-                summaryManager.startBackgroundSummarization(htmlContent)
-            },
-            // Scroll down callback
-            {
-                if (stateManager.isToolbarVisible) {
-                    stateManager.setToolbarVisible(false)
-                }
-            },
-            // Scroll up callback
-            {
-                if (!stateManager.isToolbarVisible) {
-                    stateManager.setToolbarVisible(true)
-                }
-            }
-        )
-    }
-    
-    /**
-     * Create a WebChromeClient to handle progress updates, favicons, and titles
-     */
-    private fun createWebChromeClient(): WebChromeClient {
-        return object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                updateProgress(newProgress)
-            }
-
-            override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
-                icon?.let { handleReceivedFavicon(it) }
-            }
-            
-            override fun onReceivedTitle(view: WebView?, title: String?) {
-                title?.let { handleReceivedTitle(it) }
-            }
-        }
-    }
-    
-    /**
-     * Handle a received favicon from the WebView
-     * 
-     * @param favicon The bitmap favicon received from the WebView
-     * @return Unit
-     */
-    private fun handleReceivedFavicon(favicon: Bitmap) {
-        // Update local favicon
-        updateFavicon(favicon)
-        
-        // Update in WebViewModel to persist the favicon
-        updateWebViewModel { viewModel ->
-            viewModel.updateFavicon(url, favicon)
-            Log.d(TAG, "Updated favicon in WebViewModel for URL: $url")
-        }
-        
-        Log.d(TAG, "Received favicon for bubble: $bubbleId")
-    }
-    
-    /**
-     * Handle a received page title from the WebView
-     * 
-     * @param title The title received from the WebView
-     * @return Unit
-     */
-    private fun handleReceivedTitle(title: String) {
-        Log.d(TAG, "Received page title for bubble $bubbleId: $title")
-        
-        // Update title in WebViewModel
-        updateWebViewModel { viewModel ->
-            viewModel.updateTitle(url, title)
-        }
-        
-        // Update title in history database if we have access to the application
-        try {
-            // Log that we've updated the title
-            Log.d(TAG, "Updated page title in WebViewModel: $title")
-            
-            // Also update in the application's WebViewModel if available
-            val app = context.applicationContext as? QBApplication
-            app?.webViewModel?.updateTitle(url, title)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating title in history database", e)
-        }
-    }
-    
-    /**
-     * Create a WebViewClient to handle page loading and errors
-     */
-    private fun createWebViewClient(): android.webkit.WebViewClient {
-        return object : android.webkit.WebViewClient() {
-            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                super.onPageStarted(view, url, favicon)
-                Log.d(TAG, "WebView page loading started for bubble $bubbleId: $url")
-                bubbleAnimator.animateProgressIndicator(progressBar, true)
-                
-                // Ensure the WebView is in a good state for rendering
-                view?.invalidate()
-            }
-            
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                Log.d(TAG, "WebView page loading finished for bubble $bubbleId: $url")
-                bubbleAnimator.animateProgressIndicator(progressBar, false)
-                
-                // Force a redraw to ensure content is visible
-                view?.invalidate()
-                
-                // If this is the initial URL, make sure it's properly loaded
-                if (url != null && url == formatUrl(this@BubbleView.url)) {
-                    Log.d(TAG, "Initial URL loaded successfully: $url")
-                    
-                    // If the bubble is expanded, make sure the WebView is fully visible
-                    if (stateManager.isBubbleExpanded) {
-                        webViewContainer.alpha = 1f
-                    }
-                }
-            }
-            
-            // For older Android versions
-            @Suppress("DEPRECATION")
-            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                return handleUrlLoading(view, url)
-            }
-            
-            // For newer Android versions
-            override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
-                return handleUrlLoading(view, request?.url?.toString())
-            }
-            
-            // Ad blocking implementation
-            override fun shouldInterceptRequest(view: WebView?, request: android.webkit.WebResourceRequest?): WebResourceResponse? {
-                if (settingsManager.isAdBlockEnabled()) {
-                    val url = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
-                    val adBlocker = AdBlocker.getInstance(context)
-                    val blockResponse = adBlocker.shouldBlockRequest(url)
-                    if (blockResponse != null) {
-                        Log.d(TAG, "Blocked ad request: $url")
-                        return blockResponse
-                    }
-                }
-                return super.shouldInterceptRequest(view, request)
-            }
-            
-            // For older Android versions
-            @Suppress("DEPRECATION")
-            override fun shouldInterceptRequest(view: WebView?, url: String?): WebResourceResponse? {
-                if (settingsManager.isAdBlockEnabled()) {
-                    if (url != null) {
-                        val adBlocker = AdBlocker.getInstance(context)
-                        val blockResponse = adBlocker.shouldBlockRequest(url)
-                        if (blockResponse != null) {
-                            Log.d(TAG, "Blocked ad request: $url")
-                            return blockResponse
-                        }
-                    }
-                }
-                return super.shouldInterceptRequest(view, url)
-            }
-            
-            // Common URL handling logic
-            private fun handleUrlLoading(view: WebView?, url: String?): Boolean {
-                if (url == null) return false
-                
-                Log.d(TAG, "Loading URL in WebView: $url")
-                
-                // Check if this is an authentication URL that should be handled with Custom Tabs
-                if (AuthenticationHandler.isAuthenticationUrl(url)) {
-                    Log.d(TAG, "Authentication URL detected in BubbleView, opening in Custom Tab: $url")
-                    AuthenticationHandler.openInCustomTab(context, url, bubbleId)
-                    return true
-                }
-                
-                // Handle special URLs that should be opened by external apps
-                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || 
-                    url.startsWith("intent:") || url.startsWith("market:")) {
-                    try {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
-                        return true
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error handling special URL: $url", e)
-                    }
-                }
-                
-                // Handle normal HTTP/HTTPS URLs
-                if (url.startsWith("http://") || url.startsWith("https://")) {
-                    // Update the current URL
-                    this@BubbleView.url = url
-                    
-                    // Update URL bar if bubble is expanded
-                    if (stateManager.isBubbleExpanded) {
-                        updateUrlBar()
-                    }
-                    
-                    // We don't need to call loadUrl here, as returning false will let the WebView handle it
-                    // This ensures proper handling of all navigation states, history, etc.
-                    
-                    // Return false to let WebView handle the URL loading
-                    return false
-                }
-                
-                // Return false to let WebView handle other URLs
-                return false
-            }
-            
-            // Handle HTTP errors
-            @Suppress("DEPRECATION")
-            override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
-                super.onReceivedError(view, errorCode, description, failingUrl)
-                Log.e(TAG, "WebView error for bubble $bubbleId: $errorCode - $description for URL: $failingUrl")
-                
-                // Only handle errors for the main page, not resources
-                if (failingUrl == view?.url) {
-                    handleWebViewError(view, errorCode, description, failingUrl)
-                }
-            }
-            
-            // Handle newer API errors
-            override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
-                super.onReceivedError(view, request, error)
-                
-                val errorCode = error?.errorCode ?: -1
-                val description = error?.description?.toString() ?: "Unknown error"
-                val failingUrl = request?.url?.toString()
-                
-                Log.e(TAG, "WebView error (new API) for bubble $bubbleId: $errorCode - $description for URL: $failingUrl")
-                
-                // Only handle errors for the main page, not resources
-                if (request?.isForMainFrame == true) {
-                    handleWebViewError(view, errorCode, description, failingUrl)
-                }
-            }
-            
-            // Common error handling logic
-            private fun handleWebViewError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
-                // For connection errors, try to reload after a delay
-                if (errorCode == android.webkit.WebViewClient.ERROR_CONNECT || 
-                    errorCode == android.webkit.WebViewClient.ERROR_TIMEOUT ||
-                    errorCode == android.webkit.WebViewClient.ERROR_HOST_LOOKUP) {
-                    
-                    postDelayed({
-                        Log.d(TAG, "Attempting to reload after error: $failingUrl")
-                        view?.reload()
-                    }, 2000) // 2 second delay before retry
-                }
-            }
-            
-            // Handle SSL errors - accept all for simplicity
-            override fun onReceivedSslError(view: WebView?, handler: android.webkit.SslErrorHandler?, error: android.net.http.SslError?) {
-                Log.d(TAG, "SSL Error received for bubble $bubbleId: ${error?.toString()}")
-                // Accept SSL certificate for simplicity
-                handler?.proceed()
-            }
-        }
-    }
-    
-    /**
-     * Load the initial URL in the WebView
-     */
-    private fun loadInitialUrl() {
-        if (url.isNotEmpty()) {
-            val formattedUrl = formatUrl(url)
-            if (formattedUrl.isNotEmpty()) {
-                try {
-                    Log.d(TAG, "Loading URL directly in WebView for bubble $bubbleId: $formattedUrl")
-                    
-                    // Clear any existing page
-                    webViewContainer.clearHistory()
-                    webViewContainer.clearCache(true)
-                    
-                    // Make sure WebView is in a good state for loading
-                    webViewContainer.stopLoading()
-                    
-                    // Load the URL with additional headers to ensure proper loading
-                    val headers = HashMap<String, String>()
-                    headers["User-Agent"] = webViewContainer.settings.userAgentString
-                    headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-                    headers["Accept-Language"] = "en-US,en;q=0.5"
-                    
-                    // Load the URL with headers
-                    webViewContainer.loadUrl(formattedUrl, headers)
-                    
-                    // Log success
-                    Log.d(TAG, "URL load initiated for bubble $bubbleId")
-                    
-                    // Set a fallback timer to reload if needed
-                    postDelayed({
-                        if (webViewContainer.url == null || webViewContainer.url == "about:blank") {
-                            Log.d(TAG, "Fallback: Reloading URL for bubble $bubbleId: $formattedUrl")
-                            webViewContainer.loadUrl(formattedUrl, headers)
-                        }
-                    }, 1000) // 1 second fallback
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error loading URL for bubble $bubbleId", e)
-                    webViewContainer.loadUrl("about:blank")
-                }
-            } else {
-                Log.d(TAG, "Invalid URL format for bubble $bubbleId: $url")
-                webViewContainer.loadUrl("about:blank")
-            }
-        } else {
-            // Load a blank page for empty URL
-            Log.d(TAG, "No URL provided for bubble $bubbleId")
-            webViewContainer.loadUrl("about:blank")
-        }
-    }
-
-    /**
-     * Reload the webpage if needed
-     */
-    private fun reloadWebPageIfNeeded() {
-        if (url.isEmpty()) return
-        
-        try {
-            // Only reload if WebView hasn't loaded content yet
-            if (webViewContainer.url == null || webViewContainer.url == "about:blank") {
-                val loadUrl = formatUrl(url)
-                if (loadUrl.isNotEmpty()) {
-                    Log.d(TAG, "Reloading URL for bubble $bubbleId: $loadUrl")
-                    webViewContainer.loadUrl(loadUrl)
-                    Log.d(TAG, "Successfully reloaded URL for bubble $bubbleId: $loadUrl")
-                } else {
-                    Log.d(TAG, "Invalid URL format for bubble $bubbleId: $url")
-                }
-            } else {
-                Log.d(TAG, "WebView already has content for bubble $bubbleId: ${webViewContainer.url}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error reloading URL for bubble $bubbleId", e)
-        }
-    }
+    // Note: Large WebView client and URL loading methods removed
+    // - createWebViewClient() - moved to BubbleWebViewManager  
+    // - loadInitialUrl() - moved to BubbleWebViewManager
+    // - reloadWebPageIfNeeded() - moved to BubbleWebViewManager
 
     /**
      * Toggle bubble expanded state with animation
@@ -1347,28 +853,17 @@ class BubbleView @JvmOverloads constructor(
                 .setDuration(200)
                 .start()
             
-            // Check if the page is loaded
-            val currentUrl = webViewContainer.url
+            // Check if the page is loaded using WebViewManager
+            val currentUrl = webViewManager.getCurrentUrl()
             Log.d(TAG, "Current WebView URL: $currentUrl")
             
             // If the page hasn't loaded yet or is blank, reload it
             if (currentUrl == null || currentUrl == "about:blank" || currentUrl.isEmpty()) {
-                val formattedUrl = formatUrl(url)
-                if (formattedUrl.isNotEmpty()) {
-                    Log.d(TAG, "Loading URL in expanded bubble (fallback): $formattedUrl")
+                if (url.isNotEmpty()) {
+                    Log.d(TAG, "Loading URL in expanded bubble (fallback): $url")
                     
-                    // Load with headers for better compatibility
-                    val headers = HashMap<String, String>()
-                    headers["User-Agent"] = webViewContainer.settings.userAgentString
-                    headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-                    headers["Accept-Language"] = "en-US,en;q=0.5"
-                    
-                    // Stop any current loading and load the URL
-                    webViewContainer.stopLoading()
-                    webViewContainer.loadUrl(formattedUrl, headers)
-                    
-                    // Log the reload attempt
-                    Log.d(TAG, "Reloaded URL in expanded bubble: $formattedUrl")
+                    // Use WebViewManager to load the URL
+                    webViewManager.loadUrl(url)
                     
                     // Apply the stored zoom level after a short delay to ensure the page has loaded
                     postDelayed({
@@ -1991,6 +1486,72 @@ class BubbleView @JvmOverloads constructor(
         } else {
             hideToolbar()
         }
+    }
+    
+    // ============================================================================
+    // Lifecycle Methods
+    // ============================================================================
+    
+    /**
+     * Clean up resources when the view is detached from the window
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        
+        // Clean up WebViewManager resources
+        webViewManager.cleanup()
+        
+        Log.d(TAG, "BubbleView detached and cleaned up for bubble: $bubbleId")
+    }
+    
+    // ============================================================================
+    // BubbleWebViewManagerInterface Implementation
+    // ============================================================================
+    
+    override fun onWebViewUrlChanged(newUrl: String) {
+        url = newUrl
+        // Update URL bar if bubble is expanded
+        if (stateManager.isBubbleExpanded) {
+            updateUrlBar()
+        }
+        // Update read mode manager with new URL
+        readModeManager.updateCurrentUrl(newUrl)
+    }
+    
+    override fun onWebViewHtmlContentLoaded(htmlContent: String) {
+        // HTML content received, cache it for summarization
+        Log.d(TAG, "HTML content received, length: ${htmlContent.length}")
+        summaryManager.cacheHtmlContent(htmlContent)
+        summaryManager.startBackgroundSummarization(htmlContent)
+    }
+    
+    override fun onWebViewScrollDown() {
+        if (stateManager.isToolbarVisible) {
+            stateManager.setToolbarVisible(false)
+        }
+    }
+    
+    override fun onWebViewScrollUp() {
+        if (!stateManager.isToolbarVisible) {
+            stateManager.setToolbarVisible(true)
+        }
+    }
+    
+    override fun onWebViewFaviconReceived(favicon: Bitmap) {
+        // Update local favicon
+        updateFavicon(favicon)
+        
+        Log.d(TAG, "Received favicon for bubble: $bubbleId")
+    }
+    
+    override fun onWebViewTitleReceived(title: String) {
+        Log.d(TAG, "Received page title for bubble $bubbleId: $title")
+        // Title updates are already handled by the WebViewManager
+        // Additional UI updates can be added here if needed
+    }
+    
+    override fun onWebViewProgressChanged(progress: Int) {
+        updateProgress(progress)
     }
 
 
