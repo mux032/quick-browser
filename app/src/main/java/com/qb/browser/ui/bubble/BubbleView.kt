@@ -76,7 +76,7 @@ class BubbleView @JvmOverloads constructor(
     var url: String,  // Changed from val to var to allow URL updates when navigating
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate {
+) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate, BubbleStateManager.Companion.StateChangeListener {
     
     // UI components
     private lateinit var rootView: View
@@ -101,19 +101,10 @@ class BubbleView @JvmOverloads constructor(
     // Touch handling state - moved to BubbleTouchHandler
     // Resize state - moved to BubbleTouchHandler
     
-    // Stored dimensions for the expanded container
-    private var storedWidth = 0
-    private var storedHeight = 0
-    private var hasStoredDimensions = false
-    
-    // Bubble state
-    private var isBubbleExpanded = false
-    private var onCloseListener: (() -> Unit)? = null
-    private var isActive = false
-    private var isShowingAllBubbles = false
-    
-    // Current zoom level (100% by default)
-    private var currentZoomPercent = 100f
+    // State Management - centralized in BubbleStateManager
+    private val stateManager = BubbleStateManager(bubbleId).apply {
+        setStateChangeListener(this@BubbleView)
+    }
     
     // Services and utilities
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
@@ -136,8 +127,6 @@ class BubbleView @JvmOverloads constructor(
     
     // Toolbar container
     private lateinit var toolbarContainer: View
-    private var isToolbarVisible = true
-    private var lastScrollY = 0
     
     // Settings panel
     private lateinit var settingsPanel: View
@@ -280,7 +269,7 @@ class BubbleView @JvmOverloads constructor(
                         Log.d(TAG, "Updating bubble icon with favicon for URL: $url")
                         updateBubbleIcon(favicon)
                         // Also update URL bar icon if bubble is expanded
-                        if (isBubbleExpanded) {
+                        if (stateManager.isBubbleExpanded) {
                             urlBarIcon.setImageBitmap(favicon)
                         }
                     }
@@ -486,7 +475,7 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun applyDynamicZoom(zoomPercent: Float) {
         // Store the current zoom level for persistence when bubble is collapsed/expanded
-        currentZoomPercent = zoomPercent
+        stateManager.setZoomPercent(zoomPercent)
         
         // Convert percentage to decimal (e.g., 75% -> 0.75)
         val zoomFactor = zoomPercent / 100f
@@ -561,8 +550,8 @@ class BubbleView @JvmOverloads constructor(
             @android.webkit.JavascriptInterface
             fun onScrollDown() {
                 post {
-                    if (isToolbarVisible) {
-                        hideToolbar()
+                    if (stateManager.isToolbarVisible) {
+                        stateManager.setToolbarVisible(false)
                     }
                 }
             }
@@ -570,8 +559,8 @@ class BubbleView @JvmOverloads constructor(
             @android.webkit.JavascriptInterface
             fun onScrollUp() {
                 post {
-                    if (!isToolbarVisible) {
-                        showToolbar()
+                    if (!stateManager.isToolbarVisible) {
+                        stateManager.setToolbarVisible(true)
                     }
                 }
             }
@@ -582,9 +571,8 @@ class BubbleView @JvmOverloads constructor(
      * Hide toolbar with animation
      */
     private fun hideToolbar() {
-        if (!isToolbarVisible) return // Already hidden
+        if (!stateManager.isToolbarVisible) return // Already hidden
         
-        isToolbarVisible = false
         toolbarContainer.animate()
             .translationY(toolbarContainer.height.toFloat() + 16f) // Add margin to fully hide
             .setDuration(150) // Faster animation for hiding
@@ -597,9 +585,7 @@ class BubbleView @JvmOverloads constructor(
      * Show toolbar with animation
      */
     private fun showToolbar() {
-        if (isToolbarVisible) return // Already visible
-        
-        isToolbarVisible = true
+        if (stateManager.isToolbarVisible) return // Already visible
         toolbarContainer.animate()
             .translationY(0f)
             .setDuration(200) // Slightly slower for showing
@@ -744,7 +730,7 @@ class BubbleView @JvmOverloads constructor(
             
             override fun onBubbleExpandRequested() {
                 // Expand bubble if not already expanded
-                if (!isBubbleExpanded) {
+                if (!stateManager.isBubbleExpanded) {
                     toggleBubbleExpanded()
                 }
             }
@@ -875,7 +861,7 @@ class BubbleView @JvmOverloads constructor(
             { newUrl ->
                 url = newUrl
                 // Update URL bar if bubble is expanded
-                if (isBubbleExpanded) {
+                if (stateManager.isBubbleExpanded) {
                     updateUrlBar()
                 }
                 // Update read mode manager with new URL
@@ -889,14 +875,14 @@ class BubbleView @JvmOverloads constructor(
             },
             // Scroll down callback
             {
-                if (isToolbarVisible) {
-                    hideToolbar()
+                if (stateManager.isToolbarVisible) {
+                    stateManager.setToolbarVisible(false)
                 }
             },
             // Scroll up callback
             {
-                if (!isToolbarVisible) {
-                    showToolbar()
+                if (!stateManager.isToolbarVisible) {
+                    stateManager.setToolbarVisible(true)
                 }
             }
         )
@@ -994,7 +980,7 @@ class BubbleView @JvmOverloads constructor(
                     Log.d(TAG, "Initial URL loaded successfully: $url")
                     
                     // If the bubble is expanded, make sure the WebView is fully visible
-                    if (isBubbleExpanded) {
+                    if (stateManager.isBubbleExpanded) {
                         webViewContainer.alpha = 1f
                     }
                 }
@@ -1071,7 +1057,7 @@ class BubbleView @JvmOverloads constructor(
                     this@BubbleView.url = url
                     
                     // Update URL bar if bubble is expanded
-                    if (isBubbleExpanded) {
+                    if (stateManager.isBubbleExpanded) {
                         updateUrlBar()
                     }
                     
@@ -1220,9 +1206,9 @@ class BubbleView @JvmOverloads constructor(
      * When collapsed, only the bubble icon is visible.
      */
     private fun toggleBubbleExpanded() {
-        isBubbleExpanded = !isBubbleExpanded
+        stateManager.toggleExpansion()
         
-        if (isBubbleExpanded) {
+        if (stateManager.isBubbleExpanded) {
             expandBubble()
         } else {
             collapseBubble()
@@ -1240,7 +1226,7 @@ class BubbleView @JvmOverloads constructor(
         enableWindowFocus()
         
         // Reset toolbar state
-        isToolbarVisible = true
+        stateManager.setToolbarVisible(true)
         toolbarContainer.translationY = 0f
         
         // Configure container visibility
@@ -1289,19 +1275,17 @@ class BubbleView @JvmOverloads constructor(
     private fun resizeExpandedContainer() {
         val layoutParams = expandedContainer.layoutParams
         
-        if (hasStoredDimensions && storedWidth > 0 && storedHeight > 0) {
+        if (stateManager.hasStoredDimensions && stateManager.storedWidth > 0 && stateManager.storedHeight > 0) {
             // Use stored dimensions if available
-            layoutParams.width = storedWidth
-            layoutParams.height = storedHeight
+            layoutParams.width = stateManager.storedWidth
+            layoutParams.height = stateManager.storedHeight
         } else {
             // Use default dimensions from resources
             layoutParams.width = resources.getDimensionPixelSize(R.dimen.bubble_expanded_default_width)
             layoutParams.height = resources.getDimensionPixelSize(R.dimen.bubble_expanded_default_height)
             
             // Store these default dimensions
-            storedWidth = layoutParams.width
-            storedHeight = layoutParams.height
-            hasStoredDimensions = true
+            stateManager.updateDimensions(layoutParams.width, layoutParams.height)
         }
         
         expandedContainer.layoutParams = layoutParams
@@ -1320,9 +1304,9 @@ class BubbleView @JvmOverloads constructor(
         
         // If we have a stored zoom level from previous resize operations, use it
         // Otherwise, calculate based on window width
-        val zoomPercent = if (currentZoomPercent != 100f) {
+        val zoomPercent = if (stateManager.currentZoomPercent != 100f) {
             // Use the previously stored zoom level
-            currentZoomPercent
+            stateManager.currentZoomPercent
         } else {
             // Calculate initial zoom level based on window width relative to screen width
             val screenWidth = resources.displayMetrics.widthPixels
@@ -1378,13 +1362,13 @@ class BubbleView @JvmOverloads constructor(
                     
                     // Apply the stored zoom level after a short delay to ensure the page has loaded
                     postDelayed({
-                        applyDynamicZoom(currentZoomPercent)
+                        applyDynamicZoom(stateManager.currentZoomPercent)
                     }, 500)
                 }
             } else {
                 // If the page is already loaded, make sure it's visible
                 // Also reapply the stored zoom level
-                applyDynamicZoom(currentZoomPercent)
+                applyDynamicZoom(stateManager.currentZoomPercent)
                 webViewContainer.invalidate()
                 Log.d(TAG, "WebView already has content loaded: $currentUrl")
             }
@@ -1444,7 +1428,7 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun closeBubbleWithAnimation() {
         // Hide resize handles immediately to prevent them from showing during animation
-        if (isBubbleExpanded) {
+        if (stateManager.isBubbleExpanded) {
             hideResizeHandles()
         }
         
@@ -1458,7 +1442,7 @@ class BubbleView @JvmOverloads constructor(
         readModeManager.forceExitReadMode()
         
         // Hide WebView immediately to prevent flash during animation
-        if (isBubbleExpanded) {
+        if (stateManager.isBubbleExpanded) {
             webViewContainer.visibility = View.INVISIBLE
             webViewContainer.alpha = 0f
         }
@@ -1471,21 +1455,21 @@ class BubbleView @JvmOverloads constructor(
      * Animate the bubble disappearing and notify listeners
      */
     private fun animateBubbleDisappearance() {
-        if (isBubbleExpanded) {
+        if (stateManager.isBubbleExpanded) {
             // For expanded bubbles, animate the expanded UI elements scaling down gracefully
             bubbleAnimator.animateExpandedBubbleClose(
                 urlBarContainer = urlBarContainer,
                 expandedContainer = expandedContainer,
                 bubbleContainer = bubbleContainer,
                 onEnd = {
-                    onCloseListener?.invoke()
+                    stateManager.triggerClose()
                 }
             )
         } else {
             // For collapsed bubbles, just animate the bubble icon disappearing
             bubbleContainer.visibility = View.INVISIBLE
             bubbleAnimator.animateDisappear(this, onEnd = {
-                onCloseListener?.invoke()
+                stateManager.triggerClose()
             })
         }
     }
@@ -1566,11 +1550,11 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun closeBubble() {
         // Logic to close the bubble
-        isActive = false
+        stateManager.setActive(false)
         expandedContainer.visibility = View.GONE
         bubbleContainer.visibility = View.GONE
         resizeHandlesContainer.visibility = View.GONE
-        onCloseListener?.invoke()
+        stateManager.triggerClose()
     }
     
     /**
@@ -1612,7 +1596,7 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun isBubbleExpanded(): Boolean {
-        return this.isBubbleExpanded
+        return stateManager.isBubbleExpanded
     }
     
     override fun getExpandedContainer(): View {
@@ -1649,9 +1633,7 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun updateDimensions(width: Int, height: Int) {
-        storedWidth = width
-        storedHeight = height
-        hasStoredDimensions = true
+        stateManager.updateDimensions(width, height)
     }
     
     override fun applyBubbleDynamicZoom(zoomPercent: Float) {
@@ -1664,7 +1646,7 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun getCurrentZoomPercent(): Float {
-        return currentZoomPercent
+        return stateManager.currentZoomPercent
     }
 
     /**
@@ -1689,7 +1671,7 @@ class BubbleView @JvmOverloads constructor(
      * @param listener Callback function to invoke when bubble is closed
      */
     fun setOnCloseListener(listener: () -> Unit) {
-        onCloseListener = listener
+        stateManager.setOnCloseListener(listener)
     }
 
     /**
@@ -1853,7 +1835,7 @@ class BubbleView @JvmOverloads constructor(
      * Set the bubble as active (expanded and showing content)
      */
     fun setActive() {
-        isActive = true
+        stateManager.setActive(true)
         expandedContainer.visibility = View.VISIBLE
         bubbleAnimator.animateExpand(expandedContainer)
         
@@ -1869,7 +1851,7 @@ class BubbleView @JvmOverloads constructor(
      * Set the bubble as inactive (collapsed)
      */
     fun setInactive() {
-        isActive = false
+        stateManager.setActive(false)
         expandedContainer.visibility = View.GONE
         
         // Hide resize handles when expanded container is hidden
@@ -1917,7 +1899,7 @@ class BubbleView @JvmOverloads constructor(
      * @return Unit
      */
     fun setExpanded(expanded: Boolean) {
-        isBubbleExpanded = expanded
+        stateManager.setExpanded(expanded)
         
         // Update UI based on expanded state
         if (expanded) {
@@ -1955,6 +1937,50 @@ class BubbleView @JvmOverloads constructor(
         // Set background color for summary container and content
         summaryContainer.setBackgroundColor(android.graphics.Color.WHITE)
         summaryContent.setBackgroundColor(android.graphics.Color.WHITE)
+    }
+
+    // ======================================
+    // BubbleStateManager.StateChangeListener Implementation
+    // ======================================
+    
+    override fun onExpansionStateChanged(isExpanded: Boolean) {
+        Log.d(TAG, "Expansion state changed for bubble $bubbleId: $isExpanded")
+        // Additional UI updates can be handled here if needed
+        // The main expansion/collapse logic is handled in toggleBubbleExpanded()
+    }
+    
+    override fun onActiveStateChanged(isActive: Boolean) {
+        Log.d(TAG, "Active state changed for bubble $bubbleId: $isActive")
+        // Handle active state UI updates
+        if (isActive) {
+            expandedContainer.visibility = View.VISIBLE
+            resizeHandlesContainer.visibility = View.VISIBLE
+        } else {
+            expandedContainer.visibility = View.GONE
+            resizeHandlesContainer.visibility = View.GONE
+        }
+    }
+    
+    override fun onDimensionsChanged(width: Int, height: Int) {
+        Log.d(TAG, "Dimensions changed for bubble $bubbleId: ${width}x${height}")
+        // Handle dimension changes if needed
+        // This is already handled in the updateDimensions method
+    }
+    
+    override fun onZoomChanged(zoomPercent: Float) {
+        Log.d(TAG, "Zoom changed for bubble $bubbleId: $zoomPercent%")
+        // Apply zoom changes to WebView
+        applyDynamicZoom(zoomPercent)
+    }
+    
+    override fun onToolbarVisibilityChanged(isVisible: Boolean) {
+        Log.d(TAG, "Toolbar visibility changed for bubble $bubbleId: $isVisible")
+        // Handle toolbar visibility changes
+        if (isVisible) {
+            showToolbar()
+        } else {
+            hideToolbar()
+        }
     }
 
 
