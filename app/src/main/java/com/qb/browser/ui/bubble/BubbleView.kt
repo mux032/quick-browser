@@ -198,10 +198,10 @@ class BubbleView @JvmOverloads constructor(
         settingsPanel = findViewById(R.id.settings_panel)
         
         // Initialize settings panel manager
-        settingsPanelManager = BubbleSettingsPanel(context, settingsManager)
+        settingsPanelManager = BubbleSettingsPanel(context, settingsManager, bubbleAnimator)
         
         // Initialize summary manager
-        summaryManager = BubbleSummaryManager(context)
+        summaryManager = BubbleSummaryManager(context, bubbleAnimator)
         
         // Initialize read mode manager
         readModeManager = BubbleReadModeManager(context, settingsManager)
@@ -309,7 +309,11 @@ class BubbleView @JvmOverloads constructor(
         
         // URL bar settings button listener
         btnUrlBarSettings.setOnClickListener { 
-            settingsPanelManager.toggle(settingsPanel)
+            if (settingsPanelManager.isVisible()) {
+                settingsPanelManager.hide(settingsPanel)
+            } else {
+                settingsPanelManager.show(settingsPanel, btnUrlBarSettings)
+            }
         }
         
         // Note: Click-outside-to-close is handled in onTouchEvent for better reliability
@@ -434,10 +438,14 @@ class BubbleView @JvmOverloads constructor(
      * Show resize handles when bubble is expanded
      */
     private fun showResizeHandles() {
-        resizeHandleTopLeft.visibility = View.VISIBLE
-        resizeHandleTopRight.visibility = View.VISIBLE
-        resizeHandleBottomLeft.visibility = View.VISIBLE
-        resizeHandleBottomRight.visibility = View.VISIBLE
+        val handles = listOf(
+            resizeHandleTopLeft,
+            resizeHandleTopRight,
+            resizeHandleBottomLeft,
+            resizeHandleBottomRight
+        )
+        
+        bubbleAnimator.animateResizeHandlesShow(handles)
     }
     
     /**
@@ -513,7 +521,16 @@ class BubbleView @JvmOverloads constructor(
      * Hide resize handles when bubble is collapsed
      */
     private fun hideResizeHandles() {
-        resizeHandlesContainer.visibility = View.GONE
+        val handles = listOf(
+            resizeHandleTopLeft,
+            resizeHandleTopRight,
+            resizeHandleBottomLeft,
+            resizeHandleBottomRight
+        )
+        
+        bubbleAnimator.animateResizeHandlesHide(handles) {
+            resizeHandlesContainer.visibility = View.GONE
+        }
     }
     
     /**
@@ -573,12 +590,8 @@ class BubbleView @JvmOverloads constructor(
     private fun hideToolbar() {
         if (!stateManager.isToolbarVisible) return // Already hidden
         
-        toolbarContainer.animate()
-            .translationY(toolbarContainer.height.toFloat() + 16f) // Add margin to fully hide
-            .setDuration(150) // Faster animation for hiding
-            .setInterpolator(android.view.animation.AccelerateInterpolator(1.5f)) // More aggressive acceleration
-            .withLayer() // Hardware acceleration for smoother animation
-            .start()
+        stateManager.setToolbarVisible(false)
+        bubbleAnimator.animateToolbarSlide(toolbarContainer, false)
     }
     
     /**
@@ -586,12 +599,9 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun showToolbar() {
         if (stateManager.isToolbarVisible) return // Already visible
-        toolbarContainer.animate()
-            .translationY(0f)
-            .setDuration(200) // Slightly slower for showing
-            .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f)) // More aggressive deceleration
-            .withLayer() // Hardware acceleration for smoother animation
-            .start()
+        
+        stateManager.setToolbarVisible(true)
+        bubbleAnimator.animateToolbarSlide(toolbarContainer, true)
     }
     
 
@@ -961,7 +971,7 @@ class BubbleView @JvmOverloads constructor(
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 Log.d(TAG, "WebView page loading started for bubble $bubbleId: $url")
-                progressBar.visibility = View.VISIBLE
+                bubbleAnimator.animateProgressIndicator(progressBar, true)
                 
                 // Ensure the WebView is in a good state for rendering
                 view?.invalidate()
@@ -970,7 +980,7 @@ class BubbleView @JvmOverloads constructor(
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 Log.d(TAG, "WebView page loading finished for bubble $bubbleId: $url")
-                progressBar.visibility = View.GONE
+                bubbleAnimator.animateProgressIndicator(progressBar, false)
                 
                 // Force a redraw to ensure content is visible
                 view?.invalidate()

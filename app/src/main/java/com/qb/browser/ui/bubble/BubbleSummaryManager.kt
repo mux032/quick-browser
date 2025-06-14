@@ -35,9 +35,11 @@ import org.jsoup.Jsoup
  * - Background summarization for performance
  * 
  * @param context Android context for accessing resources and services
+ * @param bubbleAnimator Enhanced animator for smooth mode transitions
  */
 class BubbleSummaryManager(
-    private val context: Context
+    private val context: Context,
+    private val bubbleAnimator: BubbleAnimator? = null
 ) {
     
     companion object {
@@ -126,9 +128,9 @@ class BubbleSummaryManager(
      * Show only the web view, hide summary
      */
     fun showWebViewOnly() {
+        if (!isSummaryMode) return // Already in web view mode
+        
         isSummaryMode = false
-        webView?.visibility = View.VISIBLE
-        summaryContainer?.visibility = View.GONE
         
         // Update button appearance
         btnSummarize?.apply {
@@ -137,8 +139,19 @@ class BubbleSummaryManager(
             contentDescription = context.getString(R.string.summarize)
         }
         
-        Toast.makeText(context, R.string.showing_web_view, Toast.LENGTH_SHORT).show()
-        listener?.onSummaryModeChanged(false)
+        // Use enhanced animation if available
+        if (bubbleAnimator != null && summaryContainer != null && webView != null) {
+            bubbleAnimator.animateFromSummaryMode(summaryContainer!!, webView!!) {
+                Toast.makeText(context, R.string.showing_web_view, Toast.LENGTH_SHORT).show()
+                listener?.onSummaryModeChanged(false)
+            }
+        } else {
+            // Fallback to direct visibility change
+            webView?.visibility = View.VISIBLE
+            summaryContainer?.visibility = View.GONE
+            Toast.makeText(context, R.string.showing_web_view, Toast.LENGTH_SHORT).show()
+            listener?.onSummaryModeChanged(false)
+        }
     }
     
     /**
@@ -150,9 +163,9 @@ class BubbleSummaryManager(
             return
         }
         
+        if (isSummaryMode) return // Already in summary mode
+        
         isSummaryMode = true
-        webView?.visibility = View.GONE
-        summaryContainer?.visibility = View.VISIBLE
         summaryProgress?.visibility = View.VISIBLE
         summaryContent?.removeAllViews()
         
@@ -163,11 +176,23 @@ class BubbleSummaryManager(
             contentDescription = context.getString(R.string.show_web_view)
         }
         
-        Toast.makeText(context, R.string.summarizing, Toast.LENGTH_SHORT).show()
-        listener?.onSummaryModeChanged(true)
-        listener?.onSummarizationStarted()
-        
-        summarizeContent()
+        // Use enhanced animation if available
+        if (bubbleAnimator != null && summaryContainer != null && webView != null) {
+            bubbleAnimator.animateToSummaryMode(webView!!, summaryContainer!!) {
+                Toast.makeText(context, R.string.summarizing, Toast.LENGTH_SHORT).show()
+                listener?.onSummaryModeChanged(true)
+                listener?.onSummarizationStarted()
+                summarizeContent()
+            }
+        } else {
+            // Fallback to direct visibility change
+            webView?.visibility = View.GONE
+            summaryContainer?.visibility = View.VISIBLE
+            Toast.makeText(context, R.string.summarizing, Toast.LENGTH_SHORT).show()
+            listener?.onSummaryModeChanged(true)
+            listener?.onSummarizationStarted()
+            summarizeContent()
+        }
     }
     
     /**

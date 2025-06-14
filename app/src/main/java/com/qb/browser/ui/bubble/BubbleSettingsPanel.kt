@@ -25,10 +25,12 @@ import com.qb.browser.manager.SettingsManager
  * 
  * @param context Android context for accessing resources and services
  * @param settingsManager Manager for persisting and retrieving user settings
+ * @param bubbleAnimator Enhanced animator for professional animations
  */
 class BubbleSettingsPanel(
     private val context: Context,
-    private val settingsManager: SettingsManager
+    private val settingsManager: SettingsManager,
+    private val bubbleAnimator: BubbleAnimator
 ) {
     
     // Settings panel state
@@ -135,35 +137,21 @@ class BubbleSettingsPanel(
      * Show settings panel with animation
      * 
      * @param panel The settings panel view to show
+     * @param triggerButton Optional button that triggered the panel (for positioning)
      */
-    fun show(panel: View) {
+    fun show(panel: View, triggerButton: View? = null) {
         if (isVisible) return // Already visible
         
         // Update settings values to current state
         updateSettingsValues()
         
-        // Show panel with animation
+        // Show panel with enhanced animation
         isVisible = true
-        panel.visibility = View.VISIBLE
-        panel.alpha = 0f
-        panel.scaleX = 0.8f
-        panel.scaleY = 0.8f
+        listener?.onSettingsPanelVisibilityChanged(true)
         
-        // Set pivot to top-right corner for dropdown effect
-        panel.pivotX = panel.width * 0.9f
-        panel.pivotY = 0f
-        
-        panel.animate()
-            .alpha(1f)
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(200)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
-            .withLayer()
-            .withStartAction {
-                listener?.onSettingsPanelVisibilityChanged(true)
-            }
-            .start()
+        bubbleAnimator.animateSettingsPanelShow(panel, triggerButton) {
+            // Animation complete
+        }
     }
     
     /**
@@ -176,22 +164,9 @@ class BubbleSettingsPanel(
         
         isVisible = false
         
-        // Set pivot to top-right corner for dropdown effect
-        panel.pivotX = panel.width * 0.9f
-        panel.pivotY = 0f
-        
-        panel.animate()
-            .alpha(0f)
-            .scaleX(0.8f)
-            .scaleY(0.8f)
-            .setDuration(150)
-            .setInterpolator(android.view.animation.AccelerateInterpolator())
-            .withLayer()
-            .withEndAction {
-                panel.visibility = View.GONE
-                listener?.onSettingsPanelVisibilityChanged(false)
-            }
-            .start()
+        bubbleAnimator.animateSettingsPanelHide(panel) {
+            listener?.onSettingsPanelVisibilityChanged(false)
+        }
     }
     
     /**
