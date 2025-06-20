@@ -31,8 +31,8 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textColor="?android:attr/textColorPrimary"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorOnSurface"
             tools:text="Tab Title" />
 
         <TextView
@@ -42,7 +42,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textAppearance="?attr/textAppearanceCaption"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="https://example.com" />
 
     </LinearLayout>
@@ -54,6 +54,7 @@
         android:layout_gravity="center_vertical"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/close_tab"
-        android:src="@drawable/ic_close" />
+        android:src="@drawable/ic_close"
+        app:tint="?attr/colorOnSurfaceVariant" />
 
 </LinearLayout>

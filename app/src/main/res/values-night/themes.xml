@@ -1,18 +1,29 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Dark application theme. -->
-    <style name="Theme.QBrowser" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.QBrowser" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primaryColorDark</item>
-        <item name="colorPrimaryVariant">@color/primaryDarkColorDark</item>
         <item name="colorOnPrimary">@color/primaryTextColorDark</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/secondaryColorDark</item>
-        <item name="colorSecondaryVariant">@color/secondaryDarkColorDark</item>
         <item name="colorOnSecondary">@color/secondaryTextColorDark</item>
+        <item name="colorPrimaryContainer">@color/primaryDarkColorDark</item>
+        <item name="colorOnPrimaryContainer">@color/primary_light</item>
+        <item name="colorSecondaryContainer">@color/secondaryDarkColorDark</item>
+        <item name="colorOnSecondaryContainer">@color/pink_accent</item>
+        <item name="colorTertiary">@color/light_blue_accent</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/light_blue_primary_dark</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/black</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorOutline">@color/text_secondary</item>
+        <item name="colorError">@color/red_accent</item>
+        <item name="colorOnError">@color/black</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor">@color/primaryDarkColorDark</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
         <!-- Customize your theme here. -->
-        <item name="android:navigationBarColor">@color/primaryDarkColorDark</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
         
         <!-- Uniform text colors -->
         <item name="android:textColorPrimary">@color/darkOnSurface</item>

@@ -35,7 +35,7 @@
                 android:progress="65"
                 android:progressDrawable="@drawable/progress_circle" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_gravity="center"
@@ -51,7 +51,7 @@
                     android:padding="0dp"
                     android:scaleType="fitCenter"
                     tools:src="@drawable/ic_globe" />
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
         </FrameLayout>
 
         <!-- Container for URL bar and expanded content with resize handles overlay -->
@@ -110,11 +110,10 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:textSize="14sp"
-                            android:textColor="#000000"
-                            android:textColorHint="?android:attr/textColorSecondary"
+                            android:textColorHint="?attr/colorOnSurfaceVariant"
                             android:singleLine="true"
                             android:ellipsize="middle"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:background="@drawable/pill_background_selector"
                             android:hint="@string/enter_url_hint"
                             android:inputType="textUri"
@@ -145,7 +144,7 @@
                             android:background="?attr/selectableItemBackgroundBorderless"
                             app:icon="@drawable/ic_more_vert"
                             app:iconSize="18dp"
-                            app:iconTint="?android:attr/textColorSecondary"
+                            app:iconTint="?attr/colorOnSurfaceVariant"
                             android:contentDescription="@string/settings" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -202,8 +201,8 @@
                                     android:id="@+id/summary_title"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:textSize="20sp"
                                     android:textStyle="bold"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge"
                                     android:layout_marginBottom="16dp"
                                     android:text="@string/summary_title" />
                                     
@@ -252,8 +251,8 @@
                                 android:id="@+id/save_message"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="14sp" />
+                                android:textColor="?attr/colorOnSurface"
+                                android:textAppearance="?attr/textAppearanceBodyMedium" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -294,8 +293,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
                                     android:text="@string/block_ads"
-                                    android:textColor="#000000"
-                                    android:textSize="13sp" />
+                                    android:textAppearance="?attr/textAppearanceLabelLarge" />
                                     
                                 <com.google.android.material.switchmaterial.SwitchMaterial
                                     android:id="@+id/ad_block_switch"
@@ -316,8 +314,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
                                     android:text="@string/enable_javascript"
-                                    android:textColor="#000000"
-                                    android:textSize="13sp" />
+                                    android:textAppearance="?attr/textAppearanceLabelLarge" />
                                     
                                 <com.google.android.material.switchmaterial.SwitchMaterial
                                     android:id="@+id/javascript_switch"
@@ -357,7 +354,7 @@
                                 android:layout_height="40dp"
                                 android:contentDescription="@string/close_bubble"
                                 app:icon="@drawable/ic_close"
-                                app:iconTint="@color/crimson_red"
+                                app:iconTint="?attr/colorError"
                                 android:layout_marginEnd="2dp" />
 
                             <com.google.android.material.button.MaterialButton

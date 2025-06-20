@@ -27,7 +27,7 @@
             android:layout_gravity="center"
             android:src="@drawable/ic_check"
             android:visibility="gone"
-            app:tint="@android:color/white" />
+            app:tint="@color/white" />
 
     </com.google.android.material.card.MaterialCardView>
 </FrameLayout>

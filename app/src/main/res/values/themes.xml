@@ -1,18 +1,29 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.QBrowser" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.QBrowser" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>
         <item name="colorOnPrimary">@color/primaryTextColor</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/secondaryColor</item>
-        <item name="colorSecondaryVariant">@color/secondaryDarkColor</item>
         <item name="colorOnSecondary">@color/secondaryTextColor</item>
+        <item name="colorPrimaryContainer">@color/primary_light</item>
+        <item name="colorOnPrimaryContainer">@color/primary_dark</item>
+        <item name="colorSecondaryContainer">@color/pink_accent</item>
+        <item name="colorOnSecondaryContainer">@color/secondaryDarkColor</item>
+        <item name="colorTertiary">@color/light_blue_accent</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/light_blue_primary</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/bubble_background</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorOutline">@color/text_secondary</item>
+        <item name="colorError">@color/red_primary</item>
+        <item name="colorOnError">@color/white</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
         <!-- Customize your theme here. -->
-        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
         
         <!-- Uniform text colors -->
         <item name="android:textColorPrimary">@color/textColorPrimary</item>

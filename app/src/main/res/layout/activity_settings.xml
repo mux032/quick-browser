@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".ui.settings.SettingsActivity">
 
-    <androidx.appcompat.widget.Toolbar
+    <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
@@ -35,11 +35,11 @@
                 android:paddingTop="16dp"
                 android:paddingBottom="8dp"
                 android:text="@string/browser_settings"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                android:textColor="?attr/colorPrimary"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorSecondary"
                 android:textStyle="bold" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -66,16 +66,16 @@
                             android:src="@drawable/ic_javascript"
                             android:layout_marginEnd="16dp"
                             android:contentDescription="@string/enable_javascript"
-                            app:tint="?attr/colorControlNormal" />
+                            app:tint="?attr/colorPrimary" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/enable_javascript"
-                            android:textSize="16sp" />
+                            android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-                        <Switch
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/switch_javascript"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
@@ -94,23 +94,23 @@
                             android:src="@drawable/ic_block_ads"
                             android:layout_marginEnd="16dp"
                             android:contentDescription="@string/block_ads_and_trackers"
-                            app:tint="?attr/colorControlNormal" />
+                            app:tint="?attr/colorPrimary" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/block_ads_and_trackers"
-                            android:textSize="16sp" />
+                            android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-                        <Switch
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/switch_block_ads"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
                     </LinearLayout>
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Privacy Settings -->
             <TextView
@@ -119,11 +119,11 @@
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
                 android:text="@string/privacy"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                android:textColor="?attr/colorPrimary"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorSecondary"
                 android:textStyle="bold" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -150,23 +150,23 @@
                             android:src="@drawable/ic_history"
                             android:layout_marginEnd="16dp"
                             android:contentDescription="@string/save_browsing_history"
-                            app:tint="?attr/colorControlNormal" />
+                            app:tint="?attr/colorPrimary" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/save_browsing_history"
-                            android:textSize="16sp" />
+                            android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-                        <Switch
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/switch_save_history"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
                     </LinearLayout>
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="match_parent"
@@ -174,7 +174,7 @@
                 android:gravity="center"
                 android:padding="16dp"
                 android:text="@string/app_name"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                android:textAppearance="?attr/textAppearanceCaption"
                 android:textStyle="italic" />
 
         </LinearLayout>

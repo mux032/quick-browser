@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp">
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/color_circle"
             android:layout_width="56dp"
             android:layout_height="56dp"
@@ -29,8 +29,9 @@
                 android:layout_gravity="center"
                 android:src="@drawable/ic_check"
                 android:visibility="gone"
+                app:tint="?attr/colorOnPrimaryContainer"
                 android:contentDescription="@string/selected_color" />
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <View
             android:layout_width="64dp"
@@ -43,8 +44,9 @@
         android:id="@+id/color_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="12sp"
         android:maxLines="1"
         android:ellipsize="end"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurface"
         android:textAlignment="center" />
 </LinearLayout>
