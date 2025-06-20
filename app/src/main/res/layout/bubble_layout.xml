@@ -129,6 +129,25 @@
                             android:paddingBottom="2dp"
                             android:text="https://example.com" />
                         
+                        <!-- Share button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_url_bar_share"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:padding="4dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            app:icon="@drawable/ic_share"
+                            app:iconSize="18dp"
+                            app:iconTint="?android:attr/textColorSecondary"
+                            android:contentDescription="@string/share" />
+                        
                         <!-- Settings button -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_url_bar_settings"
@@ -386,7 +405,7 @@
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
                                 android:contentDescription="@string/open_in_full_view"
-                                app:icon="@drawable/ic_share"
+                                app:icon="@drawable/ic_open_full"
                                 app:iconTint="@color/colorPrimary"
                                 android:layout_marginEnd="2dp" />
 

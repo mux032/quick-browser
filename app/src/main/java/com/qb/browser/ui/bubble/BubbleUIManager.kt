@@ -52,6 +52,7 @@ class BubbleUIManager(
     private lateinit var urlBarContainer: View
     private lateinit var urlBarIcon: ImageView
     private lateinit var urlBarText: EditText
+    private lateinit var btnUrlBarShare: MaterialButton
     private lateinit var btnUrlBarSettings: MaterialButton
     private lateinit var expandedContainer: View
     private lateinit var contentContainer: FrameLayout
@@ -81,6 +82,7 @@ class BubbleUIManager(
         fun onToggleReadMode()
         fun onToggleSummaryMode()
         fun onSettingsButtonClicked()
+        fun onShareButtonClicked()
         fun onUrlSubmitted(url: String)
         fun onUrlBarFocusChanged(hasFocus: Boolean)
         fun onUrlBarClicked()
@@ -120,6 +122,7 @@ class BubbleUIManager(
             urlBarContainer = bubbleView.findViewById(R.id.url_bar_container) ?: throw IllegalStateException("url_bar_container not found")
             urlBarIcon = bubbleView.findViewById(R.id.url_bar_icon) ?: throw IllegalStateException("url_bar_icon not found")
             urlBarText = bubbleView.findViewById(R.id.url_bar_text) ?: throw IllegalStateException("url_bar_text not found")
+            btnUrlBarShare = bubbleView.findViewById(R.id.btn_url_bar_share) ?: throw IllegalStateException("btn_url_bar_share not found")
             btnUrlBarSettings = bubbleView.findViewById(R.id.btn_url_bar_settings) ?: throw IllegalStateException("btn_url_bar_settings not found")
             expandedContainer = bubbleView.findViewById(R.id.expanded_container) ?: throw IllegalStateException("expanded_container not found")
             contentContainer = bubbleView.findViewById(R.id.content_container) ?: throw IllegalStateException("content_container not found")
@@ -172,6 +175,10 @@ class BubbleUIManager(
         
         btnSummarize.setOnClickListener { 
             uiListener?.onToggleSummaryMode()
+        }
+
+        btnUrlBarShare.setOnClickListener { 
+            uiListener?.onShareButtonClicked()
         }
         
         // URL bar settings button listener
@@ -401,6 +408,7 @@ class BubbleUIManager(
     fun getUrlBarContainer(): View = urlBarContainer
     fun getUrlBarIcon(): ImageView = urlBarIcon
     fun getUrlBarText(): EditText = urlBarText
+    fun getBtnUrlBarShare(): MaterialButton = btnUrlBarShare
     fun getBtnUrlBarSettings(): MaterialButton = btnUrlBarSettings
     fun getExpandedContainer(): View = expandedContainer
     fun getContentContainer(): FrameLayout = contentContainer

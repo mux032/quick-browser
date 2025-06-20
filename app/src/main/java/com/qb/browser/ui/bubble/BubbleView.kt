@@ -1454,5 +1454,18 @@ class BubbleView @JvmOverloads constructor(
         settingsPanelManager.dismissIfVisible(settingsPanel)
     }
 
-
+    override fun onShareButtonClicked() {
+        try {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, url)
+            }
+            val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share_via))
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sharing URL", e)
+            Toast.makeText(context, context.getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
+        }
+    }
 }
