@@ -16,6 +16,9 @@
     <!-- Specific dark theme text colors -->
     <color name="textColorPrimaryDark">#E0E0E0</color> <!-- Primary text on dark backgrounds -->
     <color name="textColorSecondaryDark">#BDBDBD</color> <!-- Secondary text on dark backgrounds -->
+
+    <!-- Icon tint for URL bar in dark theme -->
+    <color name="icon_tint_url_bar_dark_theme">#CE93D8</color> <!-- Light Purple/Violet -->
     
     <!-- Override daylight colors with night colors -->
     <!-- TODO: Review if these components can use theme attributes instead -->

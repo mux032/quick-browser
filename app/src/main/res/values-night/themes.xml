@@ -23,6 +23,7 @@
         <item name="colorSurface">@color/darkSurface</item>
         <item name="colorOnSurface">@color/darkOnSurface</item>
         <item name="colorOutline">@color/textColorSecondaryDark</item> <!-- Default outline color for dark theme -->
+        <item name="urlBarIconTint">@color/icon_tint_url_bar_dark_theme</item> <!-- Icon tint for URL bar in dark theme -->
         
         <!-- Menu and popup styles -->
         <item name="popupMenuStyle">@style/PopupMenu.QBrowser</item>

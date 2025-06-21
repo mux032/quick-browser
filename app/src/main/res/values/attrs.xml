@@ -1,0 +1,3 @@
+<resources>
+    <attr name="urlBarIconTint" format="color|reference" />
+</resources>

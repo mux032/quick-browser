@@ -23,6 +23,7 @@
         <item name="colorSurface">@color/surfaceColor</item>
         <item name="colorOnSurface">@color/onSurfaceColor</item>
         <item name="colorOutline">@color/text_secondary</item> <!-- Default outline color for light theme -->
+        <item name="urlBarIconTint">?android:attr/textColorSecondary</item> <!-- Icon tint for URL bar in light theme -->
         
         <!-- Menu and popup styles -->
         <item name="popupMenuStyle">@style/PopupMenu.QBrowser</item>
