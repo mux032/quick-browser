@@ -22,6 +22,7 @@
         <item name="android:colorBackground">@color/darkBackground</item>
         <item name="colorSurface">@color/darkSurface</item>
         <item name="colorOnSurface">@color/darkOnSurface</item>
+        <item name="colorOutline">@color/textColorSecondaryDark</item> <!-- Default outline color for dark theme -->
         
         <!-- Menu and popup styles -->
         <item name="popupMenuStyle">@style/PopupMenu.QBrowser</item>
