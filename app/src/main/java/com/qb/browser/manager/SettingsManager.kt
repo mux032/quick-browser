@@ -3,6 +3,7 @@ package com.qb.browser.manager
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Typeface
+import androidx.appcompat.app.AppCompatDelegate // Added import
 import androidx.preference.PreferenceManager
 
 /**
