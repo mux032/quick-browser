@@ -19,6 +19,9 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.qb.browser.R
+import android.content.res.Configuration // Added import
+import androidx.appcompat.app.AppCompatDelegate // Added import
+import com.qb.browser.QBApplication // Added import for QBApplication to access StateFlow
 
 /**
  * BubbleUIManager handles all UI components and interactions for a single BubbleView.
@@ -108,9 +111,27 @@ class BubbleUIManager(
         Log.d(TAG, "Initializing UI components for bubble: $bubbleId")
         
         try {
-            // Use the service context directly with the theme for inflation.
-            // This context might be more up-to-date after AppCompatDelegate changes than applicationContext from service.
-            val themedContext = ContextThemeWrapper(context, R.style.Theme_QBrowser)
+            // Get the current application-wide theme mode
+            val qbApp = context.applicationContext as QBApplication
+            val currentAppThemeMode = qbApp.currentThemeMode.value
+
+            // Create a new configuration based on the current theme mode
+            val currentConfiguration = context.resources.configuration
+            val newConfig = Configuration(currentConfiguration)
+            newConfig.uiMode = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                when (currentAppThemeMode) {
+                    AppCompatDelegate.MODE_NIGHT_YES -> Configuration.UI_MODE_NIGHT_YES
+                    AppCompatDelegate.MODE_NIGHT_NO -> Configuration.UI_MODE_NIGHT_NO
+                    // For MODE_NIGHT_FOLLOW_SYSTEM or unspecified, use the original configuration's night mode.
+                    // This ensures if system is light, we use light, if system is dark, we use dark.
+                    else -> currentConfiguration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                }
+
+            // Create a context with this new explicit configuration
+            val configuredContext = context.createConfigurationContext(newConfig)
+
+            // Wrap this configured context with the app's DayNight theme
+            val themedContext = ContextThemeWrapper(configuredContext, R.style.Theme_QBrowser)
             
             // Inflate the bubble layout
             rootView = LayoutInflater.from(themedContext).inflate(R.layout.bubble_layout, bubbleView, true)
