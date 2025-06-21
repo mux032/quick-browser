@@ -5,7 +5,7 @@
             android:shape="ring"
             android:thickness="5dp"
             android:useLevel="false">
-            <solid android:color="#330D47A1" />
+            <solid android:color="?attr/colorSurfaceVariant" /> <!-- Muted background -->
         </shape>
     </item>
     <item android:id="@android:id/progress">
@@ -16,7 +16,7 @@
                 android:shape="ring"
                 android:thickness="5dp"
                 android:useLevel="true">
-                <solid android:color="#0D47A1" />
+                <solid android:color="?attr/colorPrimary" />
             </shape>
         </rotate>
     </item>

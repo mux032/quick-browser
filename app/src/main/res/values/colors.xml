@@ -27,11 +27,6 @@
     <color name="surfaceColor">#FFFFFF</color>
     <color name="onSurfaceColor">#212121</color>
     
-    <!-- Dark theme colors -->
-    <color name="darkBackground">#121212</color>
-    <color name="darkSurface">#1E1E1E</color>
-    <color name="darkOnSurface">#E0E0E0</color>
-
     <!-- Bubble UI colors -->
     <color name="bubble_background">#F5F5F5</color>
     <color name="tab_background">#EEEEEE</color>

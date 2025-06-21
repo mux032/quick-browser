@@ -80,9 +80,9 @@
                     android:layout_marginBottom="2dp"
                     app:shapeAppearanceOverlay="@style/UrlBarTopRoundedCorners"
                     app:cardElevation="3dp"
-                    app:cardBackgroundColor="@android:color/white"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:strokeWidth="0.5dp"
-                    app:strokeColor="#E0E0E0"
+                    app:strokeColor="?attr/colorOutline"
                     android:visibility="gone">
                     
                     <LinearLayout
@@ -111,7 +111,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:textSize="14sp"
-                            android:textColor="#000000"
+                            android:textColor="?android:attr/textColorPrimary"
                             android:textColorHint="?android:attr/textColorSecondary"
                             android:singleLine="true"
                             android:ellipsize="middle"
@@ -180,9 +180,9 @@
                     android:layout_marginBottom="8dp"
                     app:shapeAppearanceOverlay="@style/ExpandedContainerBottomRoundedCorners"
                     app:cardElevation="2dp"
-                    app:cardBackgroundColor="@android:color/white"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:strokeWidth="0.5dp"
-                    app:strokeColor="#E0E0E0"
+                    app:strokeColor="?attr/colorOutline"
                     app:contentPadding="0dp"
                     android:visibility="gone">
 
@@ -197,7 +197,7 @@
                             android:id="@+id/web_view"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@android:color/white"
+                            android:background="?attr/colorSurface"
                             android:hardwareAccelerated="true"
                             android:scrollbars="vertical"
                             android:scrollbarStyle="insideOverlay"
@@ -286,9 +286,9 @@
                         android:layout_marginEnd="8dp"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="12dp"
-                        app:cardBackgroundColor="@android:color/white"
+                        app:cardBackgroundColor="?attr/colorSurface"
                         app:strokeWidth="0.5dp"
-                        app:strokeColor="#E0E0E0"
+                        app:strokeColor="?attr/colorOutline"
                         android:visibility="gone"
                         android:alpha="0"
                         android:scaleX="0.8"
@@ -313,7 +313,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
                                     android:text="@string/block_ads"
-                                    android:textColor="#000000"
+                                    android:textColor="?android:attr/textColorPrimary"
                                     android:textSize="13sp" />
                                     
                                 <com.google.android.material.switchmaterial.SwitchMaterial
@@ -335,7 +335,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
                                     android:text="@string/enable_javascript"
-                                    android:textColor="#000000"
+                                    android:textColor="?android:attr/textColorPrimary"
                                     android:textSize="13sp" />
                                     
                                 <com.google.android.material.switchmaterial.SwitchMaterial
@@ -356,9 +356,9 @@
                         android:layout_marginBottom="16dp"
                         app:cardCornerRadius="24dp"
                         app:cardElevation="6dp"
-                        app:cardBackgroundColor="@android:color/white"
+                        app:cardBackgroundColor="?attr/colorSurface"
                         app:strokeWidth="0.5dp"
-                        app:strokeColor="#E0E0E0">
+                        app:strokeColor="?attr/colorOutline">
 
                         <LinearLayout
                             android:layout_width="wrap_content"
@@ -376,7 +376,7 @@
                                 android:layout_height="40dp"
                                 android:contentDescription="@string/close_bubble"
                                 app:icon="@drawable/ic_close"
-                                app:iconTint="@color/crimson_red"
+                                app:iconTint="?attr/colorError"
                                 android:layout_marginEnd="2dp" />
 
                             <com.google.android.material.button.MaterialButton
@@ -386,7 +386,7 @@
                                 android:layout_height="40dp"
                                 android:contentDescription="@string/read_mode"
                                 app:icon="@drawable/ic_read_mode"
-                                app:iconTint="@color/colorPrimary"
+                                app:iconTint="?attr/colorPrimary"
                                 android:layout_marginEnd="2dp" />
 
                             <com.google.android.material.button.MaterialButton
@@ -396,7 +396,7 @@
                                 android:layout_height="40dp"
                                 android:contentDescription="@string/summarize"
                                 app:icon="@drawable/ic_summarize"
-                                app:iconTint="@color/colorPrimary"
+                                app:iconTint="?attr/colorPrimary"
                                 android:layout_marginEnd="2dp" />
 
                             <com.google.android.material.button.MaterialButton
@@ -406,7 +406,7 @@
                                 android:layout_height="40dp"
                                 android:contentDescription="@string/open_in_full_view"
                                 app:icon="@drawable/ic_open_full"
-                                app:iconTint="@color/colorPrimary"
+                                app:iconTint="?attr/colorPrimary"
                                 android:layout_marginEnd="2dp" />
 
                         </LinearLayout>

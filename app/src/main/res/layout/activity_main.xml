@@ -21,8 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/app_name"
-            android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            android:textColor="@android:color/white" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Title" />
             
     </androidx.appcompat.widget.Toolbar>
 
@@ -32,7 +31,7 @@
         android:layout_height="120dp"
         android:layout_marginTop="32dp"
         android:contentDescription="@string/app_logo"
-        android:background="@color/colorPrimary"
+        android:background="?attr/colorPrimary"
         android:padding="16dp"
         android:scaleType="fitCenter"
         app:layout_constraintEnd_toEndOf="parent"

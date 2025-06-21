@@ -139,4 +139,21 @@
     <string name="bubble_service_channel_name">Browser Service</string>
     <string name="bubble_service_channel_description">Keeps the bubble browser running in background</string>
     <string name="bubble_service_notification_text">Browser is running in bubble mode</string>
+
+    <!-- Settings - Appearance -->
+    <string name="settings_appearance_title">Appearance</string>
+    <string name="settings_theme_title">App Theme</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System Default</string>
+    <string-array name="theme_options_entries">
+        <item>@string/settings_theme_light</item>
+        <item>@string/settings_theme_dark</item>
+        <item>@string/settings_theme_system</item>
+    </string-array>
+    <string-array name="theme_options_values" translatable="false">
+        <item>mode_light</item>
+        <item>mode_dark</item>
+        <item>mode_system</item>
+    </string-array>
 </resources>

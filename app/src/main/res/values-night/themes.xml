@@ -15,8 +15,8 @@
         <item name="android:navigationBarColor">@color/primaryDarkColorDark</item>
         
         <!-- Uniform text colors -->
-        <item name="android:textColorPrimary">@color/darkOnSurface</item>
-        <item name="android:textColorSecondary">#9E9E9E</item>
+        <item name="android:textColorPrimary">@color/textColorPrimaryDark</item>
+        <item name="android:textColorSecondary">@color/textColorSecondaryDark</item>
         
         <!-- Uniform background colors -->
         <item name="android:colorBackground">@color/darkBackground</item>

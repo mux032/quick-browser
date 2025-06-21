@@ -7,6 +7,8 @@ import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
+import android.os.Build // Import Build
 import com.qb.browser.ui.base.BaseActivity
 import com.qb.browser.R
 import com.qb.browser.manager.SettingsManager
@@ -27,10 +29,13 @@ class SettingsActivity : BaseActivity() {
     private lateinit var textViewAnimSpeed: TextView
     private lateinit var switchSaveHistory: Switch
     private lateinit var switchPositionRight: Switch
+    private lateinit var spinnerTheme: android.widget.Spinner
+    private lateinit var dynamicColorsLayout: android.widget.LinearLayout // Added for dynamic colors
+    private lateinit var switchDynamicColors: com.google.android.material.switchmaterial.SwitchMaterial // Added for dynamic colors
 
     companion object {
         private const val TAG = "SettingsActivity"
-        private const val THEME_MODE = "light" // Theme is always light
+        // private const val THEME_MODE = "light" // Theme is always light - This is being changed
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +68,9 @@ class SettingsActivity : BaseActivity() {
             switchJavaScript = findViewById(R.id.switch_javascript)
             switchBlockAds = findViewById(R.id.switch_block_ads)
             switchSaveHistory = findViewById(R.id.switch_save_history)
+            spinnerTheme = findViewById(R.id.spinner_theme)
+            dynamicColorsLayout = findViewById(R.id.dynamic_colors_layout)
+            switchDynamicColors = findViewById(R.id.switch_dynamic_colors)
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing views", e)
             throw e
@@ -75,6 +83,31 @@ class SettingsActivity : BaseActivity() {
             switchJavaScript.isChecked = settingsManager.isJavaScriptEnabled()
             switchBlockAds.isChecked = settingsManager.isAdBlockEnabled()
             switchSaveHistory.isChecked = settingsManager.isSaveHistoryEnabled()
+
+            // Setup Theme Spinner
+            val themeEntries = resources.getStringArray(R.array.theme_options_entries)
+            val themeValues = resources.getStringArray(R.array.theme_options_values)
+            val adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_item, themeEntries)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinnerTheme.adapter = adapter
+
+            val currentThemeMode = settingsManager.getAppThemeMode()
+            val currentThemeValue = when (currentThemeMode) {
+                SettingsManager.APP_THEME_MODE_LIGHT -> "mode_light"
+                SettingsManager.APP_THEME_MODE_DARK -> "mode_dark"
+                SettingsManager.APP_THEME_MODE_SYSTEM -> "mode_system"
+                else -> "mode_system" // Default to system
+            }
+            spinnerTheme.setSelection(themeValues.indexOf(currentThemeValue).coerceAtLeast(0))
+
+            // Setup Dynamic Colors Switch
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                dynamicColorsLayout.visibility = android.view.View.VISIBLE
+                switchDynamicColors.isChecked = settingsManager.isDynamicColorEnabled()
+            } else {
+                dynamicColorsLayout.visibility = android.view.View.GONE
+            }
+
         } catch (e: Exception) {
             Log.e(TAG, "Error loading settings", e)
             throw e
@@ -96,6 +129,43 @@ class SettingsActivity : BaseActivity() {
             // Save history setting
             switchSaveHistory.setOnCheckedChangeListener { _, isChecked ->
                 settingsManager.setSaveHistoryEnabled(isChecked)
+            }
+
+            // Theme Spinner listener
+            spinnerTheme.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                    val themeValues = resources.getStringArray(R.array.theme_options_values)
+                    val selectedThemeValue = themeValues[position]
+
+                    val newMode = when (selectedThemeValue) {
+                        "mode_light" -> SettingsManager.APP_THEME_MODE_LIGHT
+                        "mode_dark" -> SettingsManager.APP_THEME_MODE_DARK
+                        "mode_system" -> SettingsManager.APP_THEME_MODE_SYSTEM
+                        else -> SettingsManager.APP_THEME_MODE_SYSTEM
+                    }
+
+                    if (settingsManager.getAppThemeMode() != newMode) {
+                        settingsManager.setAppThemeMode(newMode)
+                        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(newMode)
+                        recreate() // Apply theme change immediately
+                    }
+                }
+
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
+                    // No action needed
+                }
+            }
+
+            // Dynamic Colors Switch listener
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                switchDynamicColors.setOnCheckedChangeListener { _, isChecked ->
+                    settingsManager.setDynamicColorEnabled(isChecked)
+                    Toast.makeText(this, "App restart required to apply dynamic color changes.", Toast.LENGTH_LONG).show()
+                    // Note: For the change to take full effect, QBApplication.applyThemeSettings() needs to be
+                    // re-evaluated, which typically happens on app restart.
+                    // A recreate() here will only re-apply the current activity's theme,
+                    // but won't trigger DynamicColors.applyToActivitiesIfAvailable() again.
+                }
             }
 
         } catch (e: Exception) {

@@ -54,13 +54,9 @@ class QBApplication : Application() {
             DynamicColors.applyToActivitiesIfAvailable(this)
         }
         
-        // Apply night mode setting
-        val nightMode = if (settingsManager.isNightModeEnabled()) {
-            AppCompatDelegate.MODE_NIGHT_YES
-        } else {
-            AppCompatDelegate.MODE_NIGHT_NO
-        }
-        AppCompatDelegate.setDefaultNightMode(nightMode)
+        // Apply night mode setting using the new AppThemeMode
+        val appThemeMode = settingsManager.getAppThemeMode()
+        AppCompatDelegate.setDefaultNightMode(appThemeMode)
     }
 }
 

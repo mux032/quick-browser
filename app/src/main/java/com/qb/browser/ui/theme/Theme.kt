@@ -90,10 +90,3 @@ fun QBTheme(
 
     MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
 }
-
-/** Helper function to set the night mode for the app */
-fun setAppNightMode(isNightMode: Boolean) {
-    AppCompatDelegate.setDefaultNightMode(
-            if (isNightMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
-    )
-}

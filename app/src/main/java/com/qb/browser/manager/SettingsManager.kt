@@ -37,7 +37,9 @@ class SettingsManager private constructor(context: Context) {
         private const val KEY_EXPANDED_BUBBLE_SIZE = "expanded_bubble_size"
         private const val KEY_THEME_COLOR = "pref_theme_color"
         private const val KEY_DYNAMIC_COLOR = "pref_dynamic_color"
-        private const val KEY_NIGHT_MODE = "pref_night_mode"
+        // KEY_NIGHT_MODE is removed, KEY_APP_THEME is now used.
+        // Migration from old KEY_NIGHT_MODE is handled in getAppThemeMode() if needed.
+        private const val KEY_APP_THEME = "pref_app_theme"
         private const val KEY_LAST_SHARED_URL = "last_shared_url"
         
         // Default values
@@ -54,10 +56,16 @@ class SettingsManager private constructor(context: Context) {
         const val FONT_FAMILY_SANS_SERIF = "sans-serif"
         const val FONT_FAMILY_MONOSPACE = "monospace"
         
-        // Theme options
+        // Theme options (old system, might be deprecated or related to read mode themes)
         const val THEME_LIGHT = 0
         const val THEME_DARK = 1
         const val THEME_SEPIA = 2
+
+        // New App Theme Modes
+        const val APP_THEME_MODE_LIGHT = AppCompatDelegate.MODE_NIGHT_NO
+        const val APP_THEME_MODE_DARK = AppCompatDelegate.MODE_NIGHT_YES
+        const val APP_THEME_MODE_SYSTEM = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        private const val DEFAULT_APP_THEME = APP_THEME_MODE_SYSTEM
         
         @Volatile
         private var instance: SettingsManager? = null
@@ -323,16 +331,27 @@ class SettingsManager private constructor(context: Context) {
     fun setDynamicColorEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_DYNAMIC_COLOR, enabled).apply()
     }
-    
+
     /**
-     * Night mode settings
+     * App Theme Mode (Light, Dark, System)
      */
-    fun isNightModeEnabled(): Boolean {
-        return preferences.getBoolean(KEY_NIGHT_MODE, false)
+    fun getAppThemeMode(): Int {
+        // Potentially migrate from old boolean night mode preference (pref_night_mode) if it exists
+        // and the new KEY_APP_THEME is not yet set.
+        if (!preferences.contains(KEY_APP_THEME) && preferences.contains("pref_night_mode")) {
+            val oldNightMode = preferences.getBoolean("pref_night_mode", false)
+            // After reading, we can remove the old key to ensure migration only happens once.
+            // preferences.edit().remove("pref_night_mode").apply() // Optional: remove old key after migration
+            return if (oldNightMode) APP_THEME_MODE_DARK else APP_THEME_MODE_LIGHT
+        }
+        return preferences.getInt(KEY_APP_THEME, DEFAULT_APP_THEME)
     }
-    
-    fun setNightModeEnabled(enabled: Boolean) {
-        preferences.edit().putBoolean(KEY_NIGHT_MODE, enabled).apply()
+
+    fun setAppThemeMode(mode: Int) {
+        preferences.edit().putInt(KEY_APP_THEME, mode).apply()
+        // Applying the mode is usually done by the Application class or calling activity
+        // For immediate effect if called from settings:
+        // AppCompatDelegate.setDefaultNightMode(mode)
     }
     
     /**

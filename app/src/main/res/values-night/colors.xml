@@ -7,8 +7,18 @@
     <color name="secondaryColorDark">#5C6BC0</color>
     <color name="secondaryDarkColorDark">#3949AB</color>
     <color name="secondaryTextColorDark">#FFFFFF</color>
+
+    <!-- General dark theme colors (moved from values/colors.xml) -->
+    <color name="darkBackground">#121212</color>
+    <color name="darkSurface">#1E1E1E</color>
+    <color name="darkOnSurface">#E0E0E0</color> <!-- General content on dark surface -->
+
+    <!-- Specific dark theme text colors -->
+    <color name="textColorPrimaryDark">#E0E0E0</color> <!-- Primary text on dark backgrounds -->
+    <color name="textColorSecondaryDark">#BDBDBD</color> <!-- Secondary text on dark backgrounds -->
     
     <!-- Override daylight colors with night colors -->
+    <!-- TODO: Review if these components can use theme attributes instead -->
     <color name="bubble_background">#303F9F</color>
     <color name="bubble_inactive">#5C6BC0</color>
     <color name="tab_background">#283593</color>
