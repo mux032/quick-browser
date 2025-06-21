@@ -186,4 +186,22 @@ class BubbleDisplayManager(
     fun cleanup() {
         bubbleViews.keys.toList().forEach { removeBubbleView(it) }
     }
+
+    /**
+     * Applies theme changes by recreating all bubble views.
+     * This ensures bubbles reflect the new application theme.
+     */
+    fun applyThemeChange() {
+        Log.d(TAG, "Applying theme change: Recreating all bubble views.")
+        // this.bubbles should contain the current state of all bubbles from the ViewModel.
+        // We need to preserve this list.
+        val currentBubblesState = ArrayList(this.bubbles) // Make a copy to avoid issues if this.bubbles is modified during iteration by VM
+
+        cleanup() // Removes all views from WindowManager and clears bubbleViews map
+
+        // Re-add all bubbles. updateBubbleViews will call addBubbleView for each,
+        // which will inflate them with the new themed context.
+        updateBubbleViews(currentBubblesState)
+        Log.d(TAG, "Bubble views recreated for theme change.")
+    }
 }

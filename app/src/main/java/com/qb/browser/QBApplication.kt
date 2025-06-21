@@ -12,6 +12,9 @@ import com.qb.browser.manager.SettingsManager
 import com.qb.browser.service.BubbleService
 import com.qb.browser.viewmodel.BubbleViewModel
 import com.qb.browser.viewmodel.WebViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class QBApplication : Application() {
 
@@ -24,6 +27,11 @@ class QBApplication : Application() {
     
     // Reference to the BubbleService
     var bubbleService: BubbleService? = null
+
+    // Theme mode state flow
+    private val _currentThemeMode = MutableStateFlow<Int>(AppCompatDelegate.getDefaultNightMode()) // Initialize with system default or last known
+    val currentThemeMode: StateFlow<Int> = _currentThemeMode.asStateFlow()
+
 
     override fun onCreate() {
         super.onCreate()
@@ -57,6 +65,7 @@ class QBApplication : Application() {
         // Apply night mode setting using the new AppThemeMode
         val appThemeMode = settingsManager.getAppThemeMode()
         AppCompatDelegate.setDefaultNightMode(appThemeMode)
+        _currentThemeMode.value = appThemeMode // Update the StateFlow
     }
 }
 

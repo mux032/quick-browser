@@ -10,9 +10,12 @@ import com.qb.browser.manager.BubbleDisplayManager
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.manager.BubbleNotificationManager
 import com.qb.browser.ui.bubble.BubbleIntentProcessor
-import com.qb.browser.data.WebPageDao
 import com.qb.browser.data.AppDatabase
+import com.qb.browser.data.WebPageDao
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 
 /**
  * BubbleService is the core service responsible for managing floating bubbles in the QB Browser. It
@@ -105,9 +108,33 @@ class BubbleService : LifecycleService() {
             }
 
             Log.d(TAG, "Service initialized successfully")
+
+            // Observe theme changes
+            observeThemeChanges()
+
         } catch (e: Exception) {
             Log.e(TAG, "Error in onCreate", e)
             isServiceRunning = false
+        }
+    }
+
+    private fun observeThemeChanges() {
+        lifecycleScope.launch {
+            val qbApp = application as QBApplication
+            var lastKnownThemeMode = qbApp.currentThemeMode.value // Get initial value
+
+            qbApp.currentThemeMode
+                // .drop(1) // Optional: drop initial value if it's considered already applied or to avoid immediate refresh
+                .collectLatest { newThemeMode ->
+                    if (newThemeMode != lastKnownThemeMode) {
+                        Log.d(TAG, "Theme changed from $lastKnownThemeMode to $newThemeMode. Refreshing bubbles.")
+                        lastKnownThemeMode = newThemeMode
+                        // Ensure bubbleDisplayManager is initialized before calling
+                        if (::bubbleDisplayManager.isInitialized) {
+                            bubbleDisplayManager.applyThemeChange()
+                        }
+                    }
+                }
         }
     }
 
