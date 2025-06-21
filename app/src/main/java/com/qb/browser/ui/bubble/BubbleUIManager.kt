@@ -108,8 +108,9 @@ class BubbleUIManager(
         Log.d(TAG, "Initializing UI components for bubble: $bubbleId")
         
         try {
-            // Use application context with theme for inflation (same as original BubbleView)
-            val themedContext = ContextThemeWrapper(context.applicationContext, R.style.Theme_QBrowser)
+            // Use the service context directly with the theme for inflation.
+            // This context might be more up-to-date after AppCompatDelegate changes than applicationContext from service.
+            val themedContext = ContextThemeWrapper(context, R.style.Theme_QBrowser)
             
             // Inflate the bubble layout
             rootView = LayoutInflater.from(themedContext).inflate(R.layout.bubble_layout, bubbleView, true)
