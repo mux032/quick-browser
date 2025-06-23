@@ -114,6 +114,7 @@ class BubbleUIManager(
             // Get the current application-wide theme mode
             val qbApp = context.applicationContext as QBApplication
             val currentAppThemeMode = qbApp.currentThemeMode.value
+            Log.d(TAG, "BubbleUIManager: Initializing with app theme mode read from QBApplication.currentThemeMode.value: $currentAppThemeMode") // Added Log
 
             // Create a new configuration based on the current theme mode
             val currentConfiguration = context.resources.configuration

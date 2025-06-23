@@ -128,6 +128,7 @@ class BubbleService : LifecycleService() {
                 .collectLatest { newThemeMode ->
                     if (newThemeMode != lastKnownThemeMode) {
                         Log.d(TAG, "Theme changed from $lastKnownThemeMode to $newThemeMode. Refreshing bubbles.")
+                        Log.d(TAG, "BubbleService: applyThemeChange will be called for mode: $newThemeMode") // Added Log
                         lastKnownThemeMode = newThemeMode
                         // Ensure bubbleDisplayManager is initialized before calling
                         if (::bubbleDisplayManager.isInitialized) {
