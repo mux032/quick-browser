@@ -5,5 +5,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "QB Browser"
+rootProject.name = "Quick Browser"
 include ':app'

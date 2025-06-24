@@ -1,7 +1,7 @@
 # Article Summarization Feature
 
 ## Overview
-This feature adds AI-powered article summarization to the Bubble Browser. It uses a small language model (less than 100MB) to summarize web articles into 5-10 bullet points.
+This feature adds AI-powered article summarization to the Quick Browser. It uses a small language model (less than 100MB) to summarize web articles into 5-10 bullet points.
 
 ## Implementation Details
 

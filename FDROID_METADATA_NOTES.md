@@ -1,6 +1,6 @@
 # Notes for F-Droid Metadata File
 
-This document outlines specific configurations and information needed when creating the F-Droid metadata file for the QB Browser application.
+This document outlines specific configurations and information needed when creating the F-Droid metadata file for the Quick Browser application.
 
 ## General Information
 

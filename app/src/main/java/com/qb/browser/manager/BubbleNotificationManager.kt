@@ -23,8 +23,8 @@ class BubbleNotificationManager(private val context: Context) {
     companion object {
         const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "bubble_browser_channel"
-        private const val CHANNEL_NAME = "Bubble Browser Service"
-        private const val CHANNEL_DESCRIPTION = "Keeps QB Browser bubbles running"
+        private const val CHANNEL_NAME = "Quick Browser Service"
+        private const val CHANNEL_DESCRIPTION = "Keeps Quick Browser bubbles running"
     }
 
     init {
@@ -66,7 +66,7 @@ class BubbleNotificationManager(private val context: Context) {
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_web_page)
-            .setContentTitle("QB Browser Active")
+            .setContentTitle("Quick Browser Active")
             .setContentText("Browser bubbles are active")
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)

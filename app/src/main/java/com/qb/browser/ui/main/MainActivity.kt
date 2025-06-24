@@ -1,7 +1,7 @@
 /**
  * MainActivity.kt
  *
- * Summary: This activity serves as the main entry point for the Bubble Browser application. It
+ * Summary: This activity serves as the main entry point for the Quick Browser application. It
  * manages permissions, user interactions, and service operations for the floating bubble feature.
  * The activity performs the following tasks:
  *

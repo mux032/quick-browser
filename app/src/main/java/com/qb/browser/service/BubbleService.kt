@@ -15,7 +15,7 @@ import com.qb.browser.data.AppDatabase
 import kotlinx.coroutines.SupervisorJob
 
 /**
- * BubbleService is the core service responsible for managing floating bubbles in the QB Browser. It
+ * BubbleService is the core service responsible for managing floating bubbles in Quick Browser. It
  * coordinates between different managers to handle bubble lifecycle, positioning, and user
  * interactions.
  *

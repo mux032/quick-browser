@@ -2,7 +2,7 @@
  * Bubble.kt
  *
  * Summary:
- * This data class represents a "Bubble" entity used in the Bubble Browser application. Each bubble contains
+ * This data class represents a "Bubble" entity used in the Quick Browser application. Each bubble contains
  * information about a URL, its title, favicon, and the last accessed timestamp. The class implements the
  * `Parcelable` interface to allow efficient serialization and deserialization of Bubble objects for Android IPC.
  *

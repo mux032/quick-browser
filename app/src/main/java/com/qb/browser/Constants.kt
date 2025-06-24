@@ -40,8 +40,8 @@ object Constants {
     // Notification constants
     const val NOTIFICATION_ID = 1
     const val CHANNEL_ID = "bubble_browser_channel"
-    const val CHANNEL_NAME = "Bubble Browser Service"
-    const val CHANNEL_DESCRIPTION = "Keeps QB Browser bubbles running"
+    const val CHANNEL_NAME = "Quick Browser Service"
+    const val CHANNEL_DESCRIPTION = "Keeps Quick Browser bubbles running"
 
     // Bubble position constants
     const val BUBBLE_SIZE = 64 // dp
