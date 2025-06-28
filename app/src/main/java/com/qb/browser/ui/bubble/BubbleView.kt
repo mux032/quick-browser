@@ -20,6 +20,8 @@ import com.qb.browser.service.BubbleService
 import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.math.exp
+import androidx.core.net.toUri
 
 /**
  * Enhanced floating bubble view that displays web content in a draggable, expandable bubble.
@@ -40,7 +42,7 @@ class BubbleView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate, BubbleStateManager.Companion.StateChangeListener, BubbleWebViewManagerInterface, BubbleUIManager.UIInteractionListener {
     
     // UI Manager - handles all UI components and interactions
-    private lateinit var uiManager: BubbleUIManager
+    private var uiManager: BubbleUIManager
     
     // WebView needs to remain separate as it's managed by WebViewManager
     private lateinit var webViewContainer: WebView
@@ -52,10 +54,7 @@ class BubbleView @JvmOverloads constructor(
     private val stateManager = BubbleStateManager(bubbleId).apply {
         setStateChangeListener(this@BubbleView)
     }
-    
-    // Services and utilities
-    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
-    private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
     private val settingsManager = SettingsManager.getInstance(context)
     private val bubbleAnimator = BubbleAnimator(context)
     private val touchHandler = BubbleTouchHandler(context, this)
@@ -74,10 +73,7 @@ class BubbleView @JvmOverloads constructor(
     // Read Mode UI and State
     private lateinit var btnReadMode: MaterialButton
     private lateinit var readModeManager: BubbleReadModeManager
-    
-    // Toolbar container
-    private lateinit var toolbarContainer: View
-    
+
     // Settings panel
     private lateinit var settingsPanel: View
     private lateinit var settingsPanelManager: BubbleSettingsPanel
@@ -209,7 +205,7 @@ class BubbleView @JvmOverloads constructor(
      * @param lifecycleOwner The lifecycle owner to use for launching coroutines
      * @return Unit
      */
-    private fun observeFaviconChanges(lifecycleOwner: androidx.lifecycle.LifecycleOwner) {
+    private fun observeFaviconChanges(lifecycleOwner: LifecycleOwner) {
         lifecycleOwner.lifecycleScope.launch {
             webViewModel?.webPages?.collectLatest { pages ->
                 pages[url]?.let { webPage ->
@@ -285,7 +281,7 @@ class BubbleView @JvmOverloads constructor(
         
         // Apply sigmoid function: f(x) = 1 / (1 + e^(-steepness * (x - midpoint)))
         // This creates a smooth S-curve that transitions gradually between 0 and 1
-        val sigmoidValue = 1.0 / (1.0 + Math.exp(-steepness * (widthRatio - midpoint)))
+        val sigmoidValue = 1.0 / (1.0 + exp(-steepness * (widthRatio - midpoint)))
         
         // Map the sigmoid output (0-1) to our zoom range (75-100)
         return (minZoom + (sigmoidValue * zoomRange).toFloat()).coerceIn(minZoom, maxZoom)
@@ -316,7 +312,7 @@ class BubbleView @JvmOverloads constructor(
         )
         
         bubbleAnimator.animateResizeHandlesHide(handles) {
-            uiManager.getResizeHandlesContainer().visibility = View.GONE
+            uiManager.getResizeHandlesContainer().visibility = GONE
         }
     }
     
@@ -336,7 +332,7 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun setupContent() {
         // Show WebView for all bubbles
-        webViewContainer.visibility = View.VISIBLE
+        webViewContainer.visibility = VISIBLE
         
         // Set up WebView using the WebViewManager
         setupWebViewManager()
@@ -555,7 +551,7 @@ class BubbleView @JvmOverloads constructor(
         uiManager.getToolbarContainer().translationY = 0f
         
         // Configure container visibility
-        webViewContainer.visibility = View.VISIBLE
+        webViewContainer.visibility = VISIBLE
         webViewContainer.alpha = 1f
         
         // Set the dimensions for the expanded container
@@ -569,7 +565,7 @@ class BubbleView @JvmOverloads constructor(
             onEnd = {
                 // Show resize handles after expansion is complete
                 showResizeHandles()
-                uiManager.getResizeHandlesContainer().visibility = View.VISIBLE
+                uiManager.getResizeHandlesContainer().visibility = VISIBLE
                 
                 // Make WebView visible and ensure content is loaded
                 loadContentInExpandedWebView()
@@ -656,7 +652,7 @@ class BubbleView @JvmOverloads constructor(
             Log.d(TAG, "Making WebView visible for bubble $bubbleId with URL: $url")
             
             // Make WebView fully visible with animation
-            webViewContainer.visibility = View.VISIBLE
+            webViewContainer.visibility = VISIBLE
             webViewContainer.animate()
                 .alpha(1f)
                 .setDuration(200)
@@ -719,7 +715,7 @@ class BubbleView @JvmOverloads constructor(
         hideResizeHandles()
         
         // Keep WebView loaded but make it invisible immediately to prevent flash
-        webViewContainer.visibility = View.INVISIBLE
+        webViewContainer.visibility = INVISIBLE
         webViewContainer.alpha = 0f
         
         // Start the collapse animation with proper sequencing
@@ -757,7 +753,7 @@ class BubbleView @JvmOverloads constructor(
         
         // Hide WebView immediately to prevent flash during animation
         if (stateManager.isBubbleExpanded) {
-            webViewContainer.visibility = View.INVISIBLE
+            webViewContainer.visibility = INVISIBLE
             webViewContainer.alpha = 0f
         }
         
@@ -781,7 +777,7 @@ class BubbleView @JvmOverloads constructor(
             )
         } else {
             // For collapsed bubbles, just animate the bubble icon disappearing
-            uiManager.getBubbleContainer().visibility = View.INVISIBLE
+            uiManager.getBubbleContainer().visibility = INVISIBLE
             bubbleAnimator.animateDisappear(this, onEnd = {
                 stateManager.triggerClose()
             })
@@ -795,7 +791,7 @@ class BubbleView @JvmOverloads constructor(
         try {
             val formattedUrl = formatUrl(url)
             if (formattedUrl.isNotEmpty()) {
-                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(formattedUrl)).apply {
+                val intent = Intent(Intent.ACTION_VIEW, formattedUrl.toUri()).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(intent)
@@ -865,9 +861,9 @@ class BubbleView @JvmOverloads constructor(
     private fun closeBubble() {
         // Logic to close the bubble
         stateManager.setActive(false)
-        uiManager.getExpandedContainer().visibility = View.GONE
-        uiManager.getBubbleContainer().visibility = View.GONE
-        uiManager.getResizeHandlesContainer().visibility = View.GONE
+        uiManager.getExpandedContainer().visibility = GONE
+        uiManager.getBubbleContainer().visibility = GONE
+        uiManager.getResizeHandlesContainer().visibility = GONE
         stateManager.triggerClose()
     }
     
@@ -1150,14 +1146,14 @@ class BubbleView @JvmOverloads constructor(
      */
     fun setActive() {
         stateManager.setActive(true)
-        uiManager.getExpandedContainer().visibility = View.VISIBLE
+        uiManager.getExpandedContainer().visibility = VISIBLE
         bubbleAnimator.animateExpand(uiManager.getExpandedContainer())
         
         // Show resize handles when expanded container is visible
-        uiManager.getResizeHandlesContainer().visibility = View.VISIBLE
+        uiManager.getResizeHandlesContainer().visibility = VISIBLE
         
         // Show the regular web view (not the summary view)
-        webViewContainer.visibility = View.VISIBLE
+        webViewContainer.visibility = VISIBLE
         loadUrlInWebView()
     }
     
@@ -1166,17 +1162,17 @@ class BubbleView @JvmOverloads constructor(
      */
     fun setInactive() {
         stateManager.setActive(false)
-        uiManager.getExpandedContainer().visibility = View.GONE
+        uiManager.getExpandedContainer().visibility = GONE
         
         // Hide resize handles when expanded container is hidden
-        uiManager.getResizeHandlesContainer().visibility = View.GONE
+        uiManager.getResizeHandlesContainer().visibility = GONE
     }
 
     /**
      * Show the WebView and load content
      */
     private fun showWebView() {
-        webViewContainer.visibility = View.VISIBLE
+        webViewContainer.visibility = VISIBLE
         
         // Load URL in WebView
         loadUrlInWebView()
@@ -1230,7 +1226,7 @@ class BubbleView @JvmOverloads constructor(
         // Inflate or find summary container and content
         summaryContainer = findViewById(R.id.summary_container) ?: FrameLayout(context).also {
             it.id = R.id.summary_container
-            it.visibility = View.GONE
+            it.visibility = GONE
             (uiManager.getExpandedContainer() as? ViewGroup)?.addView(it)
         }
         summaryContent = findViewById(R.id.summary_content) ?: LinearLayout(context).also {
@@ -1240,7 +1236,7 @@ class BubbleView @JvmOverloads constructor(
         }
         summaryProgress = findViewById(R.id.summary_progress) ?: ProgressBar(context).also {
             it.id = R.id.summary_progress
-            it.visibility = View.GONE
+            it.visibility = GONE
             (summaryContainer as? ViewGroup)?.addView(it)
         }
         
@@ -1267,11 +1263,11 @@ class BubbleView @JvmOverloads constructor(
         Log.d(TAG, "Active state changed for bubble $bubbleId: $isActive")
         // Handle active state UI updates
         if (isActive) {
-            uiManager.getExpandedContainer().visibility = View.VISIBLE
-            uiManager.getResizeHandlesContainer().visibility = View.VISIBLE
+            uiManager.getExpandedContainer().visibility = VISIBLE
+            uiManager.getResizeHandlesContainer().visibility = VISIBLE
         } else {
-            uiManager.getExpandedContainer().visibility = View.GONE
-            uiManager.getResizeHandlesContainer().visibility = View.GONE
+            uiManager.getExpandedContainer().visibility = GONE
+            uiManager.getResizeHandlesContainer().visibility = GONE
         }
     }
     
