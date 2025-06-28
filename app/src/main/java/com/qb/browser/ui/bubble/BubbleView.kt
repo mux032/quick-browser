@@ -1,64 +1,25 @@
 package com.qb.browser.ui.bubble
 
 import android.content.Context
-import android.view.ContextThemeWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
-import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
-import android.view.ViewConfiguration
-import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceResponse
+import android.view.*
 import android.webkit.WebView
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
-import android.widget.EditText
-import android.widget.Toast
-import com.google.android.material.switchmaterial.SwitchMaterial
+import android.widget.*
 import androidx.core.content.ContextCompat
-import androidx.core.widget.NestedScrollView
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.findViewTreeLifecycleOwner
-import androidx.lifecycle.findViewTreeViewModelStoreOwner
-import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.qb.browser.Constants
-import com.qb.browser.QBApplication
 import com.qb.browser.R
-import com.qb.browser.model.Bubble
-import com.qb.browser.model.WebPage
-import com.qb.browser.service.BubbleService
-import com.qb.browser.manager.SettingsManager
-import com.qb.browser.manager.AdBlocker
 import com.qb.browser.manager.AuthenticationHandler
-import com.qb.browser.manager.ReadabilityExtractor
-import com.qb.browser.manager.SummarizationManager
+import com.qb.browser.manager.SettingsManager
+import com.qb.browser.service.BubbleService
 import com.qb.browser.viewmodel.WebViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import java.lang.Math.min
-import kotlin.math.hypot
-import kotlin.math.max
 
 /**
  * Enhanced floating bubble view that displays web content in a draggable, expandable bubble.
@@ -1456,6 +1417,9 @@ class BubbleView @JvmOverloads constructor(
 
     override fun onShareButtonClicked() {
         try {
+            // Collapse bubble view before sharing
+            setExpanded(false)
+
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, url)
