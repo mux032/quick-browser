@@ -279,7 +279,7 @@
                     <!-- Settings panel that appears below the URL bar -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/settings_panel"
-                        android:layout_width="180dp"
+                        android:layout_width="200dp"
                         android:layout_height="wrap_content"
                         android:layout_gravity="top|end"
                         android:layout_marginTop="5dp"
@@ -295,54 +295,264 @@
                         android:scaleY="0.8">
                         
                         <LinearLayout
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:padding="16dp">
                             
-                            <!-- Ad blocking toggle -->
+                            <!-- Regular browser settings (visible when not in reader mode) -->
                             <LinearLayout
+                                android:id="@+id/browser_settings_section"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginBottom="8dp">
+                                android:orientation="vertical">
                                 
-                                <TextView
-                                    android:layout_width="0dp"
+                                <!-- Ad blocking toggle -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/block_ads"
-                                    android:textColor="#000000"
-                                    android:textSize="13sp" />
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical"
+                                    android:layout_marginBottom="8dp">
                                     
-                                <com.google.android.material.switchmaterial.SwitchMaterial
-                                    android:id="@+id/ad_block_switch"
-                                    android:layout_width="wrap_content"
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="@string/block_ads"
+                                        android:textColor="#000000"
+                                        android:textSize="13sp" />
+                                        
+                                    <com.google.android.material.switchmaterial.SwitchMaterial
+                                        android:id="@+id/ad_block_switch"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="16dp" />
+                                </LinearLayout>
+                                
+                                <!-- JavaScript toggle -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginStart="16dp" />
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+                                    
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="@string/enable_javascript"
+                                        android:textColor="#000000"
+                                        android:textSize="13sp" />
+                                        
+                                    <com.google.android.material.switchmaterial.SwitchMaterial
+                                        android:id="@+id/javascript_switch"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="16dp" />
+                                </LinearLayout>
                             </LinearLayout>
                             
-                            <!-- JavaScript toggle -->
+                            <!-- Reader mode settings (visible only in reader mode) -->
                             <LinearLayout
+                                android:id="@+id/reader_settings_section"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
+                                android:orientation="vertical"
+                                android:visibility="gone">
                                 
+                                <!-- Settings Title -->
                                 <TextView
-                                    android:layout_width="0dp"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="@string/enable_javascript"
+                                    android:text="@string/reader_settings_title"
                                     android:textColor="#000000"
-                                    android:textSize="13sp" />
-                                    
-                                <com.google.android.material.switchmaterial.SwitchMaterial
-                                    android:id="@+id/javascript_switch"
-                                    android:layout_width="wrap_content"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:layout_marginBottom="12dp"
+                                    android:gravity="center" />
+                                
+                                <!-- Font Size -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginStart="16dp" />
+                                    android:orientation="vertical"
+                                    android:layout_marginBottom="12dp">
+                                    
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reader_font_size"
+                                        android:textColor="#000000"
+                                        android:textSize="12sp"
+                                        android:layout_marginBottom="4dp" />
+                                    
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center">
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_font_decrease"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="32dp"
+                                            android:layout_height="32dp"
+                                            android:minWidth="0dp"
+                                            android:minHeight="0dp"
+                                            android:text="A"
+                                            android:textSize="12sp"
+                                            android:textColor="@color/textColorPrimary"
+                                            android:backgroundTint="@android:color/white"
+                                            android:layout_marginEnd="8dp" />
+                                        
+                                        <TextView
+                                            android:id="@+id/font_size_display"
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="1"
+                                            android:text="18sp"
+                                            android:textColor="#000000"
+                                            android:textSize="12sp"
+                                            android:gravity="center" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_font_increase"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="32dp"
+                                            android:layout_height="32dp"
+                                            android:minWidth="0dp"
+                                            android:minHeight="0dp"
+                                            android:text="A"
+                                            android:textSize="16sp"
+                                            android:textColor="@color/textColorPrimary"
+                                            android:backgroundTint="@android:color/white"
+                                            android:layout_marginStart="8dp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                                
+                                <!-- Background Color -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:layout_marginBottom="12dp">
+                                    
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reader_background"
+                                        android:textColor="#000000"
+                                        android:textSize="12sp"
+                                        android:layout_marginBottom="4dp" />
+                                    
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center">
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_bg_white"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:text="@string/reader_bg_white"
+                                            android:textSize="10sp"
+                                            android:layout_marginEnd="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_bg_sepia"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:text="@string/reader_bg_sepia"
+                                            android:textSize="10sp"
+                                            android:layout_marginHorizontal="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_bg_dark"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:text="@string/reader_bg_dark"
+                                            android:textSize="10sp"
+                                            android:layout_marginStart="2dp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                                
+                                <!-- Text Alignment -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+                                    
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reader_text_align"
+                                        android:textColor="#000000"
+                                        android:textSize="12sp"
+                                        android:layout_marginBottom="4dp" />
+                                    
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center">
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_left"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            app:icon="@drawable/ic_format_align_left"
+                                            app:iconSize="16dp"
+                                            android:layout_marginEnd="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_center"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            app:icon="@drawable/ic_format_align_center"
+                                            app:iconSize="16dp"
+                                            android:layout_marginHorizontal="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_right"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            app:icon="@drawable/ic_format_align_right"
+                                            app:iconSize="16dp"
+                                            android:layout_marginHorizontal="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_justify"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            app:icon="@drawable/ic_format_align_justify"
+                                            app:iconSize="16dp"
+                                            android:layout_marginStart="2dp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                                
                             </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>

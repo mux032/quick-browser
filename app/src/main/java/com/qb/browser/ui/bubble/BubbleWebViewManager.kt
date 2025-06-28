@@ -1,20 +1,15 @@
 package com.qb.browser.ui.bubble
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.View
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import androidx.core.content.ContextCompat
 import com.qb.browser.QBApplication
-import com.qb.browser.R
 import com.qb.browser.manager.AdBlocker
-import com.qb.browser.manager.AuthenticationHandler
 import com.qb.browser.manager.SettingsManager
 import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.CoroutineScope

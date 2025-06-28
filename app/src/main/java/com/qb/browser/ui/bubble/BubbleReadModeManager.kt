@@ -176,9 +176,8 @@ class BubbleReadModeManager(
                         return@launch
                     }
                     
-                    // Create styled HTML with current theme
-                    val isNightMode = settingsManager.isDarkThemeEnabled()
-                    val styledHtml = createStyledHtml(readableContent, isNightMode)
+                    // Create styled HTML with current settings
+                    val styledHtml = createStyledHtml(readableContent)
                     
                     // Apply read mode settings to WebView
                     configureWebViewForReadMode()
@@ -268,13 +267,33 @@ class BubbleReadModeManager(
     /**
      * Create styled HTML for reader mode with responsive design and theme support
      */
-    private fun createStyledHtml(content: ReadabilityExtractor.ReadableContent, isNightMode: Boolean): String {
-        val backgroundColor = if (isNightMode) "#121212" else "#FAFAFA"
-        val textColor = if (isNightMode) "#E0E0E0" else "#212121"
-        val linkColor = if (isNightMode) "#90CAF9" else "#1976D2"
-        val secondaryTextColor = if (isNightMode) "#B0B0B0" else "#666666"
-        val codeBackgroundColor = if (isNightMode) "#1E1E1E" else "#F5F5F5"
-        val borderColor = if (isNightMode) "#616161" else "#BDBDBD"
+    private fun createStyledHtml(content: ReadabilityExtractor.ReadableContent): String {
+        // Get current reader mode settings
+        val readerBackground = settingsManager.getReaderBackground()
+        val fontSize = settingsManager.getReaderFontSize()
+        val textAlign = settingsManager.getReaderTextAlign()
+        
+        // Set colors based on background setting
+        val colors = when (readerBackground) {
+            SettingsManager.READER_BG_DARK -> arrayOf("#121212", "#E0E0E0", "#90CAF9", "#B0B0B0", "#1E1E1E", "#616161")
+            SettingsManager.READER_BG_SEPIA -> arrayOf("#F4F1E8", "#5D4E37", "#8B4513", "#8B7355", "#EAE7DC", "#D2B48C")
+            else -> arrayOf("#FFFFFF", "#212121", "#1976D2", "#666666", "#F5F5F5", "#E0E0E0") // White
+        }
+        
+        val backgroundColor = colors[0]
+        val textColor = colors[1]
+        val linkColor = colors[2]
+        val secondaryTextColor = colors[3]
+        val codeBackgroundColor = colors[4]
+        val borderColor = colors[5]
+        
+        // Convert text alignment setting to CSS
+        val textAlignCss = when (textAlign) {
+            SettingsManager.READER_ALIGN_CENTER -> "center"
+            SettingsManager.READER_ALIGN_RIGHT -> "right"
+            SettingsManager.READER_ALIGN_JUSTIFY -> "justify"
+            else -> "left" // Default to left
+        }
         
         return """
             <!DOCTYPE html>
@@ -338,8 +357,8 @@ class BubbleReadModeManager(
                     
                     p {
                         margin: 1.5em 0;
-                        font-size: clamp(1em, 2vw, 1.1em);
-                        text-align: justify;
+                        font-size: ${fontSize}px;
+                        text-align: $textAlignCss;
                         hyphens: auto;
                     }
                     
@@ -590,5 +609,15 @@ class BubbleReadModeManager(
      */
     fun getOriginalUrl(): String? {
         return originalContent
+    }
+    
+    /**
+     * Refresh reader mode content with current settings
+     * Should be called when reader mode settings change
+     */
+    fun refreshReaderModeContent() {
+        if (isReadMode && currentUrl != null) {
+            openReadMode()
+        }
     }
 }

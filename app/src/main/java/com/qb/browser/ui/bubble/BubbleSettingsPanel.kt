@@ -5,6 +5,8 @@ import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.qb.browser.R
@@ -35,16 +37,36 @@ class BubbleSettingsPanel(
     
     // Settings panel state
     private var isVisible = false
+    private var isReaderMode = false
     
     // Settings controls - will be initialized when panel is set up
     private var adBlockSwitch: SwitchMaterial? = null
     private var javascriptSwitch: SwitchMaterial? = null
+    
+    // UI sections
+    private var browserSettingsSection: View? = null
+    private var readerSettingsSection: View? = null
+    
+    // Reader mode controls
+    private var btnFontDecrease: MaterialButton? = null
+    private var btnFontIncrease: MaterialButton? = null
+    private var fontSizeDisplay: TextView? = null
+    private var btnBgWhite: MaterialButton? = null
+    private var btnBgSepia: MaterialButton? = null
+    private var btnBgDark: MaterialButton? = null
+    private var btnAlignLeft: MaterialButton? = null
+    private var btnAlignCenter: MaterialButton? = null
+    private var btnAlignRight: MaterialButton? = null
+    private var btnAlignJustify: MaterialButton? = null
     
     // Callback interface for BubbleView to respond to settings changes
     interface SettingsPanelListener {
         fun onAdBlockingChanged(enabled: Boolean)
         fun onJavaScriptChanged(enabled: Boolean)
         fun onSettingsPanelVisibilityChanged(isVisible: Boolean)
+        fun onReaderFontSizeChanged(size: Int)
+        fun onReaderBackgroundChanged(background: String)
+        fun onReaderTextAlignChanged(alignment: String)
     }
     
     private var listener: SettingsPanelListener? = null
@@ -64,6 +86,7 @@ class BubbleSettingsPanel(
      */
     fun initialize(settingsPanel: View, webView: WebView) {
         setupSettingsControls(settingsPanel, webView)
+        setupReaderModeControls(settingsPanel)
         setupTouchHandling(settingsPanel)
     }
     
@@ -74,6 +97,10 @@ class BubbleSettingsPanel(
      * @param webView The WebView instance to apply settings changes to
      */
     private fun setupSettingsControls(settingsPanel: View, webView: WebView) {
+        // Get UI sections
+        browserSettingsSection = settingsPanel.findViewById(R.id.browser_settings_section)
+        readerSettingsSection = settingsPanel.findViewById(R.id.reader_settings_section)
+        
         // Set up ad blocking switch
         adBlockSwitch = settingsPanel.findViewById<SwitchMaterial>(R.id.ad_block_switch)
         adBlockSwitch?.let { switch ->
@@ -103,6 +130,88 @@ class BubbleSettingsPanel(
                     webView.reload()
                 }
             }
+        }
+    }
+    
+    /**
+     * Set up reader mode controls and their event listeners
+     * 
+     * @param settingsPanel The root view of the settings panel
+     */
+    private fun setupReaderModeControls(settingsPanel: View) {
+        // Initialize reader mode controls
+        btnFontDecrease = settingsPanel.findViewById(R.id.btn_font_decrease)
+        btnFontIncrease = settingsPanel.findViewById(R.id.btn_font_increase)
+        fontSizeDisplay = settingsPanel.findViewById(R.id.font_size_display)
+        btnBgWhite = settingsPanel.findViewById(R.id.btn_bg_white)
+        btnBgSepia = settingsPanel.findViewById(R.id.btn_bg_sepia)
+        btnBgDark = settingsPanel.findViewById(R.id.btn_bg_dark)
+        btnAlignLeft = settingsPanel.findViewById(R.id.btn_align_left)
+        btnAlignCenter = settingsPanel.findViewById(R.id.btn_align_center)
+        btnAlignRight = settingsPanel.findViewById(R.id.btn_align_right)
+        btnAlignJustify = settingsPanel.findViewById(R.id.btn_align_justify)
+        
+        // Font size controls
+        btnFontDecrease?.setOnClickListener {
+            val currentSize = settingsManager.getReaderFontSize()
+            val newSize = (currentSize - 2).coerceAtLeast(12)
+            settingsManager.setReaderFontSize(newSize)
+            updateFontSizeDisplay()
+            updateFontSizeButtons()
+            listener?.onReaderFontSizeChanged(newSize)
+        }
+        
+        btnFontIncrease?.setOnClickListener {
+            val currentSize = settingsManager.getReaderFontSize()
+            val newSize = (currentSize + 2).coerceAtMost(32)
+            settingsManager.setReaderFontSize(newSize)
+            updateFontSizeDisplay()
+            updateFontSizeButtons()
+            listener?.onReaderFontSizeChanged(newSize)
+        }
+        
+        // Background color controls
+        btnBgWhite?.setOnClickListener {
+            settingsManager.setReaderBackground(SettingsManager.READER_BG_WHITE)
+            updateBackgroundButtons()
+            listener?.onReaderBackgroundChanged(SettingsManager.READER_BG_WHITE)
+        }
+        
+        btnBgSepia?.setOnClickListener {
+            settingsManager.setReaderBackground(SettingsManager.READER_BG_SEPIA)
+            updateBackgroundButtons()
+            listener?.onReaderBackgroundChanged(SettingsManager.READER_BG_SEPIA)
+        }
+        
+        btnBgDark?.setOnClickListener {
+            settingsManager.setReaderBackground(SettingsManager.READER_BG_DARK)
+            updateBackgroundButtons()
+            listener?.onReaderBackgroundChanged(SettingsManager.READER_BG_DARK)
+        }
+        
+        // Text alignment controls
+        btnAlignLeft?.setOnClickListener {
+            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_LEFT)
+            updateAlignmentButtons()
+            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_LEFT)
+        }
+        
+        btnAlignCenter?.setOnClickListener {
+            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_CENTER)
+            updateAlignmentButtons()
+            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_CENTER)
+        }
+        
+        btnAlignRight?.setOnClickListener {
+            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_RIGHT)
+            updateAlignmentButtons()
+            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_RIGHT)
+        }
+        
+        btnAlignJustify?.setOnClickListener {
+            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_JUSTIFY)
+            updateAlignmentButtons()
+            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_JUSTIFY)
         }
     }
     
@@ -249,5 +358,136 @@ class BubbleSettingsPanel(
      */
     fun refreshSettingsValues() {
         updateSettingsValues()
+        updateReaderModeValues()
+    }
+    
+    /**
+     * Set reader mode state and update UI accordingly
+     */
+    fun setReaderMode(isReaderMode: Boolean) {
+        this.isReaderMode = isReaderMode
+        updatePanelSections()
+        if (isReaderMode) {
+            updateReaderModeValues()
+        }
+    }
+    
+    /**
+     * Update which panel sections are visible based on reader mode state
+     */
+    private fun updatePanelSections() {
+        if (isReaderMode) {
+            browserSettingsSection?.visibility = View.GONE
+            readerSettingsSection?.visibility = View.VISIBLE
+        } else {
+            browserSettingsSection?.visibility = View.VISIBLE
+            readerSettingsSection?.visibility = View.GONE
+        }
+    }
+    
+    /**
+     * Update all reader mode values to reflect current settings
+     */
+    private fun updateReaderModeValues() {
+        updateFontSizeDisplay()
+        updateFontSizeButtons()
+        updateBackgroundButtons()
+        updateAlignmentButtons()
+    }
+    
+    /**
+     * Update font size display
+     */
+    private fun updateFontSizeDisplay() {
+        val fontSize = settingsManager.getReaderFontSize()
+        fontSizeDisplay?.text = "${fontSize}sp"
+    }
+    
+    /**
+     * Update font size button states
+     */
+    private fun updateFontSizeButtons() {
+        val fontSize = settingsManager.getReaderFontSize()
+        val textColor = ContextCompat.getColor(context, android.R.color.black)
+        val backgroundColor = ContextCompat.getColor(context, android.R.color.white)
+        
+        btnFontDecrease?.let { button ->
+            button.setBackgroundColor(backgroundColor)
+            button.setTextColor(textColor)
+            button.isEnabled = fontSize > 12
+            button.alpha = if (fontSize > 12) 1.0f else 0.5f
+        }
+        
+        btnFontIncrease?.let { button ->
+            button.setBackgroundColor(backgroundColor)
+            button.setTextColor(textColor)
+            button.isEnabled = fontSize < 32
+            button.alpha = if (fontSize < 32) 1.0f else 0.5f
+        }
+    }
+    
+    /**
+     * Update background button states
+     */
+    private fun updateBackgroundButtons() {
+        val currentBg = settingsManager.getReaderBackground()
+        val primaryColor = ContextCompat.getColor(context, R.color.primary)
+        val strokeWidth = 4
+        
+        // White button
+        btnBgWhite?.let { button ->
+            val whiteColor = ContextCompat.getColor(context, android.R.color.white)
+            val textColor = ContextCompat.getColor(context, android.R.color.black)
+            button.setBackgroundColor(whiteColor)
+            button.setTextColor(textColor)
+            button.strokeWidth = if (currentBg == SettingsManager.READER_BG_WHITE) strokeWidth else 1
+            button.strokeColor = ContextCompat.getColorStateList(context, if (currentBg == SettingsManager.READER_BG_WHITE) R.color.primary else android.R.color.darker_gray)
+        }
+        
+        // Sepia button
+        btnBgSepia?.let { button ->
+            val sepiaColor = ContextCompat.getColor(context, R.color.read_mode_background_sepia)
+            val textColor = ContextCompat.getColor(context, R.color.read_mode_text_sepia)
+            button.setBackgroundColor(sepiaColor)
+            button.setTextColor(textColor)
+            button.strokeWidth = if (currentBg == SettingsManager.READER_BG_SEPIA) strokeWidth else 1
+            button.strokeColor = ContextCompat.getColorStateList(context, if (currentBg == SettingsManager.READER_BG_SEPIA) R.color.primary else android.R.color.darker_gray)
+        }
+        
+        // Dark button
+        btnBgDark?.let { button ->
+            val darkColor = ContextCompat.getColor(context, R.color.read_mode_background_dark)
+            val textColor = ContextCompat.getColor(context, R.color.read_mode_text_dark)
+            button.setBackgroundColor(darkColor)
+            button.setTextColor(textColor)
+            button.strokeWidth = if (currentBg == SettingsManager.READER_BG_DARK) strokeWidth else 1
+            button.strokeColor = ContextCompat.getColorStateList(context, if (currentBg == SettingsManager.READER_BG_DARK) R.color.primary else android.R.color.darker_gray)
+        }
+    }
+    
+    /**
+     * Update alignment button states
+     */
+    private fun updateAlignmentButtons() {
+        val currentAlign = settingsManager.getReaderTextAlign()
+        val primaryColor = ContextCompat.getColor(context, R.color.primary)
+        val backgroundColor = ContextCompat.getColor(context, android.R.color.white)
+        val textColor = ContextCompat.getColor(context, android.R.color.black)
+        val strokeWidth = 4
+        
+        // Helper function to update alignment button
+        fun updateAlignButton(button: MaterialButton?, isSelected: Boolean) {
+            button?.let {
+                it.setBackgroundColor(backgroundColor)
+                it.setTextColor(textColor)
+                it.strokeWidth = if (isSelected) strokeWidth else 1
+                it.strokeColor = ContextCompat.getColorStateList(context, if (isSelected) R.color.primary else android.R.color.darker_gray)
+            }
+        }
+        
+        updateAlignButton(btnAlignLeft, currentAlign == SettingsManager.READER_ALIGN_LEFT)
+        updateAlignButton(btnAlignCenter, currentAlign == SettingsManager.READER_ALIGN_CENTER)
+        updateAlignButton(btnAlignRight, currentAlign == SettingsManager.READER_ALIGN_RIGHT)
+        updateAlignButton(btnAlignJustify, currentAlign == SettingsManager.READER_ALIGN_JUSTIFY)
     }
 }

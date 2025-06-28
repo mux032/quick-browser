@@ -429,6 +429,24 @@ class BubbleView @JvmOverloads constructor(
                 // Update any UI state that depends on settings panel visibility
                 Log.d(TAG, "Settings panel ${if (isVisible) "shown" else "hidden"} for bubble $bubbleId")
             }
+
+            override fun onReaderFontSizeChanged(size: Int) {
+                // Refresh reader mode content with new font size
+                Log.d(TAG, "Reader font size changed to ${size}px for bubble $bubbleId")
+                readModeManager.refreshReaderModeContent()
+            }
+
+            override fun onReaderBackgroundChanged(background: String) {
+                // Refresh reader mode content with new background
+                Log.d(TAG, "Reader background changed to $background for bubble $bubbleId")
+                readModeManager.refreshReaderModeContent()
+            }
+
+            override fun onReaderTextAlignChanged(alignment: String) {
+                // Refresh reader mode content with new text alignment
+                Log.d(TAG, "Reader text alignment changed to $alignment for bubble $bubbleId")
+                readModeManager.refreshReaderModeContent()
+            }
         })
     }
 
@@ -1378,6 +1396,8 @@ class BubbleView @JvmOverloads constructor(
     override fun onToggleReadMode() {
         settingsPanelManager.dismissIfVisible(settingsPanel)
         readModeManager.toggleReadMode()
+        // Update settings panel to show/hide reader mode controls
+        settingsPanelManager.setReaderMode(readModeManager.isReadMode())
     }
 
     override fun onToggleSummaryMode() {
@@ -1389,6 +1409,8 @@ class BubbleView @JvmOverloads constructor(
         if (settingsPanelManager.isVisible()) {
             settingsPanelManager.hide(settingsPanel)
         } else {
+            // Update reader mode state before showing settings panel
+            settingsPanelManager.setReaderMode(readModeManager.isReadMode())
             settingsPanelManager.show(settingsPanel, uiManager.getBtnUrlBarSettings())
         }
     }

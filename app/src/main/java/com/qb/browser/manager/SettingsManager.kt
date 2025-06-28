@@ -40,6 +40,11 @@ class SettingsManager private constructor(context: Context) {
         private const val KEY_NIGHT_MODE = "pref_night_mode"
         private const val KEY_LAST_SHARED_URL = "last_shared_url"
         
+        // Reader mode settings keys
+        private const val KEY_READER_FONT_SIZE = "pref_reader_font_size"
+        private const val KEY_READER_BACKGROUND = "pref_reader_background"
+        private const val KEY_READER_TEXT_ALIGN = "pref_reader_text_align"
+        
         // Default values
         private const val DEFAULT_TEXT_SIZE = 16
         private const val DEFAULT_BUBBLE_SIZE = 100 // Percentage of default size
@@ -47,6 +52,11 @@ class SettingsManager private constructor(context: Context) {
         private const val DEFAULT_EXPANDED_BUBBLE_SIZE = 64
         private const val DEFAULT_THEME_COLOR = "Blue"
         private const val DEFAULT_DYNAMIC_COLOR = true
+        
+        // Reader mode default values
+        private const val DEFAULT_READER_FONT_SIZE = 18
+        private const val DEFAULT_READER_BACKGROUND = "white"
+        private const val DEFAULT_READER_TEXT_ALIGN = "left"
         
         // Font family options
         const val FONT_FAMILY_DEFAULT = "default"
@@ -58,6 +68,17 @@ class SettingsManager private constructor(context: Context) {
         const val THEME_LIGHT = 0
         const val THEME_DARK = 1
         const val THEME_SEPIA = 2
+        
+        // Reader mode background options
+        const val READER_BG_WHITE = "white"
+        const val READER_BG_SEPIA = "sepia"
+        const val READER_BG_DARK = "dark"
+        
+        // Reader mode text alignment options
+        const val READER_ALIGN_LEFT = "left"
+        const val READER_ALIGN_CENTER = "center"
+        const val READER_ALIGN_RIGHT = "right"
+        const val READER_ALIGN_JUSTIFY = "justify"
         
         @Volatile
         private var instance: SettingsManager? = null
@@ -354,5 +375,40 @@ class SettingsManager private constructor(context: Context) {
      */
     fun clearLastSharedUrl() {
         preferences.edit().remove(KEY_LAST_SHARED_URL).apply()
+    }
+    
+    // ============== READER MODE SETTINGS ==============
+    
+    /**
+     * Reader mode font size settings
+     */
+    fun getReaderFontSize(): Int {
+        return preferences.getInt(KEY_READER_FONT_SIZE, DEFAULT_READER_FONT_SIZE)
+    }
+    
+    fun setReaderFontSize(size: Int) {
+        preferences.edit().putInt(KEY_READER_FONT_SIZE, size).apply()
+    }
+    
+    /**
+     * Reader mode background color settings
+     */
+    fun getReaderBackground(): String {
+        return preferences.getString(KEY_READER_BACKGROUND, DEFAULT_READER_BACKGROUND) ?: DEFAULT_READER_BACKGROUND
+    }
+    
+    fun setReaderBackground(background: String) {
+        preferences.edit().putString(KEY_READER_BACKGROUND, background).apply()
+    }
+    
+    /**
+     * Reader mode text alignment settings
+     */
+    fun getReaderTextAlign(): String {
+        return preferences.getString(KEY_READER_TEXT_ALIGN, DEFAULT_READER_TEXT_ALIGN) ?: DEFAULT_READER_TEXT_ALIGN
+    }
+    
+    fun setReaderTextAlign(alignment: String) {
+        preferences.edit().putString(KEY_READER_TEXT_ALIGN, alignment).apply()
     }
 }

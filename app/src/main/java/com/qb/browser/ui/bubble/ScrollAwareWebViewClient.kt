@@ -39,7 +39,7 @@ class ScrollAwareWebViewClient(
                     """.trimIndent()) { html ->
                         if (html != null && html.length > 50) {
                             // Process the HTML on a background thread
-                            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            coroutineScope.launch(Dispatchers.IO) {
                                 try {
                                     // The result is a JSON string, so we need to parse it
                                     val unescapedHtml = html.substring(1, html.length - 1)
