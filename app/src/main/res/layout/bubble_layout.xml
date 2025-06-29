@@ -127,7 +127,7 @@
                             android:paddingEnd="16dp"
                             android:paddingTop="2dp"
                             android:paddingBottom="2dp"
-                            android:text="https://example.com" />
+                            android:text="https://google.com" />
                         
                         <!-- Share button -->
                         <com.google.android.material.button.MaterialButton
@@ -400,10 +400,14 @@
                                             android:layout_height="32dp"
                                             android:minWidth="0dp"
                                             android:minHeight="0dp"
-                                            android:text="A"
-                                            android:textSize="12sp"
-                                            android:textColor="@color/textColorPrimary"
                                             android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_chevron_left"
+                                            app:iconSize="18dp"
+                                            app:iconTint="@color/textColorSecondary"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
                                             android:layout_marginEnd="8dp" />
                                         
                                         <TextView
@@ -423,10 +427,14 @@
                                             android:layout_height="32dp"
                                             android:minWidth="0dp"
                                             android:minHeight="0dp"
-                                            android:text="A"
-                                            android:textSize="16sp"
-                                            android:textColor="@color/textColorPrimary"
                                             android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_chevron_right"
+                                            app:iconSize="18dp"
+                                            app:iconTint="@color/textColorSecondary"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
                                             android:layout_marginStart="8dp" />
                                     </LinearLayout>
                                 </LinearLayout>
@@ -459,10 +467,8 @@
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
-                                            android:text="@string/reader_bg_white"
-                                            android:textSize="10sp"
                                             android:layout_marginEnd="2dp" />
-                                        
+
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_bg_sepia"
                                             style="@style/Widget.Material3.Button.OutlinedButton"
@@ -470,8 +476,6 @@
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
-                                            android:text="@string/reader_bg_sepia"
-                                            android:textSize="10sp"
                                             android:layout_marginHorizontal="2dp" />
                                         
                                         <com.google.android.material.button.MaterialButton
@@ -481,8 +485,6 @@
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
-                                            android:text="@string/reader_bg_dark"
-                                            android:textSize="10sp"
                                             android:layout_marginStart="2dp" />
                                     </LinearLayout>
                                 </LinearLayout>
@@ -514,8 +516,13 @@
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_left"
                                             app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
                                             android:layout_marginEnd="2dp" />
                                         
                                         <com.google.android.material.button.MaterialButton
@@ -525,8 +532,13 @@
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_center"
                                             app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
                                             android:layout_marginHorizontal="2dp" />
                                         
                                         <com.google.android.material.button.MaterialButton
@@ -536,8 +548,13 @@
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_right"
                                             app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
                                             android:layout_marginHorizontal="2dp" />
                                         
                                         <com.google.android.material.button.MaterialButton
@@ -547,8 +564,13 @@
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_justify"
                                             app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
                                             android:layout_marginStart="2dp" />
                                     </LinearLayout>
                                 </LinearLayout>
