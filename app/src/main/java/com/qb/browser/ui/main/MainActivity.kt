@@ -33,6 +33,7 @@
  */
 package com.qb.browser.ui.main
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -46,7 +47,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -87,6 +90,8 @@ class MainActivity : BaseActivity() {
     private lateinit var historyAdapter: HistoryAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyView: TextView
+    private lateinit var addressBar: EditText
+    private lateinit var goButton: ImageButton
     
     // Removed permissionLauncher as notification permission is now optional
 
@@ -169,9 +174,14 @@ class MainActivity : BaseActivity() {
         // Initialize views
         recyclerView = findViewById(R.id.history_recycler_view)
         emptyView = findViewById(R.id.empty_history_view)
+        addressBar = findViewById(R.id.address_bar)
+        goButton = findViewById(R.id.go_button)
         
         // Set up RecyclerView
         setupRecyclerView()
+        
+        // Set up address bar
+        setupAddressBar()
         
         // Observe history data
         observeHistoryData()
@@ -192,6 +202,73 @@ class MainActivity : BaseActivity() {
             // Removed divider decoration to eliminate horizontal lines
             adapter = this@MainActivity.historyAdapter
         }
+    }
+    
+    private fun setupAddressBar() {
+        // Handle go button click
+        goButton.setOnClickListener {
+            val url = addressBar.text.toString().trim()
+            if (url.isNotEmpty()) {
+                handleUrlInput(url)
+            } else {
+                Toast.makeText(this, "Please enter a URL", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        // Handle enter key press in address bar
+        addressBar.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_GO) {
+                val url = addressBar.text.toString().trim()
+                if (url.isNotEmpty()) {
+                    handleUrlInput(url)
+                } else {
+                    Toast.makeText(this, "Please enter a URL", Toast.LENGTH_SHORT).show()
+                }
+                true
+            } else {
+                false
+            }
+        }
+    }
+    
+    private fun handleUrlInput(inputUrl: String) {
+        var url = inputUrl
+        
+        // Add https:// if no protocol is specified
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            // Check if it looks like a domain (contains a dot and no spaces)
+            if (url.contains(".") && !url.contains(" ")) {
+                url = "https://$url"
+            } else {
+                // Treat as search query
+                url = "https://www.google.com/search?q=${Uri.encode(url)}"
+            }
+        }
+        
+        // Show loading state
+        goButton.isEnabled = false
+        goButton.alpha = 0.5f
+        
+        // Clear the address bar
+        addressBar.text.clear()
+        
+        // Hide keyboard
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(addressBar.windowToken, 0)
+        
+        // Open URL in bubble
+        startBubbleServiceWithUrl(url)
+        
+        // Provide user feedback
+        Toast.makeText(this, "Opening in bubble...", Toast.LENGTH_SHORT).show()
+        
+        // Reset button state after a short delay
+        goButton.postDelayed({
+            goButton.isEnabled = true
+            goButton.alpha = 1.0f
+        }, 1000)
+        
+        Log.d(TAG, "Opening URL in bubble: $url")
     }
     
     private fun observeHistoryData() {

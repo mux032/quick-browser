@@ -21,7 +21,11 @@
     <string name="resize_handle">Resize handle</string>
     <string name="site_icon">Site icon</string>
     <string name="minimize_bubble">Minimize bubble</string>
+    <string name="bookmarked">Bookmarked</string>
+    <string name="more_options">More options</string>
+    <string name="open">Open</string>
     <string name="enter_url_hint">Enter URL or search...</string>
+    <string name="go_to_url">Go to URL</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
@@ -49,7 +53,7 @@
     <string name="app_logo">QB Browser Logo</string>
     <string name="app_description">Fast and lightweight browser with bubble view</string>
     <string name="start_bubble_browser">Start bubble browser</string>
-    <string name="usage_hint">Hint: Share a link to the browser</string>
+    <string name="usage_hint">Enter a URL in the address bar above to open it in a bubble</string>
 
     <!-- Settings Screen -->
     <string name="browser_settings">Browser Settings</string>
@@ -73,6 +77,15 @@
     <string name="encrypt_saved_pages">Encrypt saved pages</string>
 
     <!-- History Screen -->
+    <string name="browsing_history">Browsing History</string>
+    <string name="search_history">Search history</string>
+    <string name="sites_visited">Sites Visited</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="this_week">This Week</string>
+    <string name="offline">Offline</string>
+    <string name="list_view">List View</string>
+    <string name="grid_view">Grid View</string>
+    <string name="start_browsing_hint">Start browsing to see your history here</string>
     <string name="no_history_found">No browsing history found</string>
     <string name="clear_history">Clear history</string>
     <string name="delete">Delete</string>
