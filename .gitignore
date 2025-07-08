@@ -9,3 +9,5 @@ app/build/
 app_flow_bubble_view.svg
 /.opencode/
 /extras/
+/.zencoder/
+/.vscode/
