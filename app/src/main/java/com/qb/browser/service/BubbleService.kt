@@ -6,13 +6,16 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.qb.browser.Constants
 import com.qb.browser.QBApplication
+import com.qb.browser.manager.AdBlocker
 import com.qb.browser.manager.BubbleDisplayManager
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.manager.BubbleNotificationManager
+import com.qb.browser.manager.SettingsManager
+import com.qb.browser.manager.SummarizationManager
 import com.qb.browser.ui.bubble.BubbleIntentProcessor
-import com.qb.browser.data.WebPageDao
-import com.qb.browser.data.AppDatabase
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.SupervisorJob
+import javax.inject.Inject
 
 /**
  * BubbleService is the core service responsible for managing floating bubbles in the QB Browser. It
@@ -25,6 +28,7 @@ import kotlinx.coroutines.SupervisorJob
  * - Manager coordination
  * - State preservation
  */
+@AndroidEntryPoint
 class BubbleService : LifecycleService() {
 
     private val serviceJob = SupervisorJob()
@@ -32,19 +36,39 @@ class BubbleService : LifecycleService() {
     private lateinit var notificationManager: BubbleNotificationManager
     private lateinit var bubbleDisplayManager: BubbleDisplayManager
     private lateinit var intentProcessor: BubbleIntentProcessor
-    private lateinit var webPageDao: WebPageDao
 
+    // Remove ViewModel usage from Service
+    // private lateinit var bubbleViewModel: BubbleViewModel
+    // private lateinit var webViewModel: WebViewModel
+
+    @Inject
+    lateinit var webPageDao: com.qb.browser.data.WebPageDao
+
+    @Inject
+    lateinit var settingsManager: SettingsManager
+
+    @Inject
+    lateinit var adBlocker: AdBlocker
+
+    @Inject
+    lateinit var summarizationManager: SummarizationManager
 
     companion object {
         private const val TAG = "BubbleService"
-        @Volatile private var isServiceRunning = false
+        @Volatile
+        private var isServiceRunning = false
 
         // Action constants
-        @JvmStatic val ACTION_START_BUBBLE = Constants.ACTION_CREATE_BUBBLE
-        @JvmStatic val ACTION_OPEN_URL = Constants.ACTION_OPEN_URL
-        @JvmStatic val ACTION_CLOSE_BUBBLE = Constants.ACTION_CLOSE_BUBBLE
-        @JvmStatic val ACTION_TOGGLE_BUBBLES = Constants.ACTION_TOGGLE_BUBBLES
-        @JvmStatic val ACTION_ACTIVATE_BUBBLE = Constants.ACTION_ACTIVATE_BUBBLE
+        @JvmStatic
+        val ACTION_START_BUBBLE = Constants.ACTION_CREATE_BUBBLE
+        @JvmStatic
+        val ACTION_OPEN_URL = Constants.ACTION_OPEN_URL
+        @JvmStatic
+        val ACTION_CLOSE_BUBBLE = Constants.ACTION_CLOSE_BUBBLE
+        @JvmStatic
+        val ACTION_TOGGLE_BUBBLES = Constants.ACTION_TOGGLE_BUBBLES
+        @JvmStatic
+        val ACTION_ACTIVATE_BUBBLE = Constants.ACTION_ACTIVATE_BUBBLE
 
         // Extra keys
         const val EXTRA_X = "extra_x"
@@ -62,41 +86,37 @@ class BubbleService : LifecycleService() {
 
             // Initialize managers
             val app = application as QBApplication
-            // Set reference to this service in the application
             app.bubbleService = this
-            
+
             bubbleManager =
-                    BubbleManager(
-                            context = this,
-                            bubbleViewModel = app.bubbleViewModel,
-                            webViewModel = app.webViewModel,
-                            lifecycleScope = lifecycleScope
-                    )
+                BubbleManager(
+                    context = this,
+                    lifecycleScope = lifecycleScope
+                )
 
             notificationManager = BubbleNotificationManager(this)
-            val database = AppDatabase.getInstance(this)
-            webPageDao = database.webPageDao() // Inject WebPageDao from application context
 
-            // Initialize BubbleDisplayManager to handle UI
             bubbleDisplayManager = BubbleDisplayManager(
                 context = this,
-                bubbleViewModel = app.bubbleViewModel,
-                lifecycleScope = lifecycleScope
+                bubbleManager = bubbleManager,
+                lifecycleScope = lifecycleScope,
+                settingsManager = settingsManager,
+                adBlocker = adBlocker,
+                summarizationManager = summarizationManager
             )
 
-            // Initialize BubbleIntentProcessor with necessary dependencies
             intentProcessor =
-                    BubbleIntentProcessor(
-                            context = this,
-                            bubbleManager = bubbleManager,
-                            webPageDao = webPageDao,
-                            lifecycleScope = lifecycleScope
-                    )
+                BubbleIntentProcessor(
+                    context = this,
+                    bubbleManager = bubbleManager,
+                    webPageDao = webPageDao,
+                    lifecycleScope = lifecycleScope
+                )
             // Start foreground service with notification
             try {
                 startForeground(
-                        BubbleNotificationManager.NOTIFICATION_ID,
-                        notificationManager.createNotification()
+                    BubbleNotificationManager.NOTIFICATION_ID,
+                    notificationManager.createNotification()
                 )
             } catch (e: Exception) {
                 // If notification fails (e.g., permission not granted), log but continue
@@ -124,7 +144,7 @@ class BubbleService : LifecycleService() {
         bubbleDisplayManager.cleanup()
         bubbleManager.cleanup()
         serviceJob.cancel()
-        
+
         // Remove reference from application
         try {
             val app = application as QBApplication
@@ -134,7 +154,7 @@ class BubbleService : LifecycleService() {
         } catch (e: Exception) {
             Log.e(TAG, "Error clearing service reference", e)
         }
-        
+
         Log.d(TAG, "BubbleService onDestroy()")
     }
 }

@@ -5,8 +5,6 @@ import android.util.Log
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.qb.browser.model.Bubble
 import com.qb.browser.model.WebPage
-import com.qb.browser.viewmodel.BubbleViewModel
-import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -17,10 +15,8 @@ import java.util.UUID
  * handles creation, updating, and removal of bubbles, as well as their state management.
  */
 class BubbleManager(
-        private val context: Context,
-        private val bubbleViewModel: BubbleViewModel,
-        private val webViewModel: WebViewModel,
-        private val lifecycleScope: LifecycleCoroutineScope
+    private val context: Context,
+    private val lifecycleScope: LifecycleCoroutineScope
 ) {
     private val _bubbles = MutableStateFlow<Map<String, Bubble>>(emptyMap())
     val bubbles: StateFlow<Map<String, Bubble>> = _bubbles
@@ -32,13 +28,13 @@ class BubbleManager(
     fun createOrUpdateBubbleWithNewUrl(url: String, existingBubbleId: String? = null) {
         lifecycleScope.launch {
             Log.d(TAG, "Creating new bubble for URL: $url, existing bubble ID: $existingBubbleId")
-            
+
             try {
                 val currentBubbles = _bubbles.value.toMutableMap()
-                
+
                 // Use the provided bubble ID or generate a new UUID
                 val bubbleId = existingBubbleId ?: UUID.randomUUID().toString()
-                
+
                 val timestamp = System.currentTimeMillis()
                 val newWebPage = WebPage(
                     url = url,
@@ -48,26 +44,20 @@ class BubbleManager(
                     isAvailableOffline = false,
                     visitCount = 1
                 )
-    
+
                 // Create new bubble with unique ID
                 val newBubble = Bubble(
                     id = bubbleId,
                     url = url,
                     title = url,
                 )
-                
+
                 // Add to current bubbles map
                 currentBubbles[bubbleId] = newBubble
-                
-                // Update ViewModel
-                bubbleViewModel.addBubble(newBubble)
-                
+
                 // Update state
                 _bubbles.value = currentBubbles
-                
-                // Load URL in WebView
-                webViewModel.loadUrl(bubbleId, url)
-                
+
                 Log.d(TAG, "Successfully created new bubble with ID: $bubbleId for URL: $url")
             } catch (e: Exception) {
                 Log.e(TAG, "Error creating bubble for URL: $url", e)
@@ -81,17 +71,11 @@ class BubbleManager(
             val currentBubbles = _bubbles.value.toMutableMap()
             currentBubbles.remove(bubbleId)
             _bubbles.value = currentBubbles
-            
-            // Update ViewModel
-            bubbleViewModel.removeBubble(bubbleId)
-            
-            // Close tab in WebView
-            webViewModel.closeTab(bubbleId)
-            
+
             Log.d(TAG, "Removed bubble with ID: $bubbleId")
         }
     }
-    
+
     fun getAllBubbles(): List<Bubble> {
         return _bubbles.value.values.toList()
     }
@@ -100,15 +84,15 @@ class BubbleManager(
         lifecycleScope.launch {
             // Get all bubble IDs
             val bubbleIds = _bubbles.value.keys.toList()
-            
+
             // Remove each bubble
             bubbleIds.forEach { bubbleId ->
                 removeBubble(bubbleId)
             }
-            
+
             // Clear the bubbles map
             _bubbles.value = emptyMap()
-            
+
             Log.d(TAG, "Cleaned up all bubbles")
         }
     }

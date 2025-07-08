@@ -92,15 +92,15 @@ class MainActivity : BaseActivity() {
     private lateinit var emptyView: TextView
     private lateinit var addressBar: EditText
     private lateinit var goButton: ImageButton
-    
+
     // Removed permissionLauncher as notification permission is now optional
 
     /** Starts the BubbleService to display floating bubbles. */
     private fun startBubbleService() {
         val intent =
-                Intent(this, BubbleService::class.java).apply {
-                    action = Constants.ACTION_CREATE_BUBBLE
-                }
+            Intent(this, BubbleService::class.java).apply {
+                action = Constants.ACTION_CREATE_BUBBLE
+            }
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)
@@ -122,10 +122,10 @@ class MainActivity : BaseActivity() {
 
         Log.d(TAG, "startBubbleServiceWithUrl: Starting service with URL: $url")
         val intent =
-                Intent(this, BubbleService::class.java).apply {
-                    action = Constants.ACTION_CREATE_BUBBLE
-                    putExtra(Constants.EXTRA_URL, url)
-                }
+            Intent(this, BubbleService::class.java).apply {
+                action = Constants.ACTION_CREATE_BUBBLE
+                putExtra(Constants.EXTRA_URL, url)
+            }
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -143,16 +143,14 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d(TAG, "onCreate called with intent: ${intent?.action}")
-        
-        // Apply theme before setting content view
-        applyAppTheme()
-        
+
         // Always call super.onCreate() to avoid SuperNotCalledException
+        // Theme will be applied automatically by BaseActivity
         super.onCreate(savedInstanceState)
-        
+
         // Always set content view to ensure activity is properly initialized
         setContentView(R.layout.activity_main)
-        
+
         // Check if this is a link sharing intent before setting up the rest of the UI
         if (isLinkSharingIntent(intent)) {
             Log.d(TAG, "Link sharing intent detected in onCreate, handling without full UI initialization")
@@ -167,43 +165,43 @@ class MainActivity : BaseActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false) // Hide default title
 
         // settingsManager is already initialized in BaseActivity
-        
+
         // Initialize ViewModel
         historyViewModel = ViewModelProvider(this)[HistoryViewModel::class.java]
-        
+
         // Initialize views
         recyclerView = findViewById(R.id.history_recycler_view)
         emptyView = findViewById(R.id.empty_history_view)
         addressBar = findViewById(R.id.address_bar)
         goButton = findViewById(R.id.go_button)
-        
+
         // Set up RecyclerView
         setupRecyclerView()
-        
+
         // Set up address bar
         setupAddressBar()
-        
+
         // Observe history data
         observeHistoryData()
-        
+
         // Handle main app intent (not link sharing)
         handleMainAppIntent()
     }
-    
+
     private fun setupRecyclerView() {
         historyAdapter = HistoryAdapter(
             onItemClick = { webPage ->
                 openPageInBubble(webPage.url)
             }
         )
-        
+
         recyclerView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             // Removed divider decoration to eliminate horizontal lines
             adapter = this@MainActivity.historyAdapter
         }
     }
-    
+
     private fun setupAddressBar() {
         // Handle go button click
         goButton.setOnClickListener {
@@ -214,7 +212,7 @@ class MainActivity : BaseActivity() {
                 Toast.makeText(this, "Please enter a URL", Toast.LENGTH_SHORT).show()
             }
         }
-        
+
         // Handle enter key press in address bar
         addressBar.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
@@ -230,10 +228,10 @@ class MainActivity : BaseActivity() {
             }
         }
     }
-    
+
     private fun handleUrlInput(inputUrl: String) {
         var url = inputUrl
-        
+
         // Add https:// if no protocol is specified
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             // Check if it looks like a domain (contains a dot and no spaces)
@@ -244,33 +242,33 @@ class MainActivity : BaseActivity() {
                 url = "https://www.google.com/search?q=${Uri.encode(url)}"
             }
         }
-        
+
         // Show loading state
         goButton.isEnabled = false
         goButton.alpha = 0.5f
-        
+
         // Clear the address bar
         addressBar.text.clear()
-        
+
         // Hide keyboard
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
         imm.hideSoftInputFromWindow(addressBar.windowToken, 0)
-        
+
         // Open URL in bubble
         startBubbleServiceWithUrl(url)
-        
+
         // Provide user feedback
         Toast.makeText(this, "Opening in bubble...", Toast.LENGTH_SHORT).show()
-        
+
         // Reset button state after a short delay
         goButton.postDelayed({
             goButton.isEnabled = true
             goButton.alpha = 1.0f
         }, 1000)
-        
+
         Log.d(TAG, "Opening URL in bubble: $url")
     }
-    
+
     private fun observeHistoryData() {
         historyViewModel.getRecentPages(20).observe(this) { pages ->
             if (pages.isEmpty()) {
@@ -283,16 +281,16 @@ class MainActivity : BaseActivity() {
             }
         }
     }
-    
+
     private fun openPageInBubble(url: String) {
         startBubbleServiceWithUrl(url)
     }
-    
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         return true
     }
-    
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_settings -> {
@@ -306,6 +304,7 @@ class MainActivity : BaseActivity() {
                 }
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -313,9 +312,9 @@ class MainActivity : BaseActivity() {
     override fun onNewIntent(intent: Intent?) {
         Log.d(TAG, "onNewIntent called with intent: ${intent?.action}")
         super.onNewIntent(intent)
-        
+
         if (intent == null) return
-        
+
         // Check if this is a return from authentication
         val data = intent.data
         if (data != null && data.scheme == "qbbrowser" && data.host == "auth-callback") {
@@ -323,10 +322,10 @@ class MainActivity : BaseActivity() {
             handleAuthenticationCallback(data)
             return
         }
-        
+
         // Always update the intent
         setIntent(intent)
-        
+
         // If it's a link sharing intent, handle it without showing the UI
         if (isLinkSharingIntent(intent)) {
             Log.d(TAG, "Link sharing intent detected in onNewIntent, handling without UI")
@@ -334,16 +333,16 @@ class MainActivity : BaseActivity() {
             return
         }
     }
-    
+
     /**
      * Handles the callback from Chrome Custom Tabs after authentication
      */
     private fun handleAuthenticationCallback(uri: Uri) {
         Log.d(TAG, "Handling authentication callback: $uri")
-        
+
         // Use the AuthenticationHandler to handle the return
         val handled = AuthenticationHandler.handleAuthenticationReturn(this, uri)
-        
+
         if (handled) {
             Log.d(TAG, "Authentication callback handled successfully")
             // Minimize the app after handling the callback
@@ -353,24 +352,24 @@ class MainActivity : BaseActivity() {
             Toast.makeText(this, "Failed to complete authentication", Toast.LENGTH_SHORT).show()
         }
     }
-    
+
     /**
      * Checks if the intent is for link sharing (ACTION_SEND or ACTION_VIEW)
      */
     private fun isLinkSharingIntent(intent: Intent?): Boolean {
         return intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_VIEW
     }
-    
+
     /**
      * Handles link sharing intents by starting the bubble service and moving the activity to background
      * This allows the activity to receive multiple share intents without crashing
      */
     private fun handleLinkSharingIntent(intent: Intent?) {
         if (intent == null) return
-        
+
         Log.d(TAG, "handleLinkSharingIntent | Received intent: ${intent.action}, data: ${intent.extras}")
         Log.d(TAG, "Activity will be moved to background instead of finishing to support multiple shares")
-        
+
         when (intent.action) {
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
@@ -384,6 +383,7 @@ class MainActivity : BaseActivity() {
                     }
                 }
             }
+
             Intent.ACTION_VIEW -> {
                 val url = intent.data?.toString()
                 Log.d(TAG, "Received view URL: $url")
@@ -398,7 +398,7 @@ class MainActivity : BaseActivity() {
             }
         }
     }
-    
+
     /**
      * Checks permissions and starts the bubble service with a URL
      * Returns true if successful, false if permissions are needed
@@ -412,12 +412,12 @@ class MainActivity : BaseActivity() {
             settingsManager.saveLastSharedUrl(url)
             return false
         }
-        
+
         // Start bubble service with URL
         startBubbleServiceWithUrl(url)
         return true
     }
-    
+
     /**
      * Handles incoming intents for the main app (not link sharing)
      */
@@ -452,20 +452,20 @@ class MainActivity : BaseActivity() {
     private fun requestOverlayPermission() {
         try {
             val overlayIntent =
-                    Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                        data = Uri.parse("package:$packageName")
-                    }
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                    data = Uri.parse("package:$packageName")
+                }
             startActivity(overlayIntent)
             Toast.makeText(
-                            this,
-                            "Please allow drawing over other apps to use the bubble browser",
-                            Toast.LENGTH_LONG
-                    )
-                    .show()
+                this,
+                "Please allow drawing over other apps to use the bubble browser",
+                Toast.LENGTH_LONG
+            )
+                .show()
         } catch (e: Exception) {
             Log.e(TAG, "Error requesting overlay permission", e)
             Toast.makeText(this, "Could not open overlay permission settings", Toast.LENGTH_LONG)
-                    .show()
+                .show()
         }
     }
 
@@ -473,11 +473,12 @@ class MainActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        
+
         // Check if we have a saved URL from a previous permission request
         val lastSharedUrl = settingsManager.getLastSharedUrl()
-        if (lastSharedUrl != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && 
-            Settings.canDrawOverlays(this)) {
+        if (lastSharedUrl != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            Settings.canDrawOverlays(this)
+        ) {
             // Start bubble with the saved URL
             startBubbleServiceWithUrl(lastSharedUrl)
             // Clear the saved URL
@@ -488,37 +489,36 @@ class MainActivity : BaseActivity() {
                 return
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                Settings.canDrawOverlays(this) &&
-                !isBubbleServiceRunning()
+            Settings.canDrawOverlays(this) &&
+            !isBubbleServiceRunning()
         ) {
             startBubbleService()
         }
     }
-    
 
-    
+
     // RecyclerView Adapter for History items
     private inner class HistoryAdapter(
         private val onItemClick: (WebPage) -> Unit
     ) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
-        
+
         private var items = listOf<WebPage>()
         private val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-        
+
         fun submitList(newItems: List<WebPage>) {
             items = newItems.sortedByDescending { it.timestamp }
             notifyDataSetChanged()
         }
-        
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_history, parent, false)
             return ViewHolder(view)
         }
-        
+
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val page = items[position]
-            
+
             // Use a proper title or fallback to "Untitled Page"
             // Don't show URL as title
             val displayTitle = when {
@@ -526,28 +526,28 @@ class MainActivity : BaseActivity() {
                 page.title == page.url -> getString(R.string.untitled_page)
                 else -> page.title
             }
-            
+
             holder.titleTextView.text = displayTitle
             holder.urlTextView.text = page.url
             holder.dateTextView.text = dateFormat.format(Date(page.timestamp))
-            
+
             // Set Offline indicator if available offline
             holder.offlineIndicator.visibility = if (page.isAvailableOffline) View.VISIBLE else View.GONE
-            
+
             holder.itemView.setOnClickListener {
                 onItemClick(page)
             }
         }
-        
+
         override fun getItemCount() = items.size
-        
+
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val titleTextView: TextView = itemView.findViewById(R.id.text_title)
             val urlTextView: TextView = itemView.findViewById(R.id.text_url)
             val dateTextView: TextView = itemView.findViewById(R.id.text_date)
             val offlineIndicator: View = itemView.findViewById(R.id.offline_indicator)
             val deleteButton: View = itemView.findViewById(R.id.btn_delete)
-            
+
             init {
                 // Hide delete button as we're just showing history
                 deleteButton.visibility = View.GONE

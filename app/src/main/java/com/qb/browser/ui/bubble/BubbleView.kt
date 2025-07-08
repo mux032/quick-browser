@@ -32,8 +32,10 @@ import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
 import com.qb.browser.Constants
 import com.qb.browser.R
+import com.qb.browser.manager.AdBlocker
 import com.qb.browser.manager.AuthenticationHandler
 import com.qb.browser.manager.SettingsManager
+import com.qb.browser.manager.SummarizationManager
 import com.qb.browser.service.BubbleService
 import com.qb.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -50,11 +52,17 @@ import androidx.core.net.toUri
  *
  * @property bubbleId Unique identifier for this bubble
  * @property url The URL to load in this bubble's WebView
+ * @property settingsManager Settings manager for configuration
+ * @property adBlocker Ad blocker for content filtering
+ * @property summarizationManager Manager for text summarization
  */
 class BubbleView @JvmOverloads constructor(
     context: Context,
     val bubbleId: String,
     var url: String,  // Changed from val to var to allow URL updates when navigating
+    private val settingsManager: SettingsManager,
+    private val adBlocker: AdBlocker,
+    private val summarizationManager: SummarizationManager,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate,
@@ -75,7 +83,7 @@ class BubbleView @JvmOverloads constructor(
         setStateChangeListener(this@BubbleView)
     }
 
-    private val settingsManager = SettingsManager.getInstance(context)
+    // Dependencies passed through constructor
     private val bubbleAnimator = BubbleAnimator(context)
     private val touchHandler = BubbleTouchHandler(context, this)
     private var webViewModel: WebViewModel? = null
@@ -156,13 +164,13 @@ class BubbleView @JvmOverloads constructor(
             settingsPanelManager = BubbleSettingsPanel(context, settingsManager, bubbleAnimator)
 
             // Initialize summary manager
-            summaryManager = BubbleSummaryManager(context, bubbleAnimator)
+            summaryManager = BubbleSummaryManager(context, summarizationManager, bubbleAnimator)
 
             // Initialize read mode manager
             readModeManager = BubbleReadModeManager(context, settingsManager)
 
             // Initialize WebView manager
-            webViewManager = BubbleWebViewManager(context, bubbleId, this)
+            webViewManager = BubbleWebViewManager(context, bubbleId, this, settingsManager, adBlocker)
 
             Log.d(TAG, "Remaining views initialized successfully for bubble: $bubbleId")
 

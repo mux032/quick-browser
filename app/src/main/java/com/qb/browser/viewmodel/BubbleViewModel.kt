@@ -8,12 +8,14 @@ import androidx.lifecycle.viewModelScope
 import com.qb.browser.data.SettingsDao
 import com.qb.browser.model.Bubble
 import com.qb.browser.model.Settings
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-
-class BubbleViewModel(private val settingsDao: SettingsDao) : ViewModel() {
+@HiltViewModel
+class BubbleViewModel @Inject constructor(private val settingsDao: SettingsDao) : ViewModel() {
 
     private val _bubbles = MutableStateFlow<List<Bubble>>(emptyList())
     val bubbles: StateFlow<List<Bubble>> = _bubbles

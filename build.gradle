@@ -4,19 +4,50 @@ buildscript {
         kotlin_version = '1.9.20'
     }
     repositories {
+        // Try Google's repository first (most reliable for Android)
         google()
+        // JCenter backup for legacy dependencies
         mavenCentral()
+        // Alternative mirrors as fallback
+        maven {
+            url "https://repo1.maven.org/maven2/"
+        }
+        maven {
+            url "https://maven.aliyun.com/repository/central"
+        }
+        maven {
+            url "https://maven.aliyun.com/repository/google"
+        }
+        gradlePluginPortal()
+        // Local repository as last resort
+        mavenLocal()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.10.1'
+        classpath 'com.android.tools.build:gradle:8.4.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.48'
     }
 }
 
 allprojects {
     repositories {
+        // Try Google's repository first (most reliable for Android)
         google()
+        // JCenter backup for legacy dependencies
         mavenCentral()
+        // Alternative mirrors as fallback
+        maven {
+            url "https://repo1.maven.org/maven2/"
+        }
+        maven {
+            url "https://maven.aliyun.com/repository/central"
+        }
+        maven {
+            url "https://maven.aliyun.com/repository/google"
+        }
+        gradlePluginPortal()
+        // Local repository as last resort
+        mavenLocal()
     }
 }
 

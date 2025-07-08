@@ -14,88 +14,78 @@ import com.qb.browser.util.ErrorHandler
 /**
  * AdBlocker utility to block ads and trackers
  */
-class AdBlocker private constructor(private val context: Context) {
-    
+class AdBlocker(private val context: Context) {
+
     private val adServerHosts = HashSet<String>()
     private val cachedResults = ConcurrentHashMap<String, Boolean>()
     private val whitelistedDomains = HashSet<String>()
     private val blacklistedDomains = HashSet<String>()
-    
+
     // Class tag for logging
     private val TAG = "AdBlocker"
-    
+
     init {
         // Load ad blocking rules from preferences or default list
         loadRules()
         loadWhitelist()
         loadBlacklist()
     }
-    
+
     companion object {
         private const val PREFS_AD_SERVERS = "ad_servers"
         private const val PREFS_WHITELIST = "whitelist_domains"
         private const val PREFS_BLACKLIST = "blacklist_domains"
-        
+
         // Empty response to return for blocked requests
         private val EMPTY_RESPONSE = WebResourceResponse(
             "text/plain",
             "UTF-8",
             ByteArrayInputStream("".toByteArray())
         )
-        
-        // Singleton instance
-        @Volatile
-        private var INSTANCE: AdBlocker? = null
-        
-        fun getInstance(context: Context): AdBlocker {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: AdBlocker(context.applicationContext).also {
-                    INSTANCE = it
-                }
-            }
-        }
     }
-    
+
     /**
      * Check if a request should be blocked
      */
     fun shouldBlockRequest(url: String): WebResourceResponse? {
         return runCatching {
             // Quick check for common non-ad resources to improve performance
-            if (url.endsWith(".css") || url.endsWith(".png") || url.endsWith(".jpg") || 
+            if (url.endsWith(".css") || url.endsWith(".png") || url.endsWith(".jpg") ||
                 url.endsWith(".jpeg") || url.endsWith(".gif") || url.endsWith(".svg") ||
-                url.endsWith(".woff") || url.endsWith(".woff2") || url.endsWith(".ttf")) {
+                url.endsWith(".woff") || url.endsWith(".woff2") || url.endsWith(".ttf")
+            ) {
                 return@runCatching null
             }
-            
+
             val hostname = URL(url).host ?: return@runCatching null
-            
+
             // Check domain whitelist/blacklist first
             val domain = extractDomain(url)
             if (isWhitelisted(domain)) return@runCatching null
             if (isBlacklisted(domain)) return@runCatching EMPTY_RESPONSE
-            
+
             // Use cached result if available
             cachedResults[hostname]?.let {
                 return@runCatching if (it) EMPTY_RESPONSE else null
             }
-            
+
             // Check for common ad patterns in URL
             if (url.contains("/ads/") || url.contains("/ad/") || url.contains("/analytics/") ||
-                url.contains("/tracker/") || url.contains("/pixel/") || url.contains("/banner/")) {
+                url.contains("/tracker/") || url.contains("/pixel/") || url.contains("/banner/")
+            ) {
                 cachedResults[hostname] = true
                 return@runCatching EMPTY_RESPONSE
             }
-            
+
             val shouldBlock = adServerHosts.contains(hostname)
             cachedResults[hostname] = shouldBlock
-            
+
             if (shouldBlock) EMPTY_RESPONSE else null
         }.onFailure { e ->
             ErrorHandler.logError(TAG, "Error checking if URL should be blocked: $url", e)
         }.getOrNull()
     }
-    
+
     /**
      * Add a host to the blocked list
      */
@@ -103,7 +93,7 @@ class AdBlocker private constructor(private val context: Context) {
         adServerHosts.add(host)
         saveRules()
     }
-    
+
     /**
      * Remove a host from the blocked list
      */
@@ -112,7 +102,7 @@ class AdBlocker private constructor(private val context: Context) {
         cachedResults.remove(host)
         saveRules()
     }
-    
+
     /**
      * Add a domain to the whitelist (never blocked)
      */
@@ -120,7 +110,7 @@ class AdBlocker private constructor(private val context: Context) {
         whitelistedDomains.add(domain)
         saveWhitelist()
     }
-    
+
     /**
      * Remove a domain from the whitelist
      */
@@ -128,7 +118,7 @@ class AdBlocker private constructor(private val context: Context) {
         whitelistedDomains.remove(domain)
         saveWhitelist()
     }
-    
+
     /**
      * Add a domain to the blacklist (always blocked)
      */
@@ -136,7 +126,7 @@ class AdBlocker private constructor(private val context: Context) {
         blacklistedDomains.add(domain)
         saveBlacklist()
     }
-    
+
     /**
      * Remove a domain from the blacklist
      */
@@ -144,56 +134,56 @@ class AdBlocker private constructor(private val context: Context) {
         blacklistedDomains.remove(domain)
         saveBlacklist()
     }
-    
+
     /**
      * Check if a domain is whitelisted
      */
     fun isWhitelisted(domain: String): Boolean {
         return whitelistedDomains.contains(domain)
     }
-    
+
     /**
      * Check if a domain is blacklisted
      */
     fun isBlacklisted(domain: String): Boolean {
         return blacklistedDomains.contains(domain)
     }
-    
+
     /**
      * Get list of blocked hosts
      */
     fun getBlockedHosts(): Set<String> {
         return adServerHosts.toSet()
     }
-    
+
     /**
      * Get whitelisted domains
      */
     fun getWhitelist(): Set<String> {
         return whitelistedDomains.toSet()
     }
-    
+
     /**
      * Get blacklisted domains
      */
     fun getBlacklist(): Set<String> {
         return blacklistedDomains.toSet()
     }
-    
+
     /**
      * Update ad blocking rules from a URL
      */
-    suspend fun updateRulesFromUrl(url: String): Boolean = 
+    suspend fun updateRulesFromUrl(url: String): Boolean =
         try {
             withContext(Dispatchers.IO) {
                 val connection = URL(url).openConnection()
                 connection.connectTimeout = 10000
                 connection.readTimeout = 10000
-                
+
                 val inputStream = connection.getInputStream()
                 val rulesText = inputStream.bufferedReader().use { it.readText() }
                 val hosts = parseHosts(rulesText)
-                
+
                 if (hosts.isNotEmpty()) {
                     adServerHosts.clear()
                     adServerHosts.addAll(hosts)
@@ -208,7 +198,7 @@ class AdBlocker private constructor(private val context: Context) {
             ErrorHandler.logError(TAG, "Failed to update ad blocking rules from $url", e)
             false
         }
-    
+
     /**
      * Parse hosts from a text file
      */
@@ -227,7 +217,7 @@ class AdBlocker private constructor(private val context: Context) {
             }
         return hosts
     }
-    
+
     /**
      * Extract domain from URL
      */
@@ -238,7 +228,7 @@ class AdBlocker private constructor(private val context: Context) {
             if (host.startsWith("www.")) host.substring(4) else host
         }.getOrDefault(url)
     }
-    
+
     /**
      * Load ad blocking rules from preferences
      */
@@ -248,7 +238,7 @@ class AdBlocker private constructor(private val context: Context) {
         adServerHosts.clear()
         adServerHosts.addAll(serializedRules)
     }
-    
+
     /**
      * Save ad blocking rules to preferences
      */
@@ -259,7 +249,7 @@ class AdBlocker private constructor(private val context: Context) {
             apply()
         }
     }
-    
+
     /**
      * Load whitelist from preferences
      */
@@ -269,7 +259,7 @@ class AdBlocker private constructor(private val context: Context) {
         whitelistedDomains.clear()
         whitelistedDomains.addAll(whitelist)
     }
-    
+
     /**
      * Save whitelist to preferences
      */
@@ -280,7 +270,7 @@ class AdBlocker private constructor(private val context: Context) {
             apply()
         }
     }
-    
+
     /**
      * Load blacklist from preferences
      */
@@ -290,7 +280,7 @@ class AdBlocker private constructor(private val context: Context) {
         blacklistedDomains.clear()
         blacklistedDomains.addAll(blacklist)
     }
-    
+
     /**
      * Save blacklist to preferences
      */
@@ -301,7 +291,7 @@ class AdBlocker private constructor(private val context: Context) {
             apply()
         }
     }
-    
+
     /**
      * Get default ad blocking rules
      */

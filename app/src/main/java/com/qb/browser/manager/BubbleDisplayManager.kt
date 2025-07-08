@@ -13,7 +13,6 @@ import com.qb.browser.model.Bubble
 import com.qb.browser.service.BubbleService
 import com.qb.browser.ui.bubble.BubbleView
 import com.qb.browser.util.ErrorHandler
-import com.qb.browser.viewmodel.BubbleViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -23,8 +22,11 @@ import kotlinx.coroutines.launch
  */
 class BubbleDisplayManager(
     private val context: Context,
-    private val bubbleViewModel: BubbleViewModel,
-    private val lifecycleScope: LifecycleCoroutineScope
+    private val bubbleManager: BubbleManager,
+    private val lifecycleScope: LifecycleCoroutineScope,
+    private val settingsManager: SettingsManager,
+    private val adBlocker: AdBlocker,
+    private val summarizationManager: SummarizationManager
 ) {
     private val TAG = "BubbleDisplayManager"
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -40,7 +42,8 @@ class BubbleDisplayManager(
      */
     private fun observeBubbles() {
         lifecycleScope.launch {
-            bubbleViewModel.bubbles.collectLatest { bubbles ->
+            bubbleManager.bubbles.collectLatest { bubbleMap ->
+                val bubbles = bubbleMap.values.toList()
                 Log.d(TAG, "Bubbles updated: ${bubbles.size}")
                 updateBubbleViews(bubbles)
             }
@@ -54,14 +57,14 @@ class BubbleDisplayManager(
     private fun updateBubbleViews(bubbles: List<Bubble>) {
         // Store the current list of bubbles for reference
         this.bubbles = bubbles
-        
+
         // Track current bubble IDs
         val currentBubbleIds = bubbles.map { it.id }.toSet()
-        
+
         // Remove bubbles that are no longer in the list
         val bubbleIdsToRemove = bubbleViews.keys.filter { it !in currentBubbleIds }
         bubbleIdsToRemove.forEach { removeBubbleView(it) }
-        
+
         // Add or update bubbles
         bubbles.forEach { bubble ->
             if (bubble.id in bubbleViews) {
@@ -72,7 +75,7 @@ class BubbleDisplayManager(
                 addBubbleView(bubble)
             }
         }
-        
+
         Log.d(TAG, "Updated bubble views: ${bubbleViews.size} views for ${bubbles.size} bubbles")
     }
 
@@ -87,19 +90,22 @@ class BubbleDisplayManager(
             context = context,
             block = {
                 Log.d(TAG, "Adding bubble view: ${bubble.id} with URL: ${bubble.url}")
-                
+
                 // Create bubble view
                 val bubbleView = BubbleView(
                     context = context,
                     bubbleId = bubble.id,
-                    url = bubble.url
+                    url = bubble.url,
+                    settingsManager = settingsManager,
+                    adBlocker = adBlocker,
+                    summarizationManager = summarizationManager
                 )
-                
+
                 // Set close listener
                 bubbleView.setOnCloseListener {
                     // Remove the bubble view
                     removeBubbleView(bubble.id)
-                    
+
                     // Also notify the BubbleViewModel to remove the bubble
                     val intent = Intent(context, BubbleService::class.java).apply {
                         action = Constants.ACTION_CLOSE_BUBBLE
@@ -107,16 +113,16 @@ class BubbleDisplayManager(
                     }
                     context.startService(intent)
                 }
-                
+
                 // Create layout params
                 val layoutParams = createLayoutParams()
-                
+
                 // Add view to window manager
                 windowManager.addView(bubbleView, layoutParams)
-                
+
                 // Store reference to bubble view
                 bubbleViews[bubble.id] = bubbleView
-                
+
                 Log.d(TAG, "Bubble view added successfully: ${bubble.id}")
             }
         )
@@ -127,7 +133,7 @@ class BubbleDisplayManager(
      */
     private fun updateBubbleView(bubble: Bubble) {
         val bubbleView = bubbleViews[bubble.id] ?: return
-        
+
         // Update bubble view properties
         try {
             // Update favicon if available
@@ -143,13 +149,13 @@ class BubbleDisplayManager(
     private fun removeBubbleView(bubbleId: String) {
         try {
             val bubbleView = bubbleViews[bubbleId] ?: return
-            
+
             // Remove view from window manager
             windowManager.removeView(bubbleView)
-            
+
             // Remove reference to bubble view
             bubbleViews.remove(bubbleId)
-            
+
             Log.d(TAG, "Bubble view removed: $bubbleId")
         } catch (e: Exception) {
             Log.e(TAG, "Error removing bubble view", e)
@@ -165,7 +171,7 @@ class BubbleDisplayManager(
         } else {
             WindowManager.LayoutParams.TYPE_PHONE
         }
-        
+
         return WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,

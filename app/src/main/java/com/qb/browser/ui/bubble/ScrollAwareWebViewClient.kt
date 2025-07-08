@@ -2,6 +2,8 @@ package com.qb.browser.ui.bubble
 
 import android.content.Context
 import android.webkit.WebView
+import com.qb.browser.manager.AdBlocker
+import com.qb.browser.manager.SettingsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,14 +16,16 @@ class ScrollAwareWebViewClient(
     onPageUrlChanged: (String) -> Unit,
     private val onHtmlContentLoaded: (String) -> Unit,
     private val onScrollDown: () -> Unit,
-    private val onScrollUp: () -> Unit
-) : WebViewClientEx(context, onPageUrlChanged) {
-    
+    private val onScrollUp: () -> Unit,
+    settingsManager: SettingsManager,
+    adBlocker: AdBlocker
+) : WebViewClientEx(context, onPageUrlChanged, settingsManager, adBlocker) {
+
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
-    
+
     override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
-        
+
         // Capture HTML content for summarization in the background
         view?.let { webView ->
             // Use JavaScript to get the HTML content, but do it after a short delay
@@ -30,13 +34,15 @@ class ScrollAwareWebViewClient(
                 try {
                     // Delay summarization to prioritize user interaction
                     kotlinx.coroutines.delay(1000)
-                    
+
                     // Get HTML content for summarization
-                    webView.evaluateJavascript("""
+                    webView.evaluateJavascript(
+                        """
                         (function() {
                             return document.documentElement.outerHTML;
                         })()
-                    """.trimIndent()) { html ->
+                    """.trimIndent()
+                    ) { html ->
                         if (html != null && html.length > 50) {
                             // Process the HTML on a background thread
                             coroutineScope.launch(Dispatchers.IO) {
@@ -46,9 +52,12 @@ class ScrollAwareWebViewClient(
                                         .replace("\\\"", "\"")
                                         .replace("\\n", "\n")
                                         .replace("\\\\", "\\")
-                                    
+
                                     // Pass the HTML content to the callback for background summarization
-                                    android.util.Log.d("ScrollAwareWebViewClient", "Captured HTML content for URL: $url (${unescapedHtml.length} chars)")
+                                    android.util.Log.d(
+                                        "ScrollAwareWebViewClient",
+                                        "Captured HTML content for URL: $url (${unescapedHtml.length} chars)"
+                                    )
                                     onHtmlContentLoaded(unescapedHtml)
                                 } catch (e: Exception) {
                                     // Log the error but don't crash
@@ -56,10 +65,13 @@ class ScrollAwareWebViewClient(
                                 }
                             }
                         } else {
-                            android.util.Log.w("ScrollAwareWebViewClient", "HTML content too short or null for URL: $url")
+                            android.util.Log.w(
+                                "ScrollAwareWebViewClient",
+                                "HTML content too short or null for URL: $url"
+                            )
                         }
                     }
-                    
+
                     // Inject JavaScript to monitor scrolling in real-time with improved responsiveness
                     val js = """
                         (function() {
@@ -143,7 +155,7 @@ class ScrollAwareWebViewClient(
                             }, { passive: true });
                         })();
                     """.trimIndent()
-                    
+
                     webView.evaluateJavascript(js, null)
                 } catch (e: Exception) {
                     android.util.Log.e("ScrollAwareWebViewClient", "Error in onPageFinished", e)
