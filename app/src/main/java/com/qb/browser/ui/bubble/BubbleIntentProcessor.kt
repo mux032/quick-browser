@@ -14,10 +14,13 @@ import com.qb.browser.manager.BubbleManager
 import com.qb.browser.model.WebPage
 import com.qb.browser.service.BubbleService
 import com.qb.browser.util.ErrorHandler
+import com.qb.browser.utils.ImageDownloadManager // Added import
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async // Added import
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document // Added import
 
 /**
  * BubbleIntentProcessor handles the processing of intents received by the BubbleService. It
@@ -97,28 +100,47 @@ class BubbleIntentProcessor(
                     webPageDao.incrementVisitCount(url)
                     Log.d(TAG, "Updated existing page in history: $url")
                 } else {
-                    // Try to get the title from HTML asynchronously
-                    val htmlTitle = try {
-                        extractTitleFromHtmlAsync(url)
+                    // Try to get the title and images from HTML asynchronously
+                    var title: String? = null
+                    var previewImageUrl: String? = null
+                    var faviconUrl: String? = null
+
+                    try {
+                        val document = fetchDocument(url) // Helper to fetch Jsoup document
+                        if (document != null) {
+                            title = extractTitleFromDocument(document)
+                            previewImageUrl = extractPreviewImageUrlFromDocument(document)
+                            faviconUrl = extractFaviconUrlFromDocument(document, url)
+                        }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error extracting HTML title asynchronously", e)
-                        null
+                        Log.e(TAG, "Error extracting data from HTML for $url", e)
                     }
-                    
-                    // Create new history entry with the best available title
-                    val title = htmlTitle ?: extractTitleFromUrl(url)
+
+                    // Fallback title if HTML extraction fails
+                    val finalTitle = title ?: extractTitleFromUrl(url)
+
+                    // Download images if URLs were found
+                    val imageDownloader = ImageDownloadManager.getInstance(context)
+                    val previewBitmapDeferred = previewImageUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
+                    val faviconBitmapDeferred = faviconUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
+
+                    val previewBitmap = previewBitmapDeferred?.await()
+                    val faviconBitmap = faviconBitmapDeferred?.await()
                     
                     val newPage = WebPage(
                         url = url,
-                        title = title,
+                        title = finalTitle,
                         timestamp = System.currentTimeMillis(),
-                        visitCount = 1
+                        visitCount = 1,
+                        previewImage = previewBitmap,
+                        favicon = faviconBitmap,
+                        faviconUrl = faviconUrl // Storing faviconUrl as it's in the model
                     )
                     webPageDao.insertPage(newPage)
-                    Log.d(TAG, "Added new page to history with title '$title': $url")
+                    Log.d(TAG, "Added new page to history with title '$finalTitle', preview: ${previewBitmap != null}, favicon: ${faviconBitmap != null}: $url")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error saving to history", e)
+                Log.e(TAG, "Error saving to history for $url", e)
             }
         }
     }
@@ -371,49 +393,89 @@ class BubbleIntentProcessor(
             return "Web Page" // Fallback title
         }
     }
+
+    private suspend fun fetchDocument(url: String): Document? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching document for URL: $url")
+            Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .timeout(5000) // 5 seconds
+                .followRedirects(true)
+                .get()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching document for $url: ${e.message}", e)
+            null
+        }
+    }
+
+    private fun extractTitleFromDocument(document: Document): String? {
+        var title = document.title()
+        if (title.isNotBlank()) return title
+
+        title = document.select("meta[property=og:title]").firstOrNull()?.attr("content")
+        if (!title.isNullOrBlank()) return title
+
+        title = document.select("meta[name=twitter:title]").firstOrNull()?.attr("content")
+        if (!title.isNullOrBlank()) return title
+
+        title = document.select("h1").firstOrNull()?.text()
+        if (!title.isNullOrBlank()) return title
+
+        return null
+    }
+
+    private fun extractPreviewImageUrlFromDocument(document: Document): String? {
+        var imageUrl = document.select("meta[property=og:image]").firstOrNull()?.attr("content")
+        if (!imageUrl.isNullOrBlank()) return document.absUrl(imageUrl) // Resolve to absolute URL
+
+        imageUrl = document.select("meta[name=twitter:image]").firstOrNull()?.attr("content")
+        if (!imageUrl.isNullOrBlank()) return document.absUrl(imageUrl)
+
+        // Add more fallbacks if needed, e.g., <link rel="image_src" href="...">
+        imageUrl = document.select("link[rel=image_src]").firstOrNull()?.attr("href")
+        if (!imageUrl.isNullOrBlank()) return document.absUrl(imageUrl)
+
+        return null
+    }
+
+    private fun extractFaviconUrlFromDocument(document: Document, baseUrl: String): String? {
+        var faviconUrl = document.select("link[rel=apple-touch-icon]").firstOrNull()?.attr("href")
+        if (!faviconUrl.isNullOrBlank()) return document.absUrl(faviconUrl)
+
+        faviconUrl = document.select("link[rel~=(?i)^(shortcut|icon|shortcut icon)$]").firstOrNull {
+            it.attr("href").isNotBlank()
+        }?.attr("href")
+        if (!faviconUrl.isNullOrBlank()) return document.absUrl(faviconUrl)
+
+        // Fallback to /favicon.ico at the domain root
+        try {
+            val uri = java.net.URI(baseUrl)
+            val domain = uri.host
+            if (domain != null) {
+                return "${uri.scheme}://$domain/favicon.ico"
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not construct default favicon URL from $baseUrl", e)
+        }
+        return null
+    }
     
     /**
      * Asynchronously extracts the title from a webpage's HTML.
      * This method should be called from a coroutine context.
-     * 
+     *
      * @param url The URL to extract the title from
      * @return The title from the HTML or null if it couldn't be extracted
      */
+    @Deprecated("Use fetchDocument and extractTitleFromDocument instead")
     suspend fun extractTitleFromHtmlAsync(url: String): String? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching HTML title for URL: $url")
-            val connection = org.jsoup.Jsoup.connect(url)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                .timeout(5000)
-                .followRedirects(true)
-            
-            val document = connection.get()
-            val title = document.title()
-            
-            if (title.isNotBlank()) {
-                Log.d(TAG, "Successfully extracted HTML title: $title")
-                return@withContext title
-            } else {
-                // Try to find the first h1 tag if title is empty
-                val h1Title = document.select("h1").firstOrNull()?.text()
-                if (!h1Title.isNullOrBlank()) {
-                    Log.d(TAG, "Using h1 as title: $h1Title")
-                    return@withContext h1Title
-                }
-                
-                // If still no title, try meta tags
-                val metaTitle = document.select("meta[property=og:title], meta[name=twitter:title]").firstOrNull()?.attr("content")
-                if (!metaTitle.isNullOrBlank()) {
-                    Log.d(TAG, "Using meta title: $metaTitle")
-                    return@withContext metaTitle
-                }
-            }
-            
-            Log.d(TAG, "No title found in HTML")
-            return@withContext null
+            val document = fetchDocument(url)
+            document?.let { extractTitleFromDocument(it) }
         } catch (e: Exception) {
             Log.e(TAG, "Error extracting title from HTML: ${e.message}", e)
-            return@withContext null
+            null
         }
     }
 }

@@ -73,7 +73,8 @@ class HistoryActivity : BaseActivity() {
                 returnSelectedUrl(webPage.url)
             },
             onItemLongClick = { webPage ->
-                showDeleteConfirmationDialog(webPage)
+                historyViewModel.deletePage(webPage)
+                Toast.makeText(this, "\"${webPage.title}\" deleted from history", Toast.LENGTH_SHORT).show()
             }
         )
 
@@ -122,16 +123,16 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun searchHistory(query: String) {
-//        historyViewModel.searchPages("%$query%").observe(this) { pages ->
-//            if (pages.isEmpty()) {
-//                recyclerView.visibility = View.GONE
-//                emptyView.visibility = View.VISIBLE
-//            } else {
-//                recyclerView.visibility = View.VISIBLE
-//                emptyView.visibility = View.GONE
-//                historyAdapter.submitList(pages)
-//            }
-//        }
+        historyViewModel.searchHistory(query).observe(this) { pages ->
+            if (pages.isEmpty()) {
+                recyclerView.visibility = View.GONE
+                emptyView.visibility = View.VISIBLE
+            } else {
+                recyclerView.visibility = View.VISIBLE
+                emptyView.visibility = View.GONE
+                historyAdapter.submitList(pages)
+            }
+        }
     }
 
     private fun observeHistoryData() {
@@ -218,15 +219,4 @@ class HistoryActivity : BaseActivity() {
             .show()
     }
 
-    private fun showDeleteConfirmationDialog(webPage: WebPage) {
-        AlertDialog.Builder(this)
-            .setTitle("Delete Page")
-            .setMessage("Delete \"${webPage.title}\" from history?")
-            .setPositiveButton("Delete") { _, _ ->
-                historyViewModel.deletePage(webPage)
-                Toast.makeText(this, "Page deleted from history", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
 }
