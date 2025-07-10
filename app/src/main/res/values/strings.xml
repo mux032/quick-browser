@@ -92,6 +92,7 @@
     <string name="clear_history_confirmation">Clear History?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="history_empty_message">Your browsing history will appear here</string>
 
     <!-- Read Mode -->
     <string name="web_view_mode">Switched to web view mode</string>
@@ -164,9 +165,15 @@
     <string name="web_view">Web View</string>
     <string name="settings">Settings</string>
     <string name="history">History</string>
+    <string name="history_title">History</string>
 
     <!-- Service -->
     <string name="bubble_service_channel_name">Browser Service</string>
     <string name="bubble_service_channel_description">Keeps the bubble browser running in background</string>
     <string name="bubble_service_notification_text">Browser is running in bubble mode</string>
+    
+    <!-- Menu items -->
+    <string name="menu_delete_today">Delete Today</string>
+    <string name="menu_delete_last_month">Delete Last Month</string>
+    <string name="menu_delete_all">Delete All</string>
 </resources>

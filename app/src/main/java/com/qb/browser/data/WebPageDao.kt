@@ -74,4 +74,28 @@ interface WebPageDao {
      */
     @Query("UPDATE web_pages SET visitCount = visitCount + 1 WHERE url = :url")
     suspend fun incrementVisitCount(url: String)
+    
+    /**
+     * Delete pages from today (since midnight)
+     */
+    @Query("DELETE FROM web_pages WHERE timestamp >= :startOfDay")
+    suspend fun deleteTodayPages(startOfDay: Long)
+    
+    /**
+     * Delete pages from last month (last 30 days)
+     */
+    @Query("DELETE FROM web_pages WHERE timestamp >= :thirtyDaysAgo")
+    suspend fun deleteLastMonthPages(thirtyDaysAgo: Long)
+    
+    /**
+     * Get pages grouped by time periods
+     */
+    @Query("SELECT * FROM web_pages WHERE timestamp >= :startOfDay ORDER BY timestamp DESC")
+    fun getTodayPages(startOfDay: Long): LiveData<List<WebPage>>
+    
+    @Query("SELECT * FROM web_pages WHERE timestamp >= :startOfWeek AND timestamp < :startOfDay ORDER BY timestamp DESC")
+    fun getThisWeekPages(startOfWeek: Long, startOfDay: Long): LiveData<List<WebPage>>
+    
+    @Query("SELECT * FROM web_pages WHERE timestamp < :startOfWeek ORDER BY timestamp DESC")
+    fun getOlderPages(startOfWeek: Long): LiveData<List<WebPage>>
 }

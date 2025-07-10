@@ -134,4 +134,9 @@
     <color name="light_blue_primary">#03A9F4</color>
     <color name="light_blue_primary_dark">#0288D1</color>
     <color name="light_blue_accent">#40C4FF</color>
+    
+    <!-- Additional colors for history cards -->
+    <color name="light_gray">#F5F5F5</color>
+    <color name="card_overlay">#40000000</color>
+    <color name="black_overlay">#80000000</color>
 </resources>

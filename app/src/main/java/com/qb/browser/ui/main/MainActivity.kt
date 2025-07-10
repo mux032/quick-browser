@@ -86,12 +86,20 @@ class MainActivity : BaseActivity() {
 
     // Using settingsManager from BaseActivity
     private lateinit var bubbleIntentProcessor: BubbleIntentProcessor
-    private lateinit var historyViewModel: HistoryViewModel
-    private lateinit var historyAdapter: HistoryAdapter
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var emptyView: TextView
     private lateinit var addressBar: EditText
     private lateinit var goButton: ImageButton
+
+    // Activity result launcher for history activity
+    private val historyActivityLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val selectedUrl = result.data?.getStringExtra(com.qb.browser.ui.history.HistoryActivity.EXTRA_SELECTED_URL)
+            if (selectedUrl != null) {
+                handleUrlInput(selectedUrl)
+            }
+        }
+    }
 
     // Removed permissionLauncher as notification permission is now optional
 
@@ -99,7 +107,7 @@ class MainActivity : BaseActivity() {
     private fun startBubbleService() {
         val intent =
             Intent(this, BubbleService::class.java).apply {
-                action = Constants.ACTION_CREATE_BUBBLE
+                action = Constants.ACTION_TOGGLE_BUBBLES
             }
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -166,40 +174,20 @@ class MainActivity : BaseActivity() {
 
         // settingsManager is already initialized in BaseActivity
 
-        // Initialize ViewModel
-        historyViewModel = ViewModelProvider(this)[HistoryViewModel::class.java]
-
         // Initialize views
-        recyclerView = findViewById(R.id.history_recycler_view)
-        emptyView = findViewById(R.id.empty_history_view)
         addressBar = findViewById(R.id.address_bar)
         goButton = findViewById(R.id.go_button)
 
-        // Set up RecyclerView
-        setupRecyclerView()
-
         // Set up address bar
         setupAddressBar()
-
-        // Observe history data
-        observeHistoryData()
 
         // Handle main app intent (not link sharing)
         handleMainAppIntent()
     }
 
-    private fun setupRecyclerView() {
-        historyAdapter = HistoryAdapter(
-            onItemClick = { webPage ->
-                openPageInBubble(webPage.url)
-            }
-        )
-
-        recyclerView.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            // Removed divider decoration to eliminate horizontal lines
-            adapter = this@MainActivity.historyAdapter
-        }
+    private fun openHistoryActivity() {
+        val intent = Intent(this, com.qb.browser.ui.history.HistoryActivity::class.java)
+        historyActivityLauncher.launch(intent)
     }
 
     private fun setupAddressBar() {
@@ -269,22 +257,7 @@ class MainActivity : BaseActivity() {
         Log.d(TAG, "Opening URL in bubble: $url")
     }
 
-    private fun observeHistoryData() {
-        historyViewModel.getRecentPages(20).observe(this) { pages ->
-            if (pages.isEmpty()) {
-                recyclerView.visibility = View.GONE
-                emptyView.visibility = View.VISIBLE
-            } else {
-                recyclerView.visibility = View.VISIBLE
-                emptyView.visibility = View.GONE
-                historyAdapter.submitList(pages)
-            }
-        }
-    }
 
-    private fun openPageInBubble(url: String) {
-        startBubbleServiceWithUrl(url)
-    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
@@ -302,6 +275,10 @@ class MainActivity : BaseActivity() {
                     Log.e(TAG, "Error opening settings", e)
                     Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
                 }
+                true
+            }
+            R.id.menu_history -> {
+                openHistoryActivity()
                 true
             }
 
@@ -497,61 +474,4 @@ class MainActivity : BaseActivity() {
     }
 
 
-    // RecyclerView Adapter for History items
-    private inner class HistoryAdapter(
-        private val onItemClick: (WebPage) -> Unit
-    ) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
-
-        private var items = listOf<WebPage>()
-        private val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-
-        fun submitList(newItems: List<WebPage>) {
-            items = newItems.sortedByDescending { it.timestamp }
-            notifyDataSetChanged()
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_history, parent, false)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val page = items[position]
-
-            // Use a proper title or fallback to "Untitled Page"
-            // Don't show URL as title
-            val displayTitle = when {
-                page.title.isEmpty() -> getString(R.string.untitled_page)
-                page.title == page.url -> getString(R.string.untitled_page)
-                else -> page.title
-            }
-
-            holder.titleTextView.text = displayTitle
-            holder.urlTextView.text = page.url
-            holder.dateTextView.text = dateFormat.format(Date(page.timestamp))
-
-            // Set Offline indicator if available offline
-            holder.offlineIndicator.visibility = if (page.isAvailableOffline) View.VISIBLE else View.GONE
-
-            holder.itemView.setOnClickListener {
-                onItemClick(page)
-            }
-        }
-
-        override fun getItemCount() = items.size
-
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val titleTextView: TextView = itemView.findViewById(R.id.text_title)
-            val urlTextView: TextView = itemView.findViewById(R.id.text_url)
-            val dateTextView: TextView = itemView.findViewById(R.id.text_date)
-            val offlineIndicator: View = itemView.findViewById(R.id.offline_indicator)
-            val deleteButton: View = itemView.findViewById(R.id.btn_delete)
-
-            init {
-                // Hide delete button as we're just showing history
-                deleteButton.visibility = View.GONE
-            }
-        }
-    }
 }
