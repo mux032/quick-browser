@@ -123,8 +123,7 @@ class BubbleIntentProcessor(
                     val imageDownloader = ImageDownloadManager.getInstance(context)
                     val previewBitmapDeferred = previewImageUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
                     val faviconBitmapDeferred = faviconUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
-                    Log.d(TAG, "Downloading preview bitmap for $previewImageUrl")
-                    Log.d(TAG, "Downloading favicon bitmap for $faviconUrl")
+
                     val previewBitmap = previewBitmapDeferred?.await()
                     val faviconBitmap = faviconBitmapDeferred?.await()
                     
