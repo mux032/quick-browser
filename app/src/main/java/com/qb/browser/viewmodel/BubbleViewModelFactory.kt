@@ -1,6 +1,6 @@
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.qb.browser.db.SettingsDao
+import com.qb.browser.data.SettingsDao
 import com.qb.browser.viewmodel.BubbleViewModel
 
 class BubbleViewModelFactory(private val settingsDao: SettingsDao) : ViewModelProvider.Factory {

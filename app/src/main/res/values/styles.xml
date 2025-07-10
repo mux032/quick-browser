@@ -36,4 +36,46 @@
         <item name="android:textColor">?android:attr/textColorPrimary</item>
         <item name="android:lineSpacingMultiplier">1.5</item>
     </style>
+    
+    <!-- Popup menu style for consistent appearance -->
+    <style name="PopupMenu.QBrowser" parent="Widget.MaterialComponents.PopupMenu">
+        <item name="android:popupBackground">?attr/colorSurface</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+    </style>
+    
+    <!-- Circular toolbar button style -->
+    <style name="Widget.QBrowser.Button.CircularIcon" parent="Widget.MaterialComponents.Button.TextButton.Icon">
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="iconPadding">0dp</item>
+        <item name="android:padding">8dp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.QBrowser.CircleButton</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+    </style>
+    
+    <!-- Circle shape appearance for buttons -->
+    <style name="ShapeAppearance.QBrowser.CircleButton" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    
+    <!-- URL Bar with only top corners rounded -->
+    <style name="UrlBarTopRoundedCorners" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">16dp</item>
+        <item name="cornerSizeTopRight">16dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    
+    <!-- Expanded Container with only bottom corners rounded -->
+    <style name="ExpandedContainerBottomRoundedCorners" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <item name="cornerSizeBottomLeft">16dp</item>
+        <item name="cornerSizeBottomRight">16dp</item>
+    </style>
 </resources>

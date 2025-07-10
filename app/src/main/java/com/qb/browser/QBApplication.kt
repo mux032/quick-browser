@@ -1,47 +1,45 @@
 package com.qb.browser
 
 import android.app.Application
-import com.qb.browser.db.AppDatabase
-import com.qb.browser.db.SettingsDao
+import android.os.Build
+import androidx.appcompat.app.AppCompatDelegate
+import com.google.android.material.color.DynamicColors
+import com.qb.browser.manager.SettingsManager
 import com.qb.browser.service.BubbleService
-import com.qb.browser.viewmodel.BubbleViewModel
-import com.qb.browser.viewmodel.WebViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModel
+import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
-
+@HiltAndroidApp
 class QBApplication : Application() {
 
-    lateinit var settingsDao: SettingsDao
-    lateinit var bubbleViewModelFactory: BubbleViewModelFactory
+    @Inject
+    lateinit var settingsManager: SettingsManager
 
-    // Optional: global ViewModels (avoid using if navigation-scoped is preferred)
-    lateinit var bubbleViewModel: BubbleViewModel
-    lateinit var webViewModel: WebViewModel
-    
     // Reference to the BubbleService
     var bubbleService: BubbleService? = null
 
     override fun onCreate() {
         super.onCreate()
 
-        // Room DB and DAO
-        val database = AppDatabase.getInstance(this)
-        settingsDao = database.settingsDao()
-
-        // Factory
-        bubbleViewModelFactory = BubbleViewModelFactory(settingsDao)
-
-        // Optional global ViewModels (can be removed in favor of using ViewModelProviders)
-        bubbleViewModel = BubbleViewModel(settingsDao)
-        webViewModel = WebViewModel()
+        // Apply dynamic colors if enabled
+        applyThemeSettings()
     }
-}
 
-class BubbleViewModelFactory(
-    private val settingsDao: SettingsDao
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return BubbleViewModel(settingsDao) as T
+    /**
+     * Apply theme settings including dynamic colors and night mode
+     */
+    fun applyThemeSettings() {
+        // Apply dynamic colors if enabled and available
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && settingsManager.isDynamicColorEnabled()) {
+            DynamicColors.applyToActivitiesIfAvailable(this)
+        }
+
+        // Apply night mode setting
+        val nightMode = if (settingsManager.isNightModeEnabled()) {
+            AppCompatDelegate.MODE_NIGHT_YES
+        } else {
+            AppCompatDelegate.MODE_NIGHT_NO
+        }
+        AppCompatDelegate.setDefaultNightMode(nightMode)
     }
 }

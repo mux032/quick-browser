@@ -1,166 +1,720 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- Bubble Head -->
-    <FrameLayout
-        android:id="@+id/bubble_container"
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <ImageView
-            android:id="@+id/bubble_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bubble_background"
-            android:contentDescription="@string/bubble_description"
-            android:padding="12dp"
-            android:scaleType="fitCenter"
-            tools:src="@drawable/ic_globe" />
-
-        <ProgressBar
-            android:id="@+id/progress_circular"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="0"
-            android:progressDrawable="@drawable/progress_circle" />
-    </FrameLayout>
-
-    <!-- Expanded Bubble Content -->
-    <FrameLayout
-        android:id="@+id/expanded_container"
-        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
-        android:elevation="12dp"
-        android:layout_margin="8dp"
-        android:visibility="gone">
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
-        <!-- Main Content Area -->
+        <!-- Bubble Head -->
         <FrameLayout
-            android:id="@+id/content_container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="48dp">
+            android:id="@+id/bubble_container"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
-            <!-- WebView for regular bubbles -->
-            <WebView
-                android:id="@+id/web_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@android:color/white"
-                android:hardwareAccelerated="true"
-                android:scrollbars="vertical"
-                android:scrollbarStyle="insideOverlay"
-                android:visibility="gone" />
+            <!-- Progress Bar positioned around the bubble -->
+            <ProgressBar
+                android:id="@+id/progress_circular"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="65"
+                android:progressDrawable="@drawable/progress_circle" />
 
-            <!-- Tab list for main bubble -->
-            <LinearLayout
-                android:id="@+id/tabs_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <LinearLayout
+            <androidx.cardview.widget.CardView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="4dp">
+                
+                <ImageView
+                    android:id="@+id/bubble_icon"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/open_tabs"
-                        android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textColor="?android:attr/textColorPrimary" />
-
-                    <ImageButton
-                        android:id="@+id/btn_new_tab"
-                        style="@style/Bubble.Button"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:contentDescription="@string/add_new_bubble"
-                        android:src="@drawable/ic_add" />
-                </LinearLayout>
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/tabs_recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:clipToPadding="false"
-                    android:padding="8dp" />
-
-            </LinearLayout>
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bubble_background"
+                    android:contentDescription="@string/bubble_description"
+                    android:padding="0dp"
+                    android:scaleType="fitCenter"
+                    tools:src="@drawable/ic_globe" />
+            </androidx.cardview.widget.CardView>
         </FrameLayout>
 
-        <!-- Toolbar -->
-        <LinearLayout
-            android:id="@+id/toolbar"
+        <!-- Container for URL bar and expanded content with resize handles overlay -->
+        <FrameLayout
+            android:id="@+id/expandable_content_wrapper"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="?attr/colorPrimary"
-            android:elevation="4dp"
-            android:orientation="horizontal">
-
-            <ImageButton
-                android:id="@+id/btn_close"
-                style="@style/Bubble.Button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/close_bubble"
-                android:src="@drawable/ic_close" />
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
-
-            <ImageButton
-                android:id="@+id/btn_read_mode"
-                style="@style/Bubble.Button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/read_mode"
-                android:src="@drawable/ic_read_mode" />
-
-            <ImageButton
-                android:id="@+id/btn_save_offline"
-                style="@style/Bubble.Button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/save_for_offline"
-                android:src="@drawable/ic_save" />
-
-            <ImageButton
-                android:id="@+id/btn_open_full"
-                style="@style/Bubble.Button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/open_in_full_view"
-                android:src="@drawable/ic_open_full" />
-        </LinearLayout>
-
-        <!-- Feedback message -->
-        <TextView
-            android:id="@+id/save_message"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:background="@drawable/message_background"
-            android:padding="8dp"
-            android:textColor="?android:attr/textColorPrimary"
-            android:visibility="gone" />
+            android:padding="2dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
-    </FrameLayout>
-</LinearLayout>
+            <!-- Content container for URL bar and expanded content -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- URL Bar - shown when bubble is expanded -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/url_bar_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="2dp"
+                    app:shapeAppearanceOverlay="@style/UrlBarTopRoundedCorners"
+                    app:cardElevation="3dp"
+                    app:cardBackgroundColor="@android:color/white"
+                    app:strokeWidth="0.5dp"
+                    app:strokeColor="#E0E0E0"
+                    android:visibility="gone">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp">
+                        
+                        <!-- Site icon -->
+                        <ImageView
+                            android:id="@+id/url_bar_icon"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="10dp"
+                            android:src="@drawable/ic_globe"
+                            android:contentDescription="@string/site_icon" />
+                        
+                        <!-- URL text -->
+                        <EditText
+                            android:id="@+id/url_bar_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textSize="14sp"
+                            android:textColor="#000000"
+                            android:textColorHint="?android:attr/textColorSecondary"
+                            android:singleLine="true"
+                            android:ellipsize="middle"
+                            android:background="@drawable/pill_background_selector"
+                            android:hint="@string/enter_url_hint"
+                            android:inputType="textUri"
+                            android:imeOptions="actionGo"
+                            android:selectAllOnFocus="true"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:clickable="true"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="https://google.com" />
+                        
+                        <!-- Share button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_url_bar_share"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:padding="4dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            app:icon="@drawable/ic_share"
+                            app:iconSize="18dp"
+                            app:iconTint="?android:attr/textColorSecondary"
+                            android:contentDescription="@string/share" />
+                        
+                        <!-- Settings button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_url_bar_settings"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:padding="4dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            app:icon="@drawable/ic_more_vert"
+                            app:iconSize="18dp"
+                            app:iconTint="?android:attr/textColorSecondary"
+                            android:contentDescription="@string/settings" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Expanded Bubble Content -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/expanded_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="8dp"
+                    app:shapeAppearanceOverlay="@style/ExpandedContainerBottomRoundedCorners"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="@android:color/white"
+                    app:strokeWidth="0.5dp"
+                    app:strokeColor="#E0E0E0"
+                    app:contentPadding="0dp"
+                    android:visibility="gone">
+
+                    <!-- Main Content Area -->
+                    <FrameLayout
+                        android:id="@+id/content_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <!-- WebView for regular bubbles -->
+                        <WebView
+                            android:id="@+id/web_view"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/white"
+                            android:hardwareAccelerated="true"
+                            android:scrollbars="vertical"
+                            android:scrollbarStyle="insideOverlay"
+                            android:visibility="gone" />
+
+                        <!-- Summary container that will be shown when summarize is clicked -->
+                        <androidx.core.widget.NestedScrollView
+                            android:id="@+id/summary_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:visibility="gone">
+                            
+                            <LinearLayout
+                                android:id="@+id/summary_content"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+                                
+                                <TextView
+                                    android:id="@+id/summary_title"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold"
+                                    android:layout_marginBottom="16dp"
+                                    android:text="@string/summary_title" />
+                                    
+                                <ProgressBar
+                                    android:id="@+id/summary_progress"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:layout_marginTop="24dp"
+                                    android:layout_marginBottom="24dp" />
+                                    
+                                <!-- Summary points will be added here dynamically -->
+                                
+                            </LinearLayout>
+                            
+                        </androidx.core.widget.NestedScrollView>
+
+                    </FrameLayout>
+
+                    <!-- Feedback message -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/save_message_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="6dp"
+                        android:visibility="gone">
+                        
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:padding="12dp">
+                            
+                            <ImageView
+                                android:id="@+id/save_message_icon"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="8dp"
+                                android:src="@drawable/ic_check"
+                                app:tint="?attr/colorPrimary" />
+                                
+                            <TextView
+                                android:id="@+id/save_message"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Settings panel that appears below the URL bar -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/settings_panel"
+                        android:layout_width="200dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginEnd="8dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="12dp"
+                        app:cardBackgroundColor="@android:color/white"
+                        app:strokeWidth="0.5dp"
+                        app:strokeColor="#E0E0E0"
+                        android:visibility="gone"
+                        android:alpha="0"
+                        android:scaleX="0.8"
+                        android:scaleY="0.8">
+                        
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+                            
+                            <!-- Regular browser settings (visible when not in reader mode) -->
+                            <LinearLayout
+                                android:id="@+id/browser_settings_section"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+                                
+                                <!-- Ad blocking toggle -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical"
+                                    android:layout_marginBottom="8dp">
+                                    
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="@string/block_ads"
+                                        android:textColor="#000000"
+                                        android:textSize="13sp" />
+                                        
+                                    <com.google.android.material.switchmaterial.SwitchMaterial
+                                        android:id="@+id/ad_block_switch"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="16dp" />
+                                </LinearLayout>
+                                
+                                <!-- JavaScript toggle -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+                                    
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="@string/enable_javascript"
+                                        android:textColor="#000000"
+                                        android:textSize="13sp" />
+                                        
+                                    <com.google.android.material.switchmaterial.SwitchMaterial
+                                        android:id="@+id/javascript_switch"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="16dp" />
+                                </LinearLayout>
+                            </LinearLayout>
+                            
+                            <!-- Reader mode settings (visible only in reader mode) -->
+                            <LinearLayout
+                                android:id="@+id/reader_settings_section"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:visibility="gone">
+                                
+                                <!-- Settings Title -->
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/reader_settings_title"
+                                    android:textColor="#000000"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:layout_marginBottom="12dp"
+                                    android:gravity="center" />
+                                
+                                <!-- Font Size -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:layout_marginBottom="12dp">
+                                    
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reader_font_size"
+                                        android:textColor="#000000"
+                                        android:textSize="12sp"
+                                        android:layout_marginBottom="4dp" />
+                                    
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center">
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_font_decrease"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="32dp"
+                                            android:layout_height="32dp"
+                                            android:minWidth="0dp"
+                                            android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_chevron_left"
+                                            app:iconSize="18dp"
+                                            app:iconTint="@color/textColorSecondary"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
+                                            android:layout_marginEnd="8dp" />
+                                        
+                                        <TextView
+                                            android:id="@+id/font_size_display"
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="1"
+                                            android:text="18sp"
+                                            android:textColor="#000000"
+                                            android:textSize="12sp"
+                                            android:gravity="center" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_font_increase"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="32dp"
+                                            android:layout_height="32dp"
+                                            android:minWidth="0dp"
+                                            android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_chevron_right"
+                                            app:iconSize="18dp"
+                                            app:iconTint="@color/textColorSecondary"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
+                                            android:layout_marginStart="8dp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                                
+                                <!-- Background Color -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:layout_marginBottom="12dp">
+                                    
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reader_background"
+                                        android:textColor="#000000"
+                                        android:textSize="12sp"
+                                        android:layout_marginBottom="4dp" />
+                                    
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center">
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_bg_white"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:layout_marginEnd="2dp" />
+
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_bg_sepia"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:layout_marginHorizontal="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_bg_dark"
+                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:layout_marginStart="2dp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                                
+                                <!-- Text Alignment -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+                                    
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reader_text_align"
+                                        android:textColor="#000000"
+                                        android:textSize="12sp"
+                                        android:layout_marginBottom="4dp" />
+                                    
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center">
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_left"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_format_align_left"
+                                            app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
+                                            android:layout_marginEnd="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_center"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_format_align_center"
+                                            app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
+                                            android:layout_marginHorizontal="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_right"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_format_align_right"
+                                            app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
+                                            android:layout_marginHorizontal="2dp" />
+                                        
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_align_justify"
+                                            style="@style/Widget.Material3.Button.IconButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="32dp"
+                                            android:layout_weight="1"
+                                            android:minHeight="0dp"
+                                            android:backgroundTint="@android:color/white"
+                                            app:strokeColor="@color/textColorSecondary"
+                                            app:strokeWidth="1dp"
+                                            app:icon="@drawable/ic_format_align_justify"
+                                            app:iconSize="16dp"
+                                            app:iconPadding="0dp"
+                                            app:iconGravity="textStart"
+                                            android:layout_marginStart="2dp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                                
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                    
+                    <!-- Pill-shaped toolbar at the bottom -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/toolbar_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:layout_marginBottom="16dp"
+                        app:cardCornerRadius="24dp"
+                        app:cardElevation="6dp"
+                        app:cardBackgroundColor="@android:color/white"
+                        app:strokeWidth="0.5dp"
+                        app:strokeColor="#E0E0E0">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:background="?android:attr/selectableItemBackground">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_close"
+                                style="@style/Widget.QBrowser.Button.CircularIcon"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:contentDescription="@string/close_bubble"
+                                app:icon="@drawable/ic_close"
+                                app:iconTint="@color/crimson_red"
+                                android:layout_marginEnd="2dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_read_mode"
+                                style="@style/Widget.QBrowser.Button.CircularIcon"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:contentDescription="@string/read_mode"
+                                app:icon="@drawable/ic_read_mode"
+                                app:iconTint="@color/colorPrimary"
+                                android:layout_marginEnd="2dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_summarize"
+                                style="@style/Widget.QBrowser.Button.CircularIcon"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:contentDescription="@string/summarize"
+                                app:icon="@drawable/ic_summarize"
+                                app:iconTint="@color/colorPrimary"
+                                android:layout_marginEnd="2dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_open_full"
+                                style="@style/Widget.QBrowser.Button.CircularIcon"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:contentDescription="@string/open_in_full_view"
+                                app:icon="@drawable/ic_open_full"
+                                app:iconTint="@color/colorPrimary"
+                                android:layout_marginEnd="2dp" />
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                </com.google.android.material.card.MaterialCardView>
+            
+            </LinearLayout>
+
+            <!-- Resize handles container - positioned above URL bar and expanded content -->
+            <FrameLayout
+                android:id="@+id/resize_handles_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="gone">
+                
+                <!-- Top Left Handle -->
+                <ImageView
+                    android:id="@+id/resize_handle_top_left"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="-3dp"
+                    android:layout_marginTop="-3dp"
+                    android:src="@drawable/resize_corner_top_left"
+                    android:contentDescription="@string/resize_handle"
+                    android:elevation="16dp"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp" />
+                    
+                <!-- Top Right Handle -->
+                <ImageView
+                    android:id="@+id/resize_handle_top_right"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="-3dp"
+                    android:layout_marginTop="-3dp"
+                    android:src="@drawable/resize_corner_top_right"
+                    android:contentDescription="@string/resize_handle"
+                    android:elevation="16dp"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp" />
+                    
+                <!-- Bottom Left Handle -->
+                <ImageView
+                    android:id="@+id/resize_handle_bottom_left"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="bottom|start"
+                    android:layout_marginStart="-3dp"
+                    android:layout_marginBottom="-3dp"
+                    android:src="@drawable/resize_corner_bottom_left"
+                    android:contentDescription="@string/resize_handle"
+                    android:elevation="16dp"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp" />
+                    
+                <!-- Bottom Right Handle -->
+                <ImageView
+                    android:id="@+id/resize_handle_bottom_right"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="-3dp"
+                    android:layout_marginBottom="-3dp"
+                    android:src="@drawable/resize_corner_bottom_right"
+                    android:contentDescription="@string/resize_handle"
+                    android:elevation="16dp"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp" />
+            </FrameLayout>
+
+        </FrameLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

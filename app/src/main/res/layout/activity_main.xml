@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ui.main.MainActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
@@ -26,24 +26,6 @@
             
     </androidx.appcompat.widget.Toolbar>
 
-    <ImageView
-        android:id="@+id/app_logo"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginTop="32dp"
-        android:contentDescription="@string/app_logo"
-        android:background="@color/colorPrimary"
-        android:padding="16dp"
-        android:scaleType="fitCenter"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:srcCompat="@drawable/ic_launcher_foreground" />
-
-
-
-
-        
     <TextView
         android:id="@+id/history_title"
         android:layout_width="wrap_content"
@@ -54,7 +36,7 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/app_logo" />
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
         
     <View
         android:id="@+id/history_divider"
@@ -76,7 +58,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@id/app_usage_hint"
+        app:layout_constraintBottom_toTopOf="@id/address_bar_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/history_divider"
@@ -91,25 +73,56 @@
         android:text="@string/no_history_found"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/app_usage_hint"
+        app:layout_constraintBottom_toTopOf="@id/address_bar_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/history_divider" />
 
 
-
-    <TextView
-        android:id="@+id/app_usage_hint"
+    <!-- Address Bar Container -->
+    <LinearLayout
+        android:id="@+id/address_bar_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="32dp"
-        android:gravity="center"
-        android:text="@string/usage_hint"
-        android:textStyle="italic"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/address_bar_container_background"
+        android:elevation="2dp"
+        android:orientation="horizontal"
+        android:padding="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <EditText
+            android:id="@+id/address_bar"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:background="@drawable/address_bar_background"
+            android:hint="@string/enter_url_hint"
+            android:imeOptions="actionGo"
+            android:inputType="textUri"
+            android:maxLines="1"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textSize="16sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorHint"
+            android:selectAllOnFocus="true" />
+
+        <ImageButton
+            android:id="@+id/go_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/go_to_url"
+            android:padding="12dp"
+            android:src="@drawable/ic_arrow_right_circle"
+            android:tint="?attr/colorPrimary" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

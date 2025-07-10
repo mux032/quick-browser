@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">QB Browser</string>
-    
+
     <!-- Bubble UI -->
     <string name="bubble_description">Web page bubble</string>
     <string name="close_bubble">Close bubble</string>
@@ -16,7 +16,17 @@
     <string name="bubble_icon">Bubble icon</string>
     <string name="open_tabs">Open Tabs</string>
     <string name="favicon_description">Website Icon</string>
-    
+    <string name="reader_mode_loaded">Reader mode loaded</string>
+    <string name="failed_to_load_reader_mode">Failed to load reader mode</string>
+    <string name="resize_handle">Resize handle</string>
+    <string name="site_icon">Site icon</string>
+    <string name="minimize_bubble">Minimize bubble</string>
+    <string name="bookmarked">Bookmarked</string>
+    <string name="more_options">More options</string>
+    <string name="open">Open</string>
+    <string name="enter_url_hint">Enter URL or search...</string>
+    <string name="go_to_url">Go to URL</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_ad_blocking">Ad Blocking</string>
@@ -38,37 +48,76 @@
     <string name="animation_speed">Animation Speed</string>
     <string name="speed_normal">Normal</string>
     <string name="bubble_position_right">Position on right side</string>
-    
+
     <!-- Main Screen -->
     <string name="app_logo">QB Browser Logo</string>
     <string name="app_description">Fast and lightweight browser with bubble view</string>
     <string name="start_bubble_browser">Start bubble browser</string>
-    <string name="usage_hint">Hint: Share a link to the browser</string>
-    
+    <string name="usage_hint">Enter a URL in the address bar above to open it in a bubble</string>
+
     <!-- Settings Screen -->
     <string name="browser_settings">Browser Settings</string>
     <string name="enable_javascript">Enable JavaScript</string>
+    <string name="block_ads">Block ads</string>
     <string name="block_ads_and_trackers">Block ads and trackers</string>
     <string name="appearance">Appearance</string>
     <string name="night_mode">Night Mode</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="zoom">Zoom</string>
+    <string name="theme_color">Theme Color</string>
+    <string name="choose_theme_color">Choose Theme Color</string>
+    <string name="theme_color_changed">Theme color changed to %1$s</string>
+    <string name="selected_color">Selected color</string>
+    <string name="apply">Apply</string>
+    <string name="use_dynamic_colors">Use dynamic colors from wallpaper</string>
+    <string name="dynamic_colors_enabled">Dynamic colors enabled</string>
+    <string name="dynamic_colors_disabled">Dynamic colors disabled</string>
     <string name="privacy">Privacy</string>
     <string name="save_browsing_history">Save browsing history</string>
     <string name="encrypt_saved_pages">Encrypt saved pages</string>
-    
+
     <!-- History Screen -->
+    <string name="browsing_history">Browsing History</string>
+    <string name="search_history">Search history</string>
+    <string name="sites_visited">Sites Visited</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="this_week">This Week</string>
+    <string name="offline">Offline</string>
+    <string name="list_view">List View</string>
+    <string name="grid_view">Grid View</string>
+    <string name="start_browsing_hint">Start browsing to see your history here</string>
     <string name="no_history_found">No browsing history found</string>
     <string name="clear_history">Clear history</string>
     <string name="delete">Delete</string>
     <string name="clear_history_confirmation">Clear History?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
-    
+
     <!-- Read Mode -->
+    <string name="web_view_mode">Switched to web view mode</string>
     <string name="increase_text_size">Increase text size</string>
     <string name="decrease_text_size">Decrease text size</string>
     <string name="toggle_night_mode">Toggle night mode</string>
     <string name="text_to_speech">Read aloud</string>
+    <string name="error_loading_content">Error loading content</string>
     
+    <!-- Reader Mode Settings -->
+    <string name="reader_settings_title">Reader Settings</string>
+    <string name="reader_font_size">Font Size</string>
+    <string name="reader_background">Background</string>
+    <string name="reader_text_align">Text Alignment</string>
+    <string name="reader_bg_white">White</string>
+    <string name="reader_bg_sepia">Sepia</string>
+    <string name="reader_bg_dark">Dark</string>
+    <string name="reader_align_left">Left</string>
+    <string name="reader_align_center">Center</string>
+    <string name="reader_align_right">Right</string>
+    <string name="reader_align_justify">Justify</string>
+    <string name="font_size_small">Small</string>
+    <string name="font_size_medium">Medium</string>
+    <string name="font_size_large">Large</string>
+    <string name="font_size_xl">Extra Large</string>
+
     <!-- Offline Pages -->
     <string name="offline_pages">Offline Pages</string>
     <string name="no_offline_pages">No offline pages saved</string>
@@ -84,26 +133,38 @@
     <string name="pages_deleted">Deleted %1$d pages</string>
     <string name="save_for_offline_reading">Save for offline reading</string>
     <string name="page_saved_for_offline">Page saved for offline reading</string>
-    <string name="saving_page_offline">Saving page for offline reading…</string>
+    <string name="saving_page_offline">Saving page for offline reading...</string>
     <string name="error_saving_page">Error saving page</string>
     <string name="error_loading_page">Error loading offline page</string>
-    <string name="saving_page">Saving page…</string>
-    <string name="downloading_resources">Downloading resources…</string>
+    <string name="saving_page">Saving page...</string>
+    <string name="downloading_resources">Downloading resources...</string>
     <string name="saved_on_date">Saved on %1$s</string>
     <string name="sharing_not_implemented">Sharing not implemented</string>
     <string name="untitled_page">Untitled</string>
-    
+
     <!-- Web Actions -->
     <string name="refresh">Refresh</string>
     <string name="share">Share</string>
-    
+    <string name="summarize">Summarize</string>
+    <string name="summarizing">Summarizing article...</string>
+    <string name="showing_summary">Showing article summary</string>
+    <string name="showing_web_view">Showing web view</string>
+    <string name="show_web_view">Show web view</string>
+    <string name="summary_title">Article Summary</string>
+    <string name="summary_error">Could not summarize this article</string>
+    <string name="summary_error_no_content">No content found to summarize</string>
+    <string name="summary_not_article">This page does not appear to be an article</string>
+    <string name="open_in_browser">Open in Browser</string>
+    <string name="share_via">Share via</string>
+    <string name="share_failed">Failed to share link</string>
+
     <!-- Activities -->
     <string name="title_activity_settings">Settings</string>
     <string name="title_activity_read_mode">Reader Mode</string>
     <string name="web_view">Web View</string>
     <string name="settings">Settings</string>
     <string name="history">History</string>
-    
+
     <!-- Service -->
     <string name="bubble_service_channel_name">Browser Service</string>
     <string name="bubble_service_channel_description">Keeps the bubble browser running in background</string>

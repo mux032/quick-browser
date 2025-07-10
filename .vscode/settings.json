@@ -1,3 +1,4 @@
 {
-    "zencoder.enableRepoIndexing": true
+    "zencoder.enableRepoIndexing": true,
+    "java.configuration.updateBuildConfiguration": "automatic"
 }

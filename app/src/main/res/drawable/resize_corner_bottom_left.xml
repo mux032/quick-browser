@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    
+    <!-- Black outline for better visibility -->
+    <path
+        android:pathData="M4,16 A12,12 0 0,0 16,28"
+        android:strokeWidth="3"
+        android:strokeColor="?attr/colorPrimary"
+        android:strokeLineCap="round" />
+        
+    <!-- Simple bold white arc -->
+    <path
+        android:pathData="M4,16 A12,12 0 0,0 16,28"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+</vector>

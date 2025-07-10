@@ -5,7 +5,7 @@
     <color name="primary_dark">#303F9F</color>
     <color name="primary_light">#C5CAE9</color>
     <color name="colorAccent">#FF4081</color>
-    
+
     <!-- Aliases for themes.xml compatibility -->
     <color name="colorPrimary">@color/primary</color>
     <color name="colorPrimaryDark">@color/primary_dark</color>
@@ -13,17 +13,40 @@
     <color name="secondaryColor">#E91E63</color>
     <color name="secondaryDarkColor">#C2185B</color>
     <color name="secondaryTextColor">#FFFFFF</color>
-    
+
     <!-- Text colors -->
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
     
+    <!-- Uniform text colors -->
+    <color name="textColorPrimary">#212121</color>
+    <color name="textColorSecondary">#757575</color>
+    
+    <!-- Uniform background colors -->
+    <color name="backgroundColor">#FFFFFF</color>
+    <color name="surfaceColor">#FFFFFF</color>
+    <color name="onSurfaceColor">#212121</color>
+    
+    <!-- Dark theme colors -->
+    <color name="darkBackground">#121212</color>
+    <color name="darkSurface">#1E1E1E</color>
+    <color name="darkOnSurface">#E0E0E0</color>
+
     <!-- Bubble UI colors -->
     <color name="bubble_background">#F5F5F5</color>
     <color name="tab_background">#EEEEEE</color>
     <color name="tab_text">#424242</color>
     <color name="selected_tab">#E8F0FE</color>
+    <color name="crimson_red">#DC143C</color>
     
+    <!-- Launcher icon colors -->
+    <color name="launcher_background">#FFFFFF</color>
+    <color name="launcher_bubble_light">#BCD9F2</color>
+    <color name="launcher_bubble_medium">#9DCBF4</color>
+    <color name="launcher_bubble_medium_dark">#75ADDF</color>
+    <color name="launcher_bubble_dark">#389AD6</color>
+    <color name="launcher_stroke">#2A5081</color>
+
     <!-- Read mode colors -->
     <color name="read_mode_background_light">#FAFAFA</color>
     <color name="read_mode_text_light">#212121</color>
@@ -42,8 +65,73 @@
     <color name="secondaryDarkColorDark">#3949AB</color>
     <color name="secondaryTextColorDark">#FFFFFF</color>
 
-
     <color name="bubble_inactive">#5C6BC0</color>
     <color name="tab_selected_background">#303F9F</color>
     <color name="tab_selected_text">#FFFFFF</color>
+
+    <!-- Theme color palettes -->
+    <!-- Blue theme (default) -->
+    <color name="blue_primary">#2196F3</color>
+    <color name="blue_primary_dark">#1976D2</color>
+    <color name="blue_accent">#448AFF</color>
+
+    <!-- Green theme -->
+    <color name="green_primary">#4CAF50</color>
+    <color name="green_primary_dark">#388E3C</color>
+    <color name="green_accent">#69F0AE</color>
+
+    <!-- Red theme -->
+    <color name="red_primary">#F44336</color>
+    <color name="red_primary_dark">#D32F2F</color>
+    <color name="red_accent">#FF5252</color>
+
+    <!-- Purple theme (lighter version) -->
+    <color name="purple_primary">#AB47BC</color>
+    <color name="purple_primary_dark">#8E24AA</color>
+    <color name="purple_accent">#EA80FC</color>
+    
+    <!-- Lavender theme (even lighter purple) -->
+    <color name="lavender_primary">#9575CD</color>
+    <color name="lavender_primary_dark">#7986CB</color>
+    <color name="lavender_accent">#B388FF</color>
+
+    <!-- Orange theme -->
+    <color name="orange_primary">#FF9800</color>
+    <color name="orange_primary_dark">#F57C00</color>
+    <color name="orange_accent">#FFAB40</color>
+
+    <!-- Teal theme -->
+    <color name="teal_primary">#009688</color>
+    <color name="teal_primary_dark">#00796B</color>
+    <color name="teal_accent">#64FFDA</color>
+
+    <!-- Pink theme -->
+    <color name="pink_primary">#E91E63</color>
+    <color name="pink_primary_dark">#C2185B</color>
+    <color name="pink_accent">#FF4081</color>
+
+    <!-- Indigo theme -->
+    <color name="indigo_primary">#3F51B5</color>
+    <color name="indigo_primary_dark">#303F9F</color>
+    <color name="indigo_accent">#536DFE</color>
+
+    <!-- Cyan theme -->
+    <color name="cyan_primary">#00BCD4</color>
+    <color name="cyan_primary_dark">#0097A7</color>
+    <color name="cyan_accent">#18FFFF</color>
+
+    <!-- Amber theme -->
+    <color name="amber_primary">#FFC107</color>
+    <color name="amber_primary_dark">#FFA000</color>
+    <color name="amber_accent">#FFD740</color>
+
+    <!-- Deep Purple theme -->
+    <color name="deep_purple_primary">#673AB7</color>
+    <color name="deep_purple_primary_dark">#512DA8</color>
+    <color name="deep_purple_accent">#7C4DFF</color>
+
+    <!-- Light Blue theme -->
+    <color name="light_blue_primary">#03A9F4</color>
+    <color name="light_blue_primary_dark">#0288D1</color>
+    <color name="light_blue_accent">#40C4FF</color>
 </resources>

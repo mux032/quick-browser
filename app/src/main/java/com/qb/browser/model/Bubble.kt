@@ -36,7 +36,6 @@
      val id: String,
      val url: String,
      val title: String = "",
-     val tabs: List<WebPage> = emptyList(),
      val favicon: Bitmap? = null,
      val lastAccessed: Long = System.currentTimeMillis()
  ) : Parcelable {
@@ -50,7 +49,6 @@
          id = parcel.readString() ?: "",
          url = parcel.readString() ?: "",
          title = parcel.readString() ?: "",
-         tabs = parcel.createTypedArrayList(WebPage.CREATOR) ?: emptyList(),
          favicon = parcel.readParcelable(Bitmap::class.java.classLoader),
          lastAccessed = parcel.readLong()
      )
@@ -65,7 +63,6 @@
          parcel.writeString(id)
          parcel.writeString(url)
          parcel.writeString(title)
-         parcel.writeTypedList(tabs)
          parcel.writeParcelable(favicon, flags)
          parcel.writeLong(lastAccessed)
      }
