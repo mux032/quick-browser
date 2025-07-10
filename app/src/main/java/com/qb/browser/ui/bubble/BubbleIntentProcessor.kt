@@ -123,7 +123,8 @@ class BubbleIntentProcessor(
                     val imageDownloader = ImageDownloadManager.getInstance(context)
                     val previewBitmapDeferred = previewImageUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
                     val faviconBitmapDeferred = faviconUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
-
+                    Log.d(TAG, "Downloading preview bitmap for $previewImageUrl")
+                    Log.d(TAG, "Downloading favicon bitmap for $faviconUrl")
                     val previewBitmap = previewBitmapDeferred?.await()
                     val faviconBitmap = faviconBitmapDeferred?.await()
                     
@@ -412,6 +413,9 @@ class BubbleIntentProcessor(
         var title = document.title()
         if (title.isNotBlank()) return title
 
+        title = document.select("meta[itemprop=name]").firstOrNull()?.attr("content")
+        if (!title.isNullOrBlank()) return title
+
         title = document.select("meta[property=og:title]").firstOrNull()?.attr("content")
         if (!title.isNullOrBlank()) return title
 
@@ -425,41 +429,59 @@ class BubbleIntentProcessor(
     }
 
     private fun extractPreviewImageUrlFromDocument(document: Document): String? {
-        var imageUrl = document.select("meta[property=og:image]").firstOrNull()?.attr("content")
-        if (!imageUrl.isNullOrBlank()) return document.absUrl(imageUrl) // Resolve to absolute URL
+        // 1. Try OpenGraph image
+        document.select("meta[property=og:image]").firstOrNull()?.absUrl("content")?.let {
+            if (it.isNotBlank()) return it
+        }
 
-        imageUrl = document.select("meta[name=twitter:image]").firstOrNull()?.attr("content")
-        if (!imageUrl.isNullOrBlank()) return document.absUrl(imageUrl)
+        // 2. Try Twitter card image
+        document.select("meta[name=twitter:image]").firstOrNull()?.absUrl("content")?.let {
+            if (it.isNotBlank()) return it
+        }
 
-        // Add more fallbacks if needed, e.g., <link rel="image_src" href="...">
-        imageUrl = document.select("link[rel=image_src]").firstOrNull()?.attr("href")
-        if (!imageUrl.isNullOrBlank()) return document.absUrl(imageUrl)
+        // 3. Try <link rel="image_src">
+        document.select("link[rel=image_src]").firstOrNull()?.absUrl("href")?.let {
+            if (it.isNotBlank()) return it
+        }
+
+        // 4. Fallback: First large <img> element on page (you can add width/height filter if needed)
+        document.select("img").firstOrNull()?.absUrl("src")?.let {
+            if (it.isNotBlank()) return it
+        }
+
+        // 5. Final fallback: favicon
+        document.select("link[rel~=(?i)icon]").firstOrNull()?.absUrl("href")?.let {
+            if (it.isNotBlank()) return it
+        }
 
         return null
     }
 
     private fun extractFaviconUrlFromDocument(document: Document, baseUrl: String): String? {
-        var faviconUrl = document.select("link[rel=apple-touch-icon]").firstOrNull()?.attr("href")
-        if (!faviconUrl.isNullOrBlank()) return document.absUrl(faviconUrl)
+        // 1. Try Apple touch icon
+        document.select("link[rel=apple-touch-icon]").firstOrNull()?.absUrl("href")?.let {
+            if (it.isNotBlank()) return it
+        }
 
-        faviconUrl = document.select("link[rel~=(?i)^(shortcut|icon|shortcut icon)$]").firstOrNull {
+        // 2. Try generic favicons (shortcut icon, icon, etc.)
+        document.select("link[rel~=(?i)^(shortcut icon|icon|shortcut)$]").firstOrNull {
             it.attr("href").isNotBlank()
-        }?.attr("href")
-        if (!faviconUrl.isNullOrBlank()) return document.absUrl(faviconUrl)
+        }?.absUrl("href")?.let {
+            if (it.isNotBlank()) return it
+        }
 
-        // Fallback to /favicon.ico at the domain root
-        try {
+        // 3. Fallback to default /favicon.ico
+        return try {
             val uri = java.net.URI(baseUrl)
-            val domain = uri.host
-            if (domain != null) {
-                return "${uri.scheme}://$domain/favicon.ico"
-            }
+            val scheme = uri.scheme ?: "https"
+            val domain = uri.host ?: return null
+            "$scheme://$domain/favicon.ico"
         } catch (e: Exception) {
             Log.w(TAG, "Could not construct default favicon URL from $baseUrl", e)
+            null
         }
-        return null
     }
-    
+
     /**
      * Asynchronously extracts the title from a webpage's HTML.
      * This method should be called from a coroutine context.
