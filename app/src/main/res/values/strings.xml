@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">QB Browser</string>
+    <string name="app_name">Quick Browser</string>
 
     <!-- Bubble UI -->
     <string name="bubble_description">Web page bubble</string>
@@ -50,10 +50,10 @@
     <string name="bubble_position_right">Position on right side</string>
 
     <!-- Main Screen -->
-    <string name="app_logo">QB Browser Logo</string>
-    <string name="app_description">Fast and lightweight browser with bubble view</string>
+    <string name="app_logo">Quick Browser Logo</string>
+    <string name="app_description">Fast and lightweight browser</string>
     <string name="start_bubble_browser">Start bubble browser</string>
-    <string name="usage_hint">Enter a URL in the address bar above to open it in a bubble</string>
+    <string name="usage_hint">Enter a URL in the address bar below to open it in a bubble</string>
 
     <!-- Settings Screen -->
     <string name="browser_settings">Browser Settings</string>

@@ -1,39 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
-    android:viewportWidth="1080"
-    android:viewportHeight="1080"
-    android:width="1080dp"
-    android:height="1080dp">
-    <path
-        android:pathData="M0 0H100V100H0V0Z"
-        android:fillColor="#00000000" />
+    android:viewportWidth="920"
+    android:viewportHeight="920"
+    android:width="24dp"
+    android:height="24dp">
+
     <group
-        android:translateX="540"
-        android:translateY="540">
-        <path
-            android:pathData="M-540 -540H540V540H-540V-540Z"
-            android:fillColor="#FFFFFF" />
-    </group>
-    <group
-        android:rotation="-42.06606"
-        android:scaleX="2.464022"
-        android:scaleY="1.196702"
-        android:translateX="661.15"
-        android:translateY="757.38">
+        android:translateX="460"
+        android:translateY="440">
         <group
-            android:rotation="90.05558">
+                android:rotation="-42.06606"
+                android:scaleX="2.984022"
+                android:scaleY="1.091"
+                android:translateX="149.15"
+                android:translateY="212.38">
             <group
-                android:translateX="-50"
-                android:translateY="-50">
-                <path
-                    android:pathData="M94.75 50C94.75 56.213 89.514 61.25 83.054 61.25L16.946 61.25C10.486 61.25 5.25 56.213 5.25 50L5.25 50C5.25 43.787 10.486 38.75 16.945999999999998 38.75L83.053 38.75C89.514 38.75 94.75 43.787 94.75 50L94.75 50z"
-                    android:fillColor="#389AD6" />
+                    android:rotation="95.05558">
+                <group
+                        android:translateX="-50"
+                        android:translateY="-50">
+                    <path
+                            android:pathData="M94.75 50C94.75 56.213 89.514 61.25 83.054 61.25L16.946 61.25C10.486 61.25 5.25 56.213 5.25 50L5.25 50C5.25 43.787 10.486 38.75 16.945999999999998 38.75L83.053 38.75C89.514 38.75 94.75 43.787 94.75 50L94.75 50z"
+                            android:fillColor="#389AD6"
+                            android:strokeColor="#2A5081"
+                            android:strokeWidth="7"/>
+                </group>
             </group>
         </group>
-    </group>
-    <group
-        android:translateX="540"
-        android:translateY="540">
         <group
             android:scaleX="12.5"
             android:scaleY="12.5"
@@ -51,7 +44,7 @@
             android:scaleX="12.5"
             android:scaleY="12.5"
             android:translateX="-12.61"
-            android:translateY="38.05">
+            android:translateY="34.05">
             <group
                 android:translateX="-31"
                 android:translateY="-35.04">
@@ -62,7 +55,7 @@
         </group>
         <group
             android:scaleX="12.5"
-            android:scaleY="12.5"
+            android:scaleY="-12.5"
             android:translateX="0.32">
             <group
                 android:translateX="-32.04"
@@ -77,7 +70,7 @@
         </group>
         <group
             android:scaleX="12.5"
-            android:scaleY="12.5"
+            android:scaleY="-12.5"
             android:translateX="0.45"
             android:translateY="0.09">
             <group
@@ -93,9 +86,9 @@
         </group>
         <group
             android:scaleX="12.5"
-            android:scaleY="12.5"
-            android:translateX="133.74"
-            android:translateY="-182.15">
+            android:scaleY="-12.5"
+            android:translateX="159.94"
+            android:translateY="164.15">
             <path
                 android:pathData="M1 0A1 1 0 0 1 -1 0A1 1 0 0 1 1 0Z"
                 android:fillColor="#2A5081" />
