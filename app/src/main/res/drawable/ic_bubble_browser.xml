@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="?attr/colorPrimary"
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    
+    <!-- Inner bubble -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M60,60m-35,0a35,35 0,1 1,70 0a35,35 0,1 1,-70 0" />
+    
+    <!-- Web icon -->
+    <path
+        android:fillColor="?attr/colorPrimary"
+        android:pathData="M60,30c-16.57,0 -30,13.43 -30,30s13.43,30 30,30 30,-13.43 30,-30 -13.43,-30 -30,-30zM45,60c0,-1.65 0.35,-3.22 0.98,-4.64L56.79,66.17C54.15,67.32 51.18,68 48,68c-2.21,0 -4.34,-0.36 -6.32,-1.02L45,60zM60,45c8.28,0 15,6.72 15,15 0,1.91 -0.36,3.73 -1.02,5.39L60,52.5V45zM60,75c-8.28,0 -15,-6.72 -15,-15 0,-1.91 0.36,-3.73 1.02,-5.39L60,67.5V75z" />
+</vector>

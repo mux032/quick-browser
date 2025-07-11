@@ -65,6 +65,13 @@
             android:label="@string/settings"
             android:theme="@style/Theme.QBrowser" />
 
+        <activity
+            android:name=".ui.history.HistoryActivity"
+            android:label="@string/history_title"
+            android:theme="@style/Theme.QBrowser"
+            android:parentActivityName=".ui.main.MainActivity" />
+        
+
         <service
             android:name=".service.BubbleService"
             android:enabled="true"
