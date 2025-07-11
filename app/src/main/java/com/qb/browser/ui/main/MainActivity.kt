@@ -1,82 +1,27 @@
-/**
- * MainActivity.kt
- *
- * Summary: This activity serves as the main entry point for the Bubble Browser application. It
- * manages permissions, user interactions, and service operations for the floating bubble feature.
- * The activity performs the following tasks:
- *
- * 1. **Permission Management**:
- * ```
- *    - Requests overlay permission to draw bubbles over other apps.
- *    - Requests notification permission for Android 13+ devices to display notifications.
- *    - Provides rationale dialogs for permissions when required.
- * ```
- * 2. **Bubble Service Management**:
- * ```
- *    - Starts the BubbleService to display floating bubbles.
- *    - Handles intents to open URLs in the bubble browser.
- *    - Checks if the BubbleService is already running.
- * ```
- * 3. **UI Interaction**:
- * ```
- *    - Provides buttons to start the bubble browser, open settings, and view history.
- *    - Handles user actions like sharing URLs or opening links via intents.
- * ```
- * 4. **Lifecycle Management**:
- * ```
- *    - Ensures the BubbleService is started when the app resumes if permissions are granted.
- * ```
- * Dependencies:
- * - AndroidX libraries for lifecycle management and permissions.
- * - Kotlin Coroutines for asynchronous operations.
- * - Custom classes like `BubbleService`, `SettingsManager`, and `SettingsActivity`.
- */
 package com.qb.browser.ui.main
 
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.TextView
 import android.widget.Toast
-import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.result.contract.ActivityResultContracts
-import com.qb.browser.ui.base.BaseActivity
-import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.qb.browser.Constants
 import com.qb.browser.R
-import com.qb.browser.model.WebPage
+import com.qb.browser.manager.AuthenticationHandler
 import com.qb.browser.service.BubbleService
-import com.qb.browser.viewmodel.HistoryViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.qb.browser.ui.base.BaseActivity
 import com.qb.browser.ui.settings.SettingsActivity
-import com.qb.browser.manager.SettingsManager
-import com.qb.browser.ui.bubble.BubbleIntentProcessor
-import com.qb.browser.manager.BubbleManager
-import com.qb.browser.data.WebPageDao
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.qb.browser.manager.AuthenticationHandler
 
 class MainActivity : BaseActivity() {
     companion object {
@@ -84,8 +29,6 @@ class MainActivity : BaseActivity() {
         // Removed NOTIFICATION_PERMISSION constant as it's no longer needed
     }
 
-    // Using settingsManager from BaseActivity
-    private lateinit var bubbleIntentProcessor: BubbleIntentProcessor
     private lateinit var addressBar: EditText
     private lateinit var goButton: ImageButton
 
@@ -110,11 +53,7 @@ class MainActivity : BaseActivity() {
                 action = Constants.ACTION_TOGGLE_BUBBLES
             }
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            startForegroundService(intent)
             // Removed moveTaskToBack(true) to keep the app in foreground
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start bubble service", e)
@@ -136,12 +75,7 @@ class MainActivity : BaseActivity() {
             }
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                Log.d(TAG, "Using startService for pre-Oreo devices")
-                startService(intent)
-            }
+            startForegroundService(intent)
             // Removed moveTaskToBack(true) to keep the app in foreground
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start bubble service", e)
@@ -223,11 +157,11 @@ class MainActivity : BaseActivity() {
         // Add https:// if no protocol is specified
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             // Check if it looks like a domain (contains a dot and no spaces)
-            if (url.contains(".") && !url.contains(" ")) {
-                url = "https://$url"
+            url = if (url.contains(".") && !url.contains(" ")) {
+                "https://$url"
             } else {
                 // Treat as search query
-                url = "https://www.google.com/search?q=${Uri.encode(url)}"
+                "https://www.google.com/search?q=${Uri.encode(url)}"
             }
         }
 
@@ -239,7 +173,7 @@ class MainActivity : BaseActivity() {
         addressBar.text.clear()
 
         // Hide keyboard
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
         imm.hideSoftInputFromWindow(addressBar.windowToken, 0)
 
         // Open URL in bubble
@@ -382,7 +316,7 @@ class MainActivity : BaseActivity() {
      */
     private fun checkPermissionsAndStartBubbleWithUrl(url: String): Boolean {
         // Check overlay permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+        if (!Settings.canDrawOverlays(this)) {
             // Show permission dialog
             requestOverlayPermission()
             // Save the URL to use after permission is granted
@@ -415,7 +349,7 @@ class MainActivity : BaseActivity() {
     /** Checks required permissions and starts the BubbleService if permissions are granted. */
     private fun checkPermissionsAndStartBubble(): Boolean {
         // Only check for overlay permission as it's essential
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+        if (!Settings.canDrawOverlays(this)) {
             requestOverlayPermission()
             return false
         }
@@ -430,7 +364,7 @@ class MainActivity : BaseActivity() {
         try {
             val overlayIntent =
                 Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                    data = Uri.parse("package:$packageName")
+                    data = "package:$packageName".toUri()
                 }
             startActivity(overlayIntent)
             Toast.makeText(
@@ -453,8 +387,7 @@ class MainActivity : BaseActivity() {
 
         // Check if we have a saved URL from a previous permission request
         val lastSharedUrl = settingsManager.getLastSharedUrl()
-        if (lastSharedUrl != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            Settings.canDrawOverlays(this)
+        if (lastSharedUrl != null && Settings.canDrawOverlays(this)
         ) {
             // Start bubble with the saved URL
             startBubbleServiceWithUrl(lastSharedUrl)
@@ -465,9 +398,7 @@ class MainActivity : BaseActivity() {
                 moveTaskToBack(true)
                 return
             }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            Settings.canDrawOverlays(this) &&
-            !isBubbleServiceRunning()
+        } else if (Settings.canDrawOverlays(this) && !isBubbleServiceRunning()
         ) {
             startBubbleService()
         }

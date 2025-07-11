@@ -1,11 +1,9 @@
 package com.qb.browser.ui.base
 
-import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.qb.browser.R
-import com.qb.browser.ui.theme.ThemeColor
 import com.qb.browser.manager.SettingsManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -20,30 +18,31 @@ open class BaseActivity : AppCompatActivity() {
     lateinit var settingsManager: SettingsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        setTheme(R.style.Theme_QBrowser)
 
-        // Apply theme after dependency injection
-        applyAppTheme()
+        // 2. Then call super
+        super.onCreate(savedInstanceState)
     }
 
-    /**
-     * Apply the app theme based on settings
-     */
-    protected fun applyAppTheme() {
-        // Use the injected SettingsManager instance
-        // Apply theme color
-        val themeColor = ThemeColor.fromName(settingsManager.getThemeColor())
+    override fun setContentView(layoutResID: Int) {
+        super.setContentView(layoutResID)
+        // Apply status bar color after content view is set
+        applyStatusBarColor()
+    }
 
-        // We'll use the system's night mode setting instead of a separate theme
-        // The Theme.QBrowser will automatically use the night variant when in dark mode
-        val themeResId = R.style.Theme_QBrowser
+    override fun setContentView(view: android.view.View?) {
+        super.setContentView(view)
+        // Apply status bar color after content view is set
+        applyStatusBarColor()
+    }
 
-        // Apply the theme
-        setTheme(themeResId)
+    override fun setContentView(view: android.view.View?, params: android.view.ViewGroup.LayoutParams?) {
+        super.setContentView(view, params)
+        // Apply status bar color after content view is set
+        applyStatusBarColor()
+    }
 
-        // Apply status bar color
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.statusBarColor = ContextCompat.getColor(this, themeColor.primaryDarkColorRes)
-        }
+    private fun applyStatusBarColor() {
+        window.statusBarColor = ContextCompat.getColor(this, R.color.colorPrimary)
     }
 }
