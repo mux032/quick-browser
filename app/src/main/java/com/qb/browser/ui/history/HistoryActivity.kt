@@ -7,7 +7,9 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.SearchView
+import android.text.Editable
+import android.text.TextWatcher
+import android.widget.EditText
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -31,7 +33,7 @@ class HistoryActivity : BaseActivity() {
     private lateinit var historyAdapter: HistoryAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyView: View
-    private lateinit var searchView: SearchView
+    private lateinit var searchView: EditText
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +53,7 @@ class HistoryActivity : BaseActivity() {
         // Initialize views
         recyclerView = findViewById(R.id.history_recycler_view)
         emptyView = findViewById(R.id.empty_history_view)
-        searchView = findViewById(R.id.search_view)
+        searchView = findViewById(R.id.address_bar)
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
 
         // Set up RecyclerView
@@ -85,20 +87,23 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun setupSearchView() {
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
+        searchView.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // Not used
             }
 
-            override fun onQueryTextChange(newText: String?): Boolean {
-                if (newText.isNullOrEmpty()) {
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (s.isNullOrEmpty()) {
                     // Show all history
                     observeHistoryData()
                 } else {
                     // Search history
-                    searchHistory(newText)
+                    searchHistory(s.toString())
                 }
-                return true
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                // Not used
             }
         })
     }
