@@ -83,22 +83,6 @@
             app:layout_constraintTop_toTopOf="parent"
             app:tint="@android:color/white" />
 
-        <!-- Offline indicator in top right corner (moved down to avoid share button) -->
-        <ImageView
-            android:id="@+id/offline_indicator"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/offline_indicator_background"
-            android:padding="2dp"
-            android:src="@drawable/ic_save"
-            android:visibility="gone"
-            app:layout_constraintEnd_toStartOf="@id/share_button"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@android:color/white"
-            tools:visibility="visible" />
-
         <!-- Title text floating at bottom -->
         <TextView
             android:id="@+id/title_text"
@@ -120,6 +104,19 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             tools:text="Sample Article Title That Might Be Long" />
+
+        <!-- Offline indicator -->
+        <ImageView
+            android:id="@+id/offline_indicator"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="12dp"
+            android:src="@drawable/ic_offline"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/date_text"
+            app:tint="@android:color/white" />
 
         <!-- Date text at bottom right -->
         <TextView
