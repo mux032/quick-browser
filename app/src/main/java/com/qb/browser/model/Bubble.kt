@@ -20,6 +20,7 @@
  package com.qb.browser.model
 
  import android.graphics.Bitmap
+ import android.os.Build
  import android.os.Parcel
  import android.os.Parcelable
  
@@ -49,7 +50,12 @@
          id = parcel.readString() ?: "",
          url = parcel.readString() ?: "",
          title = parcel.readString() ?: "",
-         favicon = parcel.readParcelable(Bitmap::class.java.classLoader),
+         favicon = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+             parcel.readParcelable(Bitmap::class.java.classLoader, Bitmap::class.java)
+         } else {
+             @Suppress("DEPRECATION") // Suppress the deprecation warning for older Android versions
+             parcel.readParcelable(Bitmap::class.java.classLoader)
+         },
          lastAccessed = parcel.readLong()
      )
 

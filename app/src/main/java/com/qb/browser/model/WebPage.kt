@@ -1,6 +1,7 @@
 package com.qb.browser.model
 
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.Entity
@@ -52,13 +53,21 @@ data class WebPage(
     private constructor(parcel: Parcel) : this(
         url = parcel.readString() ?: "",
         title = parcel.readString() ?: "",
-        timestamp = parcel.readLong(),
         content = parcel.readString() ?: "",
-        isAvailableOffline = parcel.readInt() == 1,
-        visitCount = parcel.readInt(),
-        favicon = parcel.readParcelable(Bitmap::class.java.classLoader),
-        previewImage = parcel.readParcelable(Bitmap::class.java.classLoader),
-        faviconUrl = parcel.readString()
+        favicon = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            parcel.readParcelable(Bitmap::class.java.classLoader, Bitmap::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            parcel.readParcelable(Bitmap::class.java.classLoader)
+        },
+        previewImage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            parcel.readParcelable(Bitmap::class.java.classLoader, Bitmap::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            parcel.readParcelable(Bitmap::class.java.classLoader)
+        },
+        timestamp = parcel.readLong(),
+        visitCount = parcel.readInt()
     ) {
         summary = parcel.createStringArrayList() ?: emptyList()
         parentBubbleId = parcel.readString()

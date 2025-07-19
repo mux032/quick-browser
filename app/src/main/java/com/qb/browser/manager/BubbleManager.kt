@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.qb.browser.model.Bubble
-import com.qb.browser.model.WebPage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -34,16 +33,6 @@ class BubbleManager(
 
                 // Use the provided bubble ID or generate a new UUID
                 val bubbleId = existingBubbleId ?: UUID.randomUUID().toString()
-
-                val timestamp = System.currentTimeMillis()
-                val newWebPage = WebPage(
-                    url = url,
-                    title = url,
-                    timestamp = timestamp,
-                    content = "",
-                    isAvailableOffline = false,
-                    visitCount = 1
-                )
 
                 // Create new bubble with unique ID
                 val newBubble = Bubble(

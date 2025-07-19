@@ -38,12 +38,6 @@ android {
         }
     }
 
-    // Suppress namespace warnings for TensorFlow Lite
-    lint {
-        disable 'DuplicateNamespace'
-        abortOnError false
-    }
-
     // Add packaging options to handle duplicate files
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
@@ -93,31 +87,6 @@ android {
     // Use only the java directory for Kotlin sources
     sourceSets {
         main.java.srcDirs = ['src/main/java']
-    }
-}
-
-// Add repositories for better dependency resolution
-repositories {
-    mavenCentral()
-    google()
-    gradlePluginPortal()
-    // Alternative Maven Central mirrors
-    maven {
-        url "https://repo1.maven.org/maven2/"
-    }
-    maven {
-        url "https://jcenter.bintray.com/"
-    }
-    maven {
-        url "https://maven.aliyun.com/repository/central"
-    }
-    maven {
-        url "https://maven.aliyun.com/repository/google"
-    }
-    jcenter() {
-        content {
-            includeModule("org.jetbrains.trove4j", "trove4j")
-        }
     }
 }
 

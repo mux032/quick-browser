@@ -39,144 +39,117 @@
                 android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
-            <androidx.cardview.widget.CardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                android:orientation="vertical"
+                android:padding="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="8dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="1dp"
+                    android:layout_marginBottom="1dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_javascript"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="@string/enable_javascript"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="8dp"
-                        android:layout_marginBottom="8dp">
+                        android:layout_weight="1"
+                        android:text="@string/enable_javascript"
+                        android:textSize="16sp" />
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_javascript"
-                            android:layout_marginEnd="16dp"
-                            android:contentDescription="@string/enable_javascript"
-                            app:tint="?attr/colorControlNormal" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/enable_javascript"
-                            android:textSize="16sp" />
-
-                        <Switch
-                            android:id="@+id/switch_javascript"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="8dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_block_ads"
-                            android:layout_marginEnd="16dp"
-                            android:contentDescription="@string/block_ads_and_trackers"
-                            app:tint="?attr/colorControlNormal" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/block_ads_and_trackers"
-                            android:textSize="16sp" />
-
-                        <Switch
-                            android:id="@+id/switch_block_ads"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switch_javascript"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="1dp"
+                    android:layout_marginBottom="1dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_block_ads"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="@string/block_ads_and_trackers"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/block_ads_and_trackers"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switch_block_ads"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- Privacy Settings -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="8dp"
-                android:paddingBottom="8dp"
+                android:paddingBottom="4dp"
                 android:text="@string/privacy"
                 android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                 android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
-            <androidx.cardview.widget.CardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                android:orientation="vertical"
+                android:padding="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="8dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="1dp"
+                    android:layout_marginBottom="1dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_history"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="@string/save_browsing_history"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="8dp"
-                        android:layout_marginBottom="8dp">
+                        android:layout_weight="1"
+                        android:text="@string/save_browsing_history"
+                        android:textSize="16sp" />
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_history"
-                            android:layout_marginEnd="16dp"
-                            android:contentDescription="@string/save_browsing_history"
-                            app:tint="?attr/colorControlNormal" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/save_browsing_history"
-                            android:textSize="16sp" />
-
-                        <Switch
-                            android:id="@+id/switch_save_history"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switch_save_history"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="16dp"
-                android:text="@string/app_name"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                android:textStyle="italic" />
-
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 

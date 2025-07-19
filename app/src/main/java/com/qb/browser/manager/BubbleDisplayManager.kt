@@ -166,11 +166,8 @@ class BubbleDisplayManager(
      * Creates layout parameters for the bubble view.
      */
     private fun createLayoutParams(): WindowManager.LayoutParams {
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val type =
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        } else {
-            WindowManager.LayoutParams.TYPE_PHONE
-        }
 
         return WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
