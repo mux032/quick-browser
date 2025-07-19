@@ -3,13 +3,10 @@ package com.qb.browser.ui.settings
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
-import android.widget.SeekBar
-import android.widget.Switch
-import android.widget.TextView
 import android.widget.Toast
 import com.qb.browser.ui.base.BaseActivity
 import com.qb.browser.R
-import com.qb.browser.manager.SettingsManager
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 /**
  * Settings activity for the browser
@@ -18,19 +15,12 @@ import com.qb.browser.manager.SettingsManager
 class SettingsActivity : BaseActivity() {
 
     // UI Components
-    private lateinit var switchJavaScript: Switch
-    private lateinit var switchBlockAds: Switch
-    private lateinit var seekBarBubbleSize: SeekBar
-    private lateinit var seekBarAnimSpeed: SeekBar
-    private lateinit var expandedBubbleSizeSlider: SeekBar
-    private lateinit var textViewBubbleSize: TextView
-    private lateinit var textViewAnimSpeed: TextView
-    private lateinit var switchSaveHistory: Switch
-    private lateinit var switchPositionRight: Switch
+    private lateinit var switchJavaScript: SwitchMaterial
+    private lateinit var switchBlockAds: SwitchMaterial
+    private lateinit var switchSaveHistory: SwitchMaterial
 
     companion object {
         private const val TAG = "SettingsActivity"
-        private const val THEME_MODE = "light" // Theme is always light
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

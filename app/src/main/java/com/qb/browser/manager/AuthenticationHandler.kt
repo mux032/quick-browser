@@ -4,10 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.webkit.WebView
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
-import androidx.core.content.ContextCompat
-import com.qb.browser.R
+import androidx.core.net.toUri
 
 /**
  * Handles authentication URLs by launching them in Chrome Custom Tabs
@@ -84,7 +84,7 @@ class AuthenticationHandler {
          */
         fun isAuthenticationUrl(url: String): Boolean {
             try {
-                val uri = Uri.parse(url)
+                val uri = url.toUri()
                 val host = uri.host?.lowercase() ?: return false
                 val path = uri.path?.lowercase() ?: ""
                 val query = uri.query?.lowercase() ?: ""
@@ -173,7 +173,7 @@ class AuthenticationHandler {
                 customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 
                 // Launch the URL in Custom Tabs
-                customTabsIntent.launchUrl(context, Uri.parse(url))
+                customTabsIntent.launchUrl(context, url.toUri())
                 Log.d(TAG, "Successfully launched URL in Custom Tab: $url")
                 true
             } catch (e: Exception) {
@@ -181,7 +181,7 @@ class AuthenticationHandler {
                 
                 // Fallback to system browser if Custom Tabs fails
                 try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
                     Log.d(TAG, "Successfully launched URL in system browser: $url")
@@ -192,41 +192,91 @@ class AuthenticationHandler {
                 }
             }
         }
-        
+
         /**
-         * Handles the return from Chrome Custom Tabs
-         * @param context The context to use for handling the return
-         * @param uri The URI from the intent
-         * @return True if the URI was handled, false otherwise
+         * Handles the authentication return from Chrome Custom Tabs.
+         * @param uri The callback URI received after authentication.
+         * @return True if the authentication was handled successfully, false otherwise.
          */
-        fun handleAuthenticationReturn(context: Context, uri: Uri): Boolean {
-            if (uri.scheme == REDIRECT_SCHEME && uri.host == REDIRECT_HOST) {
-                Log.d(TAG, "Handling return from authentication: $uri")
-                
-                // Extract the original URL and bubble ID
-                val originalUrl = uri.getQueryParameter("original_url")
-                val bubbleId = uri.getQueryParameter("bubble_id")
-                
-                Log.d(TAG, "Original URL: $originalUrl, Bubble ID: $bubbleId")
-                
-                // If we have a bubble ID, update that bubble with the authenticated state
-                if (!bubbleId.isNullOrEmpty()) {
-                    // Get the BubbleManager instance
-                    // val bubbleManager = (context.applicationContext as? com.qb.browser.QBApplication)?.bubbleManager
-                    
-                    // if (bubbleManager != null) {
-                    //     // Update the bubble with the authenticated URL
-                    //     if (!originalUrl.isNullOrEmpty()) {
-                    //         Log.d(TAG, "Updating bubble $bubbleId with authenticated URL: $originalUrl")
-                    //         bubbleManager.createOrUpdateBubbleWithNewUrl(originalUrl, bubbleId)
-                    //     }
-                    // }
+        fun handleAuthenticationReturn(uri: Uri): Boolean {
+            return try {
+                Log.d(TAG, "Processing authentication return URI: $uri")
+
+                // Validate the URI (e.g., check scheme, host, and required parameters)
+                if (uri.scheme != REDIRECT_SCHEME || uri.host != REDIRECT_HOST) {
+                    Log.e(TAG, "Invalid authentication callback URI")
+                    return false
                 }
-                
-                return true
+
+                // Extract parameters (e.g., token or state)
+                val token = uri.getQueryParameter("token")
+                val state = uri.getQueryParameter("state")
+
+                if (token.isNullOrEmpty()) {
+                    Log.e(TAG, "Missing token in authentication callback")
+                    return false
+                }
+
+                // Notify the WebView to reload or update its state
+                val webView = getWebViewForState(state)
+                if (webView != null) {
+                    val redirectUrl = uri.getQueryParameter("redirect_url") ?: "https://example.com"
+                    webView.post {
+                        webView.loadUrl(redirectUrl)
+                    }
+                    Log.d(TAG, "WebView updated with redirect URL: $redirectUrl")
+                } else {
+                    Log.w(TAG, "No WebView found for state: $state")
+                }
+
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling authentication return: ${e.message}", e)
+                false
             }
-            
-            return false
+        }
+
+        private val webViewStateMap = mutableMapOf<String, WebView>()
+
+        /**
+         * Associates a WebView with a specific state.
+         * This should be called when initiating an authentication flow.
+         * @param state The state parameter used to track the WebView.
+         * @param webView The WebView instance to associate with the state.
+         */
+        fun associateWebViewWithState(state: String, webView: WebView) {
+            webViewStateMap[state] = webView
+            Log.d(TAG, "Associated WebView with state: $state")
+        }
+
+        /**
+         * Retrieves the WebView associated with the given state.
+         * @param state The state parameter from the authentication callback.
+         * @return The WebView instance or null if not found.
+         */
+        private fun getWebViewForState(state: String?): WebView? {
+            if (state == null) {
+                Log.w(TAG, "State is null, cannot retrieve WebView")
+                return null
+            }
+
+            val webView = webViewStateMap[state]
+            if (webView != null) {
+                Log.d(TAG, "Retrieved WebView for state: $state")
+            } else {
+                Log.w(TAG, "No WebView found for state: $state")
+            }
+            return webView
+        }
+
+        /**
+         * Removes the WebView associated with a specific state.
+         * This should be called after the authentication flow is complete.
+         * @param state The state parameter used to track the WebView.
+         */
+        fun removeWebViewForState(state: String) {
+            webViewStateMap.remove(state)
+            Log.d(TAG, "Removed WebView association for state: $state")
         }
     }
 }

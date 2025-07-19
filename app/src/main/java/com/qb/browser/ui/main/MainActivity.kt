@@ -252,7 +252,7 @@ class MainActivity : BaseActivity() {
         Log.d(TAG, "Handling authentication callback: $uri")
 
         // Use the AuthenticationHandler to handle the return
-        val handled = AuthenticationHandler.handleAuthenticationReturn(this, uri)
+        val handled = AuthenticationHandler.handleAuthenticationReturn(uri)
 
         if (handled) {
             Log.d(TAG, "Authentication callback handled successfully")

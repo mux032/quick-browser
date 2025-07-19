@@ -235,7 +235,7 @@ class BubbleTouchHandler(
      * Set up touch listener for a specific resize handle
      */
     private fun setupResizeHandleTouch(handle: ImageView) {
-        handle.setOnTouchListener { view, event ->
+        handle.setOnTouchListener { _, event ->
             if (bubbleView.layoutParams !is WindowManager.LayoutParams) return@setOnTouchListener false
 
             when (event.action) {

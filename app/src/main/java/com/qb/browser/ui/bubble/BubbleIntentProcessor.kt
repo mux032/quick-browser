@@ -5,22 +5,19 @@ import android.content.Intent
 import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.LifecycleCoroutineScope
-import java.util.UUID
-import java.util.regex.Pattern
 import com.qb.browser.Constants
 import com.qb.browser.data.WebPageDao
 import com.qb.browser.manager.AuthenticationHandler
 import com.qb.browser.manager.BubbleManager
 import com.qb.browser.model.WebPage
-import com.qb.browser.service.BubbleService
-import com.qb.browser.util.ErrorHandler
-import com.qb.browser.utils.ImageDownloadManager // Added import
+import com.qb.browser.utils.ImageDownloadManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async // Added import
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document // Added import
+import org.jsoup.nodes.Document
+import java.util.regex.Pattern
 
 /**
  * BubbleIntentProcessor handles the processing of intents received by the BubbleService. It
@@ -57,7 +54,7 @@ class BubbleIntentProcessor(
     private fun handleCreateBubble(intent: Intent) {
         val sharedUrl = intent.getStringExtra(Constants.EXTRA_URL)
         val url = sharedUrl?.let { text -> extractUrl(text) ?: text}
-        Log.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: ${url}")
+        Log.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: $url")
         
         if (url != null && isValidUrl(url)) {
             Log.e(TAG, "Creating bubble with URL: $url")
@@ -148,10 +145,9 @@ class BubbleIntentProcessor(
     /**
      * Process a URL if it's valid, handling common operations
      * @param url The URL to process
-     * @param action The action name for logging
      * @param handler The function to call with the valid URL
      */
-    private fun processValidUrl(url: String?, action: String, handler: (String) -> Unit) {
+    private fun processValidUrl(url: String?, handler: (String) -> Unit) {
         if (url != null && isValidUrl(url)) {
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationHandler.isAuthenticationUrl(url)) {
@@ -165,7 +161,7 @@ class BubbleIntentProcessor(
             saveToHistory(url)
             handler(url)
         } else {
-            Log.w(TAG, "Invalid or missing URL for $action")
+            Log.w(TAG, "Invalid or missing URL for handleSharedContent")
         }
     }
     
@@ -243,7 +239,7 @@ class BubbleIntentProcessor(
             extractUrl(text) ?: text
         }
         Log.d(TAG, "handleSharedContent | Received url: $url")
-        processValidUrl(url, "handleSharedContent") { validUrl ->
+        processValidUrl(url) { validUrl ->
             bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl, null)
         }
     }
@@ -253,7 +249,7 @@ class BubbleIntentProcessor(
      */
     private fun extractUrl(text: String): String? {
         // Check for Google App specific pattern first (search.app/*)
-        val googleAppPattern = "(https?://)?search\\.app/[^\\s]+"
+        val googleAppPattern = "(https?://)?search\\.app/\\S+"
         val googleAppMatcher = Pattern.compile(googleAppPattern).matcher(text)
         if (googleAppMatcher.find()) {
             Log.d(TAG, "Found Google App URL: ${googleAppMatcher.group()}")
@@ -261,7 +257,7 @@ class BubbleIntentProcessor(
         }
         
         // Standard URL extraction using regex
-        val urlPattern = "(https?://(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|https?://(?:www\\.|(?!www))[a-zA-Z0-9]+\\.[^\\s]{2,}|www\\.[a-zA-Z0-9]+\\.[^\\s]{2,})"
+        val urlPattern = "(https?://(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.\\S{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.\\S{2,}|https?://(?:www\\.|(?!www))[a-zA-Z0-9]+\\.\\S{2,}|www\\.[a-zA-Z0-9]+\\.\\S{2,})"
         val pattern = Pattern.compile(urlPattern)
         val matcher = pattern.matcher(text)
         
@@ -328,7 +324,7 @@ class BubbleIntentProcessor(
             val htmlTitle = try {
                 // This is a blocking call, but it's okay for this context
                 // In a real app, you might want to use a more sophisticated approach
-                val connection = org.jsoup.Jsoup.connect(url)
+                val connection = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                     .timeout(3000) // Short timeout to avoid blocking too long
                     .followRedirects(true)
@@ -412,17 +408,17 @@ class BubbleIntentProcessor(
         var title = document.title()
         if (title.isNotBlank()) return title
 
-        title = document.select("meta[itemprop=name]").firstOrNull()?.attr("content")
-        if (!title.isNullOrBlank()) return title
+        title = document.select("meta[itemprop=name]").firstOrNull()?.attr("content") ?: ""
+        if (title.isNotBlank()) return title
 
-        title = document.select("meta[property=og:title]").firstOrNull()?.attr("content")
-        if (!title.isNullOrBlank()) return title
+        title = document.select("meta[property=og:title]").firstOrNull()?.attr("content") ?: ""
+        if (title.isNotBlank()) return title
 
-        title = document.select("meta[name=twitter:title]").firstOrNull()?.attr("content")
-        if (!title.isNullOrBlank()) return title
+        title = document.select("meta[name=twitter:title]").firstOrNull()?.attr("content") ?: ""
+        if (title.isNotBlank()) return title
 
-        title = document.select("h1").firstOrNull()?.text()
-        if (!title.isNullOrBlank()) return title
+        title = document.select("h1").firstOrNull()?.text() ?: ""
+        if (title.isNotBlank()) return title
 
         return null
     }

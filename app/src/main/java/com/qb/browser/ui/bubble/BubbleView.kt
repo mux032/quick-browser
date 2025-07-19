@@ -28,6 +28,7 @@ import android.view.*
 import android.webkit.WebView
 import android.widget.*
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
 import com.qb.browser.Constants
@@ -1181,7 +1182,11 @@ class BubbleView @JvmOverloads constructor(
             progress < 70 -> ContextCompat.getColor(context, R.color.colorPrimary)
             else -> ContextCompat.getColor(context, android.R.color.holo_green_light)
         }
-        uiManager.getProgressBar().progressDrawable?.setColorFilter(color, PorterDuff.Mode.SRC_IN)
+        val progressBarDrawable = uiManager.getProgressBar().progressDrawable
+        if (progressBarDrawable != null) {
+            DrawableCompat.setTint(progressBarDrawable, color)
+            DrawableCompat.setTintMode(progressBarDrawable, PorterDuff.Mode.SRC_IN)
+        }
     }
 
     /**

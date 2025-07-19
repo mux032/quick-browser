@@ -207,7 +207,7 @@ class HistoryAdapter(
             
             // Set long click listener for the card
             itemView.setOnLongClickListener {
-                showDeleteOption(page)
+                showDeleteOption()
                 true
             }
             
@@ -223,7 +223,7 @@ class HistoryAdapter(
             }
         }
         
-        private fun showDeleteOption(page: WebPage) {
+        private fun showDeleteOption() {
             deleteOverlay.visibility = View.VISIBLE
             deleteButton.visibility = View.VISIBLE
             
