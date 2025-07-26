@@ -24,8 +24,8 @@ object DatabaseModule {
             AppDatabase::class.java,
             "qb_browser.db"
         )
-        .fallbackToDestructiveMigration()
-        .build()
+            .fallbackToDestructiveMigration(false)
+            .build()
     }
 
     @Provides
