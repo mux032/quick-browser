@@ -50,7 +50,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="qbbrowser" android:host="auth-callback" />
+                <data android:scheme="quick_browser" android:host="auth-callback" />
             </intent-filter>
             
             <intent-filter>
@@ -79,11 +79,11 @@
             android:foregroundServiceType="dataSync">
             
             <intent-filter>
-                <action android:name="com.qb.browser.action.CREATE_BUBBLE" />
-                <action android:name="com.qb.browser.action.CLOSE_BUBBLE" />
-                <action android:name="com.qb.browser.action.TOGGLE_BUBBLES" />
-                <action android:name="com.qb.browser.action.OPEN_URL" />
-                <action android:name="com.qb.browser.action.ACTIVATE_BUBBLE" />
+                <action android:name="com.quick.browser.action.CREATE_BUBBLE" />
+                <action android:name="com.quick.browser.action.CLOSE_BUBBLE" />
+                <action android:name="com.quick.browser.action.TOGGLE_BUBBLES" />
+                <action android:name="com.quick.browser.action.OPEN_URL" />
+                <action android:name="com.quick.browser.action.ACTIVATE_BUBBLE" />
             </intent-filter>
         </service>
 

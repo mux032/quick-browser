@@ -25,11 +25,11 @@ android {
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.qb.browser"
+        applicationId "com.quick.browser"
         minSdk 26
         targetSdk 36
-        versionCode 1
-        versionName "1.0"
+        versionCode 19
+        versionName "0.1.8"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -83,7 +83,7 @@ android {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
 
-    namespace 'com.qb.browser'
+    namespace 'com.quick.browser'
 }
 
 dependencies {

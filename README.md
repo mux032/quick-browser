@@ -1,11 +1,10 @@
-# Bubble Browser
+# Quick Browser
 
-A floating bubble browser for Android that allows you to browse the web in a draggable, expandable bubble overlay.
+A floating quick browser for Android that allows you to browse the web in a draggable, expandable bubble overlay.
 
 ## Features
 
 - Floating bubble interface that can be dragged around the screen
-- Expandable web browser with full functionality
 - Resizable bubble window
 - Web content summarization
 - Read mode for better text readability
@@ -36,7 +35,7 @@ This project is open source and welcomes contributions. By contributing to this 
 
 ## Copyright
 
-Copyright (C) 2024 Bubble Browser Contributors
+Copyright (C) 2024 Quick Browser Contributors
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

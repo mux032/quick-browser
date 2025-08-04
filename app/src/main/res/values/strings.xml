@@ -52,7 +52,7 @@
     <!-- Main Screen -->
     <string name="app_logo">Quick Browser Logo</string>
     <string name="app_description">Fast and lightweight browser</string>
-    <string name="start_bubble_browser">Start bubble browser</string>
+    <string name="start_bubble_browser">Start quick browser</string>
     <string name="usage_hint">Enter a URL in the address bar below to open it in a bubble</string>
 
     <!-- Settings Screen -->
@@ -169,7 +169,7 @@
 
     <!-- Service -->
     <string name="bubble_service_channel_name">Browser Service</string>
-    <string name="bubble_service_channel_description">Keeps the bubble browser running in background</string>
+    <string name="bubble_service_channel_description">Keeps the quick browser running in background</string>
     <string name="bubble_service_notification_text">Browser is running in bubble mode</string>
     
     <!-- Menu items -->
