@@ -1,4 +1,4 @@
-# ProGuard rules for the BubbleBrowser app
+# ProGuard rules for the QuickBrowser app
 # Suppress warnings for missing annotations
 -dontwarn javax.annotation.Nullable
 -dontwarn javax.annotation.ParametersAreNonnullByDefault

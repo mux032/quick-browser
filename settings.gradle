@@ -21,5 +21,5 @@ dependencyResolutionManagement {
         mavenLocal()
     }
 }
-rootProject.name = "QB Browser"
+rootProject.name = "quick-browser"
 include ':app'
