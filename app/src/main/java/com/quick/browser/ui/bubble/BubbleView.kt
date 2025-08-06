@@ -377,6 +377,9 @@ class BubbleView @JvmOverloads constructor(
 
             // Initialize the manager with WebView components
             webViewManager.initialize(webViewContainer, uiManager.getProgressBar(), webViewModel)
+            
+            // Connect WebView progress updates to UI progress bar
+            webViewManager.setOnProgressChangedCallback { progress -> onWebViewProgressChanged(progress) }
 
             // Initialize settings panel manager with WebView
             setupSettingsPanelManager()
