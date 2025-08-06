@@ -11,6 +11,9 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
@@ -105,6 +108,13 @@ class MainActivity : BaseActivity() {
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false) // Hide default title
+
+        // Ensure toolbar sits below the status bar on all devices
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            v.updatePadding(top = statusBarHeight)
+            insets
+        }
 
         // settingsManager is already initialized in BaseActivity
 
