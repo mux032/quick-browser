@@ -4,6 +4,10 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.appcompat.widget.Toolbar
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.quick.browser.ui.base.BaseActivity
 import com.quick.browser.R
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -29,9 +33,17 @@ class SettingsActivity : BaseActivity() {
 
         try {
             // Set up toolbar
-            setSupportActionBar(findViewById(R.id.toolbar))
+            val toolbar = findViewById<Toolbar>(R.id.toolbar)
+            setSupportActionBar(toolbar)
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             supportActionBar?.title = getString(R.string.settings)
+
+            // Ensure toolbar sits below the status bar on all devices
+            ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
+                val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+                v.updatePadding(top = statusBarHeight)
+                insets
+            }
 
             // Initialize UI Components
             initializeViews()
