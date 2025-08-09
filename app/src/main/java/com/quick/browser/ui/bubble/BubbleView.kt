@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.exp
 import androidx.core.net.toUri
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 /**
  * Enhanced floating bubble view that displays web content in a draggable, expandable bubble.
@@ -107,6 +108,9 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var settingsPanel: View
     private lateinit var settingsPanelManager: BubbleSettingsPanel
 
+    // Add SwipeRefreshLayout property
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+
     companion object {
         private const val TAG = "BubbleView"
     }
@@ -150,6 +154,30 @@ class BubbleView @JvmOverloads constructor(
     private fun initializeViews() {
         try {
             Log.d(TAG, "Initializing remaining views for bubble: $bubbleId")
+
+            // Initialize SwipeRefreshLayout and wrap the WebView
+            swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout) as? SwipeRefreshLayout
+                ?: SwipeRefreshLayout(context).also { srl ->
+                    srl.id = R.id.swipe_refresh_layout
+                    // Remove webViewContainer from its parent and add to SwipeRefreshLayout
+                    val parent = webViewContainer.parent as? ViewGroup
+                    parent?.removeView(webViewContainer)
+                    srl.addView(webViewContainer)
+                    parent?.addView(srl)
+                }
+
+            // Set up pull-to-refresh listener
+            swipeRefreshLayout.setOnRefreshListener {
+                // Refresh the current page
+                webViewManager.reload()
+            }
+
+            // Optionally, set refresh indicator colors
+            swipeRefreshLayout.setColorSchemeResources(
+                R.color.colorPrimary,
+                R.color.colorAccent,
+                R.color.secondaryColor
+            )
 
             // WebView container (managed separately due to WebViewManager requirements)
             webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
@@ -1157,6 +1185,11 @@ class BubbleView @JvmOverloads constructor(
         if (progress !in 0..100) return
 
         uiManager.updateProgress(progress)
+
+        // Hide the refresh indicator when loading is complete
+        if (::swipeRefreshLayout.isInitialized) {
+            swipeRefreshLayout.isRefreshing = progress in 1..99
+        }
 
         when {
             // Show progress bar when loading (1-99%)
