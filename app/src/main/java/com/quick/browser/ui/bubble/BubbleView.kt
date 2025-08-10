@@ -1416,13 +1416,13 @@ class BubbleView @JvmOverloads constructor(
 
     override fun onWebViewScrollDown() {
         if (stateManager.isToolbarVisible) {
-            stateManager.setToolbarVisible(false)
+            hideToolbar()
         }
     }
 
     override fun onWebViewScrollUp() {
         if (!stateManager.isToolbarVisible) {
-            stateManager.setToolbarVisible(true)
+            showToolbar()
         }
     }
 
