@@ -829,7 +829,7 @@ class BubbleAnimator(private val context: Context) {
      * @param onEnd Callback to invoke when animation completes
      */
     fun animateToolbarSlide(toolbar: View, show: Boolean, onEnd: (() -> Unit)? = null) {
-        val targetTranslationY = if (show) 0f else -toolbar.height.toFloat()
+        val targetTranslationY = if (show) 0f else 140f
         
         val animator = ObjectAnimator.ofFloat(toolbar, "translationY", toolbar.translationY, targetTranslationY)
         animator.duration = ANIMATION_DURATION_SHORT

@@ -77,6 +77,10 @@ class BubbleWebViewManager(
         this.progressBar = progressBar
         this.webViewModel = webViewModel
 
+        // Set up scroll callbacks to link JS interface to BubbleView
+        onScrollUpCallback = { bubbleView.onWebViewScrollUp() }
+        onScrollDownCallback = { bubbleView.onWebViewScrollDown() }
+
         setupWebView()
     }
 
