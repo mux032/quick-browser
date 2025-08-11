@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.exp
 import androidx.core.net.toUri
+import com.quick.browser.ui.custom.HorizontalSwipeRefreshLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 /**
@@ -109,7 +110,9 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var settingsPanelManager: BubbleSettingsPanel
 
     // Add SwipeRefreshLayout property
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var swipeRefreshLayout: HorizontalSwipeRefreshLayout
+    private lateinit var backArrow: ImageView
+    private lateinit var forwardArrow: ImageView
 
     companion object {
         private const val TAG = "BubbleView"
@@ -155,9 +158,12 @@ class BubbleView @JvmOverloads constructor(
         try {
             Log.d(TAG, "Initializing remaining views for bubble: $bubbleId")
 
+            // WebView container (managed separately due to WebViewManager requirements)
+            webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
+
             // Initialize SwipeRefreshLayout and wrap the WebView
-            swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout) as? SwipeRefreshLayout
-                ?: SwipeRefreshLayout(context).also { srl ->
+            swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout) as? HorizontalSwipeRefreshLayout
+                ?: HorizontalSwipeRefreshLayout(context).also { srl ->
                     srl.id = R.id.swipe_refresh_layout
                     // Remove webViewContainer from its parent and add to SwipeRefreshLayout
                     val parent = webViewContainer.parent as? ViewGroup
@@ -171,6 +177,12 @@ class BubbleView @JvmOverloads constructor(
                 // Refresh the current page
                 webViewManager.reload()
             }
+            swipeRefreshLayout.webView = webViewContainer
+
+            // Initialize and set arrow views
+            backArrow = findViewById(R.id.back_arrow)
+            forwardArrow = findViewById(R.id.forward_arrow)
+            swipeRefreshLayout.setArrowImageViews(backArrow, forwardArrow)
 
             // Optionally, set refresh indicator colors
             swipeRefreshLayout.setColorSchemeResources(
@@ -178,9 +190,6 @@ class BubbleView @JvmOverloads constructor(
                 R.color.colorAccent,
                 R.color.secondaryColor
             )
-
-            // WebView container (managed separately due to WebViewManager requirements)
-            webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
 
             // Ensure summary views and FAB are initialized after layout is ready
             initializeSummaryViews()
