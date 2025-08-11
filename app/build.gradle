@@ -28,8 +28,8 @@ android {
         applicationId "com.quick.browser"
         minSdk 26
         targetSdk 36
-        versionCode 23
-        versionName "0.1.12"
+        versionCode 24
+        versionName "0.1.13"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
