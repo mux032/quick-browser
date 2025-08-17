@@ -829,17 +829,28 @@ class BubbleAnimator(private val context: Context) {
      * @param onEnd Callback to invoke when animation completes
      */
     fun animateToolbarSlide(toolbar: View, show: Boolean, onEnd: (() -> Unit)? = null) {
-        val targetTranslationY = if (show) 0f else 140f
+        val targetTranslationY = if (show) 0f else toolbar.height.toFloat()
         
         val animator = ObjectAnimator.ofFloat(toolbar, "translationY", toolbar.translationY, targetTranslationY)
-        animator.duration = ANIMATION_DURATION_SHORT
+        animator.duration = ANIMATION_DURATION_MEDIUM
         animator.interpolator = if (show) DecelerateInterpolator() else AccelerateInterpolator()
         
         animator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
+                // Ensure toolbar is fully visible or hidden
+                if (!show) {
+                    toolbar.visibility = View.GONE
+                } else {
+                    toolbar.visibility = View.VISIBLE
+                }
                 onEnd?.invoke()
             }
         })
+        
+        // Make sure toolbar is visible before starting show animation
+        if (show) {
+            toolbar.visibility = View.VISIBLE
+        }
         
         animator.start()
     }
