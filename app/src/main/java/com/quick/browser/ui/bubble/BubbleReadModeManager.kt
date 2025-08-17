@@ -62,6 +62,8 @@ class BubbleReadModeManager(
         fun onReadModeLoadingCompleted(success: Boolean)
         fun onReadModeError(message: String)
         fun onBubbleExpandRequested()
+        fun onReadModeScrollDown()
+        fun onReadModeScrollUp()
     }
     
     private var listener: ReadModeManagerListener? = null
@@ -129,17 +131,18 @@ class BubbleReadModeManager(
     private fun exitReadMode() {
         // Restore WebView settings for normal mode
         webView?.settings?.apply {
-            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
-            builtInZoomControls = true
+            javaScriptEnabled = true
+            builtInZoomControls = false
             displayZoomControls = false
-            textZoom = 100
         }
         
-        // Return to normal web view using cached content if available
-        val urlToLoad = originalContent ?: currentUrl
-        urlToLoad?.let { url ->
+        // Load original content if available
+        originalContent?.let { url ->
             webView?.loadUrl(url)
         }
+        
+        // Update button state
+        updateReadModeButton()
         
         // Announce mode change for accessibility
         webView?.announceForAccessibility(context.getString(R.string.web_view_mode))
@@ -185,6 +188,9 @@ class BubbleReadModeManager(
                     // Load the styled content
                     webView?.loadDataWithBaseURL(url, styledHtml, "text/html", "UTF-8", null)
                     
+                    // Add JavaScript interface for scroll detection
+                    setupScrollDetection()
+                    
                     // Hide loading indicator
                     progressBar?.visibility = View.GONE
                     progressBar?.isIndeterminate = false
@@ -212,8 +218,8 @@ class BubbleReadModeManager(
      */
     private fun configureWebViewForReadMode() {
         webView?.settings?.apply {
-            // Disable JavaScript for reader mode (cleaner experience)
-            javaScriptEnabled = false
+            // Enable JavaScript for scroll detection, but disable other scripts for cleaner experience
+            javaScriptEnabled = true
             // Enable built-in zoom for text scaling
             builtInZoomControls = true
             displayZoomControls = false
@@ -226,6 +232,9 @@ class BubbleReadModeManager(
      * Handle read mode errors and reset state
      */
     private fun handleReadModeError(message: String) {
+        // Remove JavaScript interface for reader mode
+        webView?.removeJavascriptInterface("ReaderModeScrollDetector")
+        
         // Hide loading indicator
         progressBar?.visibility = View.GONE
         progressBar?.isIndeterminate = false
@@ -248,6 +257,29 @@ class BubbleReadModeManager(
     }
     
     /**
+     * Set up JavaScript interface for scroll detection in reader mode
+     */
+    private fun setupScrollDetection() {
+        webView?.addJavascriptInterface(object {
+            @android.webkit.JavascriptInterface
+            fun onScrollDown() {
+                // Post to main thread to update UI
+                webView?.post {
+                    listener?.onReadModeScrollDown()
+                }
+            }
+
+            @android.webkit.JavascriptInterface
+            fun onScrollUp() {
+                // Post to main thread to update UI
+                webView?.post {
+                    listener?.onReadModeScrollUp()
+                }
+            }
+        }, "ReaderModeScrollDetector") // Use a different name to avoid conflicts
+    }
+    
+    /**
      * Update the read mode button appearance based on current state
      */
     private fun updateReadModeButton() {
@@ -266,6 +298,9 @@ class BubbleReadModeManager(
     
     /**
      * Create styled HTML for reader mode with responsive design and theme support
+     * 
+     * @param content The extracted readable content
+     * @return The styled HTML string
      */
     private fun createStyledHtml(content: ReadabilityExtractor.ReadableContent): String {
         // Get current reader mode settings
@@ -273,297 +308,155 @@ class BubbleReadModeManager(
         val fontSize = settingsManager.getReaderFontSize()
         val textAlign = settingsManager.getReaderTextAlign()
         
-        // Set colors based on background setting
+        // Define color schemes for different backgrounds
         val colors = when (readerBackground) {
             SettingsManager.READER_BG_DARK -> arrayOf("#121212", "#E0E0E0", "#90CAF9", "#B0B0B0", "#1E1E1E", "#616161")
             SettingsManager.READER_BG_SEPIA -> arrayOf("#F4F1E8", "#5D4E37", "#8B4513", "#8B7355", "#EAE7DC", "#D2B48C")
-            else -> arrayOf("#FFFFFF", "#212121", "#1976D2", "#666666", "#F5F5F5", "#E0E0E0") // White
+            else -> arrayOf("#FFFFFF", "#212121", "#1976D2", "#757575", "#F5F5F5", "#9E9E9E")
         }
         
-        val backgroundColor = colors[0]
-        val textColor = colors[1]
-        val linkColor = colors[2]
-        val secondaryTextColor = colors[3]
-        val codeBackgroundColor = colors[4]
-        val borderColor = colors[5]
-        
-        // Convert text alignment setting to CSS
-        val textAlignCss = when (textAlign) {
+        // Map text alignment values
+        val textAlignStyle = when (textAlign) {
+            SettingsManager.READER_ALIGN_LEFT -> "left"
             SettingsManager.READER_ALIGN_CENTER -> "center"
             SettingsManager.READER_ALIGN_RIGHT -> "right"
             SettingsManager.READER_ALIGN_JUSTIFY -> "justify"
-            else -> "left" // Default to left
+            else -> "left"
         }
         
+        // Create responsive HTML with embedded CSS
         return """
             <!DOCTYPE html>
-            <html lang="en">
+            <html>
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${content.title}</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
                 <style>
-                    :root {
-                        --content-width: 100%;
-                        --body-padding: clamp(16px, 5%, 32px);
-                        --content-max-width: 800px;
-                    }
-                    
-                    * {
-                        box-sizing: border-box;
-                    }
-                    
                     body {
-                        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                        line-height: 1.8;
-                        color: $textColor;
-                        background-color: $backgroundColor;
-                        padding: var(--body-padding);
-                        margin: 0 auto;
-                        max-width: var(--content-max-width);
-                        text-rendering: optimizeLegibility;
-                        -webkit-font-smoothing: antialiased;
-                        -moz-osx-font-smoothing: grayscale;
-                    }
-                    
-                    article {
-                        width: var(--content-width);
-                        margin: 0 auto;
-                    }
-                    
-                    h1, h2, h3, h4, h5, h6 {
-                        line-height: 1.3;
-                        margin: 1.5em 0 0.5em;
-                        font-weight: 600;
-                        color: $textColor;
-                    }
-                    
-                    h1 {
-                        font-size: clamp(1.5em, 5vw, 2em);
-                        letter-spacing: -0.02em;
-                        margin-bottom: 0.5em;
-                        border-bottom: 2px solid ${linkColor}40;
-                        padding-bottom: 0.5em;
-                    }
-                    
-                    h2 {
-                        font-size: clamp(1.3em, 4vw, 1.75em);
-                        margin-top: 2em;
-                    }
-                    
-                    h3 {
-                        font-size: clamp(1.2em, 3vw, 1.5em);
-                    }
-                    
-                    p {
-                        margin: 1.5em 0;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                        background-color: ${colors[0]};
+                        color: ${colors[1]};
+                        margin: 0;
+                        padding: 20px;
                         font-size: ${fontSize}px;
-                        text-align: $textAlignCss;
-                        hyphens: auto;
+                        line-height: 1.6;
+                        text-align: $textAlignStyle;
                     }
-                    
-                    .byline {
-                        font-size: 0.9em;
-                        color: $secondaryTextColor;
-                        margin-bottom: 2em;
-                        padding: 1em 0;
-                        border-bottom: 1px solid ${borderColor}40;
-                        font-style: italic;
+                    h1, h2, h3, h4, h5, h6 {
+                        color: ${colors[2]};
+                        margin-top: 1.5em;
+                        margin-bottom: 0.5em;
                     }
-                    
+                    h1 {
+                        font-size: 1.8em;
+                        border-bottom: 1px solid ${colors[3]};
+                        padding-bottom: 0.3em;
+                    }
+                    h2 {
+                        font-size: 1.5em;
+                    }
+                    h3 {
+                        font-size: 1.3em;
+                    }
+                    p {
+                        margin-top: 0;
+                        margin-bottom: 1em;
+                        text-align: $textAlignStyle;
+                    }
                     a {
-                        color: $linkColor;
+                        color: ${colors[2]};
                         text-decoration: none;
-                        border-bottom: 1px solid ${linkColor}40;
-                        transition: all 0.2s ease;
-                        word-wrap: break-word;
                     }
-                    
                     a:hover {
-                        border-bottom-color: $linkColor;
-                        background-color: ${linkColor}10;
-                        padding: 0 2px;
-                        border-radius: 2px;
+                        text-decoration: underline;
                     }
-                    
                     img {
                         max-width: 100%;
                         height: auto;
-                        margin: 2em 0;
-                        border-radius: 8px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                         display: block;
-                        margin-left: auto;
-                        margin-right: auto;
+                        margin: 1em auto;
                     }
-                    
-                    figure {
-                        margin: 2em 0;
-                        text-align: center;
-                    }
-                    
-                    figcaption {
-                        font-size: 0.9em;
-                        color: $secondaryTextColor;
-                        margin-top: 0.5em;
-                        font-style: italic;
-                    }
-                    
                     blockquote {
-                        margin: 2em 0;
-                        padding: 1.5em 2em;
-                        border-left: 4px solid $linkColor;
-                        background-color: ${linkColor}08;
-                        font-style: italic;
-                        color: $secondaryTextColor;
-                        border-radius: 0 8px 8px 0;
-                        position: relative;
-                    }
-                    
-                    blockquote::before {
-                        content: '"';
-                        font-size: 3em;
-                        color: ${linkColor}40;
-                        position: absolute;
-                        top: 0.2em;
-                        left: 0.3em;
-                        line-height: 1;
-                    }
-                    
-                    code {
-                        font-family: 'SF Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-                        background-color: $codeBackgroundColor;
-                        padding: 0.2em 0.4em;
-                        border-radius: 4px;
-                        font-size: 0.9em;
-                        border: 1px solid ${borderColor}40;
-                    }
-                    
-                    pre {
-                        background-color: $codeBackgroundColor;
-                        padding: 1.5em;
-                        border-radius: 8px;
-                        overflow-x: auto;
-                        font-size: 0.9em;
-                        border: 1px solid ${borderColor}40;
-                        margin: 2em 0;
-                        line-height: 1.4;
-                    }
-                    
-                    pre code {
-                        background: none;
-                        padding: 0;
-                        border: none;
-                        border-radius: 0;
-                    }
-                    
-                    ul, ol {
-                        padding-left: 2em;
+                        border-left: 4px solid ${colors[4]};
                         margin: 1.5em 0;
+                        padding: 0.5em 1em;
+                        color: ${colors[5]};
+                        font-style: italic;
                     }
-                    
-                    li {
-                        margin: 0.8em 0;
-                        line-height: 1.6;
-                    }
-                    
-                    li p {
-                        margin: 0.5em 0;
-                    }
-                    
-                    hr {
-                        border: none;
-                        border-top: 2px solid ${borderColor}40;
-                        margin: 3em 0;
-                        border-radius: 1px;
-                    }
-                    
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 2em 0;
-                        font-size: 0.9em;
-                    }
-                    
-                    th, td {
-                        padding: 0.8em;
-                        text-align: left;
-                        border-bottom: 1px solid ${borderColor}40;
-                    }
-                    
-                    th {
-                        background-color: ${linkColor}10;
-                        font-weight: 600;
-                        color: $textColor;
-                    }
-                    
-                    tr:hover {
-                        background-color: ${textColor}05;
-                    }
-                    
-                    /* Responsive adjustments */
-                    @media (max-width: 600px) {
-                        :root {
-                            --body-padding: 16px;
-                        }
-                        
-                        h1 {
-                            font-size: 1.5em;
-                        }
-                        
-                        blockquote {
-                            padding: 1em;
-                            margin: 1.5em 0;
-                        }
-                        
-                        pre {
-                            padding: 1em;
-                            font-size: 0.8em;
-                        }
-                        
-                        table {
-                            font-size: 0.8em;
-                        }
-                        
-                        th, td {
-                            padding: 0.5em;
-                        }
-                    }
-                    
-                    /* Accessibility improvements */
-                    @media (prefers-reduced-motion: reduce) {
-                        * {
-                            animation-duration: 0.01ms !important;
-                            animation-iteration-count: 1 !important;
-                            transition-duration: 0.01ms !important;
-                            scroll-behavior: auto !important;
-                        }
-                    }
-                    
-                    @media (prefers-contrast: high) {
-                        a {
-                            border-bottom-width: 2px;
-                        }
-                        
-                        blockquote {
-                            border-left-width: 6px;
-                        }
-                    }
-                    
-                    /* Focus styles for better accessibility */
-                    a:focus {
-                        outline: 2px solid $linkColor;
-                        outline-offset: 2px;
+                    pre, code {
+                        background-color: ${colors[4]};
                         border-radius: 4px;
+                        padding: 0.2em 0.4em;
+                        font-family: 'Courier New', Courier, monospace;
                     }
+                    pre {
+                        padding: 1em;
+                        overflow-x: auto;
+                    }
+                    hr {
+                        border: 0;
+                        border-top: 1px solid ${colors[3]};
+                        margin: 2em 0;
+                    }
+                    // Add JavaScript for scroll detection
+                    // Variables for scroll tracking
+                    var lastScrollY = window.scrollY || document.documentElement.scrollTop;
+                    var lastScrollDirection = null;
+                    var scrollThreshold = 3; // Lower threshold for more sensitivity
+                    var consecutiveThreshold = 2; // Number of consecutive scrolls in same direction to trigger
+                    var consecutiveCount = 0;
+                    var lastNotifiedDirection = null;
+                    
+                    // Use requestAnimationFrame for smoother performance
+                    var ticking = false;
+                    
+                    // Main scroll handler
+                    window.addEventListener('scroll', function() {
+                        if (!ticking) {
+                            window.requestAnimationFrame(function() {
+                                var currentScrollY = window.scrollY || document.documentElement.scrollTop;
+                                var scrollDelta = currentScrollY - lastScrollY;
+                                
+                                // Determine scroll direction
+                                if (Math.abs(scrollDelta) > scrollThreshold) {
+                                    var currentDirection = scrollDelta > 0 ? 'down' : 'up';
+                                    
+                                    // Check if we're continuing in the same direction
+                                    if (currentDirection === lastScrollDirection) {
+                                        consecutiveCount++;
+                                    } else {
+                                        consecutiveCount = 1;
+                                        lastScrollDirection = currentDirection;
+                                    }
+                                    
+                                    // Only notify when we have enough consecutive scrolls in the same direction
+                                    // or when direction changes from the last notification
+                                    if ((consecutiveCount >= consecutiveThreshold && 
+                                        currentDirection !== lastNotifiedDirection) || 
+                                        (currentDirection !== lastNotifiedDirection && 
+                                        Math.abs(scrollDelta) > scrollThreshold * 3)) {
+                                        
+                                        if (currentDirection === 'down' && window.ReaderModeScrollDetector) {
+                        window.ReaderModeScrollDetector.onScrollDown();
+                    } else if (window.ReaderModeScrollDetector) {
+                        window.ReaderModeScrollDetector.onScrollUp();
+                    }
+                                        lastNotifiedDirection = currentDirection;
+                                    }
+                                    
+                                    lastScrollY = currentScrollY;
+                                }
+                                
+                                ticking = false;
+                            });
+                            
+                            ticking = true;
+                        }
+                    }, { passive: true });
                 </style>
             </head>
             <body>
-                <article>
-                    <h1>${content.title}</h1>
-                    ${if (!content.byline.isNullOrEmpty()) "<div class=\"byline\">${content.byline}</div>" else ""}
-                    ${content.content}
-                </article>
+                <h1>${content.title}</h1>
+                ${content.content}
             </body>
             </html>
         """.trimIndent()

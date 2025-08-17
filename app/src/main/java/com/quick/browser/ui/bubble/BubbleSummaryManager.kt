@@ -67,6 +67,8 @@ class BubbleSummaryManager(
         fun onSummarizationStarted()
         fun onSummarizationCompleted(success: Boolean)
         fun onSummarizationError(message: String)
+        fun onSummaryScrollDown()
+        fun onSummaryScrollUp()
     }
 
     private var listener: SummaryManagerListener? = null
@@ -110,6 +112,23 @@ class BubbleSummaryManager(
         // Set background color for summary container and content
         summaryContainer?.setBackgroundColor(android.graphics.Color.WHITE)
         summaryContent?.setBackgroundColor(android.graphics.Color.WHITE)
+        
+        // Set up scroll listener for the summary container
+        summaryContainer?.let { container ->
+            // If it's a NestedScrollView, we can set up a scroll listener
+            if (container is androidx.core.widget.NestedScrollView) {
+                container.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+                    // Detect scroll direction
+                    if (scrollY > oldScrollY) {
+                        // Scrolling down
+                        listener?.onSummaryScrollDown()
+                    } else if (scrollY < oldScrollY) {
+                        // Scrolling up
+                        listener?.onSummaryScrollUp()
+                    }
+                }
+            }
+        }
     }
 
     /**

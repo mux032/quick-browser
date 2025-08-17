@@ -457,7 +457,12 @@ class BubbleView @JvmOverloads constructor(
         if (!stateManager.isToolbarVisible) return // Already hidden
 
         stateManager.setToolbarVisible(false)
-        bubbleAnimator.animateToolbarSlide(uiManager.getToolbarContainer(), false)
+        uiManager.getToolbarContainer().let { toolbar ->
+            bubbleAnimator.animateToolbarSlide(toolbar, false) {
+                // Ensure toolbar is hidden after animation
+                toolbar.visibility = View.GONE
+            }
+        }
     }
 
     /**
@@ -467,7 +472,11 @@ class BubbleView @JvmOverloads constructor(
         if (stateManager.isToolbarVisible) return // Already visible
 
         stateManager.setToolbarVisible(true)
-        bubbleAnimator.animateToolbarSlide(uiManager.getToolbarContainer(), true)
+        uiManager.getToolbarContainer().let { toolbar ->
+            // Make sure toolbar is visible before starting animation
+            toolbar.visibility = View.VISIBLE
+            bubbleAnimator.animateToolbarSlide(toolbar, true)
+        }
     }
 
 
@@ -548,6 +557,20 @@ class BubbleView @JvmOverloads constructor(
             override fun onSummarizationError(message: String) {
                 Log.e(TAG, "Summarization error for bubble $bubbleId: $message")
             }
+
+            override fun onSummaryScrollDown() {
+                // Hide toolbar when scrolling down in summary mode
+                if (stateManager.isToolbarVisible) {
+                    hideToolbar()
+                }
+            }
+
+            override fun onSummaryScrollUp() {
+                // Show toolbar when scrolling up in summary mode
+                if (!stateManager.isToolbarVisible) {
+                    showToolbar()
+                }
+            }
         })
     }
 
@@ -585,6 +608,20 @@ class BubbleView @JvmOverloads constructor(
                 // Expand bubble if not already expanded
                 if (!stateManager.isBubbleExpanded) {
                     toggleBubbleExpanded()
+                }
+            }
+
+            override fun onReadModeScrollDown() {
+                // Hide toolbar when scrolling down in reader mode
+                if (stateManager.isToolbarVisible) {
+                    hideToolbar()
+                }
+            }
+
+            override fun onReadModeScrollUp() {
+                // Show toolbar when scrolling up in reader mode
+                if (!stateManager.isToolbarVisible) {
+                    showToolbar()
                 }
             }
         })
@@ -1424,12 +1461,14 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun onWebViewScrollDown() {
+        // Hide toolbar in all modes (web view, reader mode, summary mode)
         if (stateManager.isToolbarVisible) {
             hideToolbar()
         }
     }
 
     override fun onWebViewScrollUp() {
+        // Show toolbar in all modes (web view, reader mode, summary mode)
         if (!stateManager.isToolbarVisible) {
             showToolbar()
         }
