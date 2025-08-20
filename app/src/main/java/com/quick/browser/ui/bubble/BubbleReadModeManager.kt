@@ -374,6 +374,7 @@ class BubbleReadModeManager(
                         height: auto;
                         display: block;
                         margin: 1em auto;
+                        border-radius: 4px;
                     }
                     blockquote {
                         border-left: 4px solid ${colors[4]};
@@ -387,15 +388,42 @@ class BubbleReadModeManager(
                         border-radius: 4px;
                         padding: 0.2em 0.4em;
                         font-family: 'Courier New', Courier, monospace;
+                        overflow-x: auto;
                     }
                     pre {
                         padding: 1em;
                         overflow-x: auto;
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                    }
+                    pre code {
+                        background-color: transparent;
+                        padding: 0;
                     }
                     hr {
                         border: 0;
                         border-top: 1px solid ${colors[3]};
                         margin: 2em 0;
+                    }
+                    ul, ol {
+                        padding-left: 1.5em;
+                        margin: 1em 0;
+                    }
+                    li {
+                        margin-bottom: 0.5em;
+                    }
+                    table {
+                        border-collapse: collapse;
+                        width: 100%;
+                        margin: 1em 0;
+                    }
+                    th, td {
+                        border: 1px solid ${colors[3]};
+                        padding: 0.5em;
+                        text-align: left;
+                    }
+                    th {
+                        background-color: ${colors[4]};
                     }
                     // Add JavaScript for scroll detection
                     // Variables for scroll tracking
@@ -455,8 +483,21 @@ class BubbleReadModeManager(
                 </style>
             </head>
             <body>
-                <h1>${content.title}</h1>
-                ${content.content}
+                <article>
+                    <header>
+                        <h1>${content.title}</h1>
+                        ${if (content.byline != null) "<p class='byline'>By ${content.byline}</p>" else ""}
+                        ${if (content.siteName != null || content.publishDate != null) """
+                        <div class='article-meta'>
+                            ${if (content.siteName != null) "<span class='site-name'>${content.siteName}</span>" else ""}
+                            ${if (content.publishDate != null) "<span class='publish-date'>${content.publishDate}</span>" else ""}
+                        </div>
+                        """ else ""}
+                    </header>
+                    <main>
+                        ${content.content}
+                    </main>
+                </article>
             </body>
             </html>
         """.trimIndent()

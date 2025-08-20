@@ -22,6 +22,10 @@
     <color name="textColorPrimary">#212121</color>
     <color name="textColorSecondary">#757575</color>
     
+    <!-- Button colors -->
+    <color name="button_stroke_color">#757575</color>
+    <color name="button_icon_color">#757575</color>
+    
     <!-- Uniform background colors -->
     <color name="backgroundColor">#FFFFFF</color>
     <color name="surfaceColor">#FFFFFF</color>

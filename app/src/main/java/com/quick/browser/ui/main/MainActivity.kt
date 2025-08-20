@@ -11,11 +11,11 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.quick.browser.Constants
 import com.quick.browser.R
@@ -223,6 +223,16 @@ class MainActivity : BaseActivity() {
             }
             R.id.menu_history -> {
                 openHistoryActivity()
+                true
+            }
+            R.id.menu_saved_articles -> {
+                try {
+                    val intent = Intent(this, com.quick.browser.ui.SavedArticlesActivity::class.java)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error opening saved articles", e)
+                    Toast.makeText(this, "Could not open saved articles", Toast.LENGTH_SHORT).show()
+                }
                 true
             }
 

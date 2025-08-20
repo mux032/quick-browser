@@ -9,7 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Calendar
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,17 +47,17 @@ class HistoryViewModel @Inject constructor(
     }
 
     /**
-     * Search history by query
+     * Search history by query without BLOB data for efficient loading
      */
-    fun searchHistory(query: String): LiveData<List<WebPage>> {
-        return webPageDao.searchPages("%$query%")
+    fun searchHistoryWithoutBlobs(query: String): LiveData<List<WebPage>> {
+        return webPageDao.searchPagesWithoutBlobs("%$query%")
     }
 
     /**
-     * Get recent pages
+     * Get recent pages without BLOB data for efficient loading
      */
-    fun getRecentPages(limit: Int = 10): LiveData<List<WebPage>> {
-        return webPageDao.getRecentPages(limit)
+    fun getRecentPagesWithoutBlobs(limit: Int = 10): LiveData<List<WebPage>> {
+        return webPageDao.getRecentPagesWithoutBlobs(limit)
     }
 
     /**

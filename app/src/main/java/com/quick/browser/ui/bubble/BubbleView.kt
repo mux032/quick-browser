@@ -24,11 +24,14 @@ import android.graphics.Bitmap
 import android.graphics.PorterDuff
 import android.util.AttributeSet
 import android.util.Log
-import android.view.*
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.Constants
@@ -38,13 +41,12 @@ import com.quick.browser.manager.AuthenticationHandler
 import com.quick.browser.manager.SettingsManager
 import com.quick.browser.manager.SummarizationManager
 import com.quick.browser.service.BubbleService
+import com.quick.browser.ui.custom.HorizontalSwipeRefreshLayout
+import com.quick.browser.util.OfflineArticleSaver
 import com.quick.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.exp
-import androidx.core.net.toUri
-import com.quick.browser.ui.custom.HorizontalSwipeRefreshLayout
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 /**
  * Enhanced floating bubble view that displays web content in a draggable, expandable bubble.
@@ -523,6 +525,12 @@ class BubbleView @JvmOverloads constructor(
                 Log.d(TAG, "Reader text alignment changed to $alignment for bubble $bubbleId")
                 readModeManager.refreshReaderModeContent()
             }
+            
+            override fun onSaveOfflineRequested() {
+                // Handle save for offline reading
+                Log.d(TAG, "Save for offline reading requested for bubble $bubbleId")
+                saveArticleForOfflineReading()
+            }
         })
     }
 
@@ -643,6 +651,33 @@ class BubbleView @JvmOverloads constructor(
     // - createWebViewClient() - moved to BubbleWebViewManager  
     // - loadInitialUrl() - moved to BubbleWebViewManager
     // - reloadWebPageIfNeeded() - moved to BubbleWebViewManager
+
+    /**
+     * Save the current article for offline reading
+     */
+    private fun saveArticleForOfflineReading() {
+        Log.d(TAG, "Save article for offline reading requested")
+        
+        // Get the current URL
+        val currentUrl = url
+        if (currentUrl.isBlank()) {
+            Toast.makeText(context, "No URL to save", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Create offline article saver and save the article
+        val offlineSaver = OfflineArticleSaver(context)
+        offlineSaver.saveArticleForOfflineReading(
+            url = currentUrl,
+            scope = (context as LifecycleOwner).lifecycleScope,
+            onSuccess = {
+                Log.d(TAG, "Article saved successfully for bubble $bubbleId")
+            },
+            onError = { error ->
+                Log.e(TAG, "Failed to save article for bubble $bubbleId: $error")
+            }
+        )
+    }
 
     /**
      * Toggle bubble expanded state with animation
@@ -1252,6 +1287,15 @@ class BubbleView @JvmOverloads constructor(
             else -> uiManager.setProgressVisible(false)
         }
     }
+    
+    /**
+     * Update the save article button icon based on whether the article is saved
+     */
+    private fun updateSaveButtonIcon() {
+        // For now, we'll just set the default icon
+        // In a more complete implementation, we would check if the article is actually saved
+        uiManager.getBtnSaveArticle().setIconResource(R.drawable.ic_save_article)
+    }
 
     /**
      * Update the progress bar color based on progress value
@@ -1545,6 +1589,20 @@ class BubbleView @JvmOverloads constructor(
 
     override fun onUrlBarClicked() {
         settingsPanelManager.dismissIfVisible(settingsPanel)
+    }
+    
+    override fun onSaveArticle() {
+        // Create OfflineArticleSaver instance
+        val offlineSaver = OfflineArticleSaver(context)
+        
+        // Save the article
+        offlineSaver.saveArticleForOfflineReading(
+            url = url,
+            scope = (context as LifecycleOwner).lifecycleScope
+        )
+        
+        // Update the save button icon to show that the article is saved
+        uiManager.getBtnSaveArticle().setIconResource(R.drawable.ic_article_saved)
     }
 
     override fun onShareButtonClicked() {

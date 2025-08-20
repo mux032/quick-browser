@@ -184,7 +184,7 @@ class BubbleIntentProcessor(
             
             bubbleManager.createOrUpdateBubbleWithNewUrl(url, bubbleId)
         } else {
-            Log.w(TAG, "Invalid or missing URL for handleOpenUrl")
+            Log.w(TAG, "Invalid or missing URL for handleOpenUrl. URL: $url")
         }
     }
 
@@ -215,7 +215,7 @@ class BubbleIntentProcessor(
     }
 
     private fun handleToggleBubbles() {
-        // Optional: implement show/hide behavior if needed. Here’s a basic toggle logic idea.
+        // Optional: implement show/hide behavior if needed. Here's a basic toggle logic idea.
         val bubbles = bubbleManager.bubbles.value
         if (bubbles.isNotEmpty()) {
             // We now have multiple bubbles, so we'll just log this action

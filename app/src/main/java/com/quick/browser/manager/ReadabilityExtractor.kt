@@ -1,10 +1,10 @@
 package com.quick.browser.manager
 
 import android.content.Context
+import com.quick.browser.util.ErrorHandler
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import com.quick.browser.util.ErrorHandler
 
 /**
  * Utility for extracting readable content from web pages
@@ -36,6 +36,15 @@ class ReadabilityExtractor(private val context: Context) {
         ) {
             val doc = Jsoup.connect(url)
                 .userAgent(USER_AGENT)
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+                .header("Accept-Language", "en-US,en;q=0.5")
+                .header("Accept-Encoding", "gzip, deflate, br")
+                .header("Connection", "keep-alive")
+                .header("Upgrade-Insecure-Requests", "1")
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none")
+                .header("Cache-Control", "max-age=0")
                 .timeout(TIMEOUT_MS)
                 .get()
             extractFromDocument(doc, url)

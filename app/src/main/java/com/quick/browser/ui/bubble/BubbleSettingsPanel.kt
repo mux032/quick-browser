@@ -67,6 +67,7 @@ class BubbleSettingsPanel(
         fun onReaderFontSizeChanged(size: Int)
         fun onReaderBackgroundChanged(background: String)
         fun onReaderTextAlignChanged(alignment: String)
+        fun onSaveOfflineRequested()
     }
 
     private var listener: SettingsPanelListener? = null

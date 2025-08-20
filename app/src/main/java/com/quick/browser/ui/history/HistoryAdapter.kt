@@ -11,15 +11,15 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.quick.browser.R
-import com.quick.browser.model.WebPage
 import com.quick.browser.model.HistoryItem
+import com.quick.browser.model.WebPage
+import com.quick.browser.util.OfflineArticleSaver
 import com.quick.browser.utils.ImageDownloadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 import kotlin.random.Random
 
 class HistoryAdapter(
@@ -150,6 +150,7 @@ class HistoryAdapter(
         private val offlineIndicator: ImageView = itemView.findViewById(R.id.offline_indicator)
         private val websiteName: TextView = itemView.findViewById(R.id.website_name)
         private val shareButton: ImageView = itemView.findViewById(R.id.share_button)
+        private val saveButton: ImageView = itemView.findViewById(R.id.save_button)
         private val deleteOverlay: View = itemView.findViewById(R.id.delete_overlay)
         private val deleteButton: ImageView = itemView.findViewById(R.id.delete_button)
 
@@ -170,7 +171,15 @@ class HistoryAdapter(
             dateText.text = dateFormat.format(Date(page.timestamp))
 
             // Set offline indicator
-            offlineIndicator.visibility = if (page.isAvailableOffline) View.VISIBLE else View.GONE
+            offlineIndicator.visibility = if (page.isAvailableOffline) View.GONE else View.GONE
+            
+            // Set save button visibility and icon based on whether the article is saved
+            saveButton.visibility = View.VISIBLE
+            if (page.isAvailableOffline) {
+                saveButton.setImageResource(R.drawable.ic_article_saved)
+            } else {
+                saveButton.setImageResource(R.drawable.ic_save_article)
+            }
 
             // Set preview image
             if (page.previewImage != null) {
@@ -198,6 +207,11 @@ class HistoryAdapter(
             // Set share button click listener
             shareButton.setOnClickListener {
                 shareWebPage(page)
+            }
+            
+            // Set save button click listener
+            saveButton.setOnClickListener {
+                saveWebPageForOffline(page)
             }
 
             // Set click listener for the card
@@ -280,6 +294,27 @@ class HistoryAdapter(
             
             val chooser = Intent.createChooser(shareIntent, "Share webpage")
             itemView.context.startActivity(chooser)
+        }
+        
+        private fun saveWebPageForOffline(page: WebPage) {
+            // Create OfflineArticleSaver instance
+            val offlineSaver = OfflineArticleSaver(itemView.context)
+            
+            // Save the article
+            offlineSaver.saveArticleForOfflineReading(
+                url = page.url,
+                scope = CoroutineScope(Dispatchers.Main),
+                onSuccess = {
+                    // Update the page's offline status
+                    page.isAvailableOffline = true
+                    
+                    // Update the save button icon to show that the article is saved
+                    saveButton.setImageResource(R.drawable.ic_article_saved)
+                    
+                    // Hide the offline indicator (it's not needed since we're using the save button icon)
+                    offlineIndicator.visibility = View.GONE
+                }
+            )
         }
 
         private fun getRandomColorForUrl(url: String): Int {

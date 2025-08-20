@@ -1,12 +1,7 @@
 package com.quick.browser.data
 
 import androidx.lifecycle.LiveData
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 import com.quick.browser.model.WebPage
 
 /**
@@ -58,10 +53,24 @@ interface WebPageDao {
     fun searchPages(query: String): LiveData<List<WebPage>>
     
     /**
+     * Search pages by title or URL without BLOB data for efficient loading
+     */
+    @Query("SELECT url, title, timestamp, content, isAvailableOffline, visitCount, faviconUrl FROM web_pages WHERE title LIKE :query OR url LIKE :query ORDER BY timestamp DESC")
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    fun searchPagesWithoutBlobs(query: String): LiveData<List<WebPage>>
+    
+    /**
      * Get the most recent pages
      */
     @Query("SELECT * FROM web_pages ORDER BY timestamp DESC LIMIT :limit")
     fun getRecentPages(limit: Int): LiveData<List<WebPage>>
+    
+    /**
+     * Get the most recent pages without BLOB data for efficient loading in lists
+     */
+    @Query("SELECT url, title, timestamp, content, isAvailableOffline, visitCount, faviconUrl FROM web_pages ORDER BY timestamp DESC LIMIT :limit")
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    fun getRecentPagesWithoutBlobs(limit: Int): LiveData<List<WebPage>>
     
     /**
      * Get the most visited pages
@@ -74,6 +83,12 @@ interface WebPageDao {
      */
     @Query("UPDATE web_pages SET visitCount = visitCount + 1 WHERE url = :url")
     suspend fun incrementVisitCount(url: String)
+    
+    /**
+     * Update the isAvailableOffline status for a page
+     */
+    @Query("UPDATE web_pages SET isAvailableOffline = :isAvailable WHERE url = :url")
+    suspend fun updateOfflineStatus(url: String, isAvailable: Boolean)
     
     /**
      * Delete pages from today (since midnight)

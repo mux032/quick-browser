@@ -131,7 +131,7 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun searchHistory(query: String) {
-        historyViewModel.searchHistory(query).observe(this) { pages ->
+        historyViewModel.searchHistoryWithoutBlobs(query).observe(this) { pages ->
             if (pages.isEmpty()) {
                 recyclerView.visibility = View.GONE
                 emptyView.visibility = View.VISIBLE
@@ -144,7 +144,7 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun observeHistoryData() {
-        historyViewModel.getRecentPages(50).observe(this) { pages ->
+        historyViewModel.getRecentPagesWithoutBlobs(50).observe(this) { pages ->
             if (pages.isEmpty()) {
                 recyclerView.visibility = View.GONE
                 emptyView.visibility = View.VISIBLE
