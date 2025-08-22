@@ -33,21 +33,6 @@ data class WebPage(
     var parentBubbleId: String? = null
 
     /**
-     * No-arg constructor required by Room
-     */
-    constructor() : this(
-        url = "",
-        title = "",
-        timestamp = 0,
-        content = "",
-        isAvailableOffline = false,
-        visitCount = 0,
-        favicon = null,
-        faviconUrl = null,
-        previewImageUrl = null
-    )
-
-    /**
      * Constructor to create a WebPage object from a Parcel.
      */
     private constructor(parcel: Parcel) : this(
