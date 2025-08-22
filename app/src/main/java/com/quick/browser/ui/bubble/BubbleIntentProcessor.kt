@@ -10,11 +10,7 @@ import com.quick.browser.data.WebPageDao
 import com.quick.browser.manager.AuthenticationHandler
 import com.quick.browser.manager.BubbleManager
 import com.quick.browser.model.WebPage
-import com.quick.browser.utils.ImageDownloadManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.util.regex.Pattern
@@ -116,25 +112,16 @@ class BubbleIntentProcessor(
                     // Fallback title if HTML extraction fails
                     val finalTitle = title ?: extractTitleFromUrl(url)
 
-                    // Download images if URLs were found
-                    val imageDownloader = ImageDownloadManager.getInstance(context)
-                    val previewBitmapDeferred = previewImageUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
-                    val faviconBitmapDeferred = faviconUrl?.let { lifecycleScope.async(Dispatchers.IO) { imageDownloader.downloadAndCacheImage(it) } }
-
-                    val previewBitmap = previewBitmapDeferred?.await()
-                    val faviconBitmap = faviconBitmapDeferred?.await()
-                    
                     val newPage = WebPage(
                         url = url,
                         title = finalTitle,
                         timestamp = System.currentTimeMillis(),
                         visitCount = 1,
-                        previewImage = previewBitmap,
-                        favicon = faviconBitmap,
-                        faviconUrl = faviconUrl // Storing faviconUrl as it's in the model
+                        faviconUrl = faviconUrl,
+                        previewImageUrl = previewImageUrl
                     )
                     webPageDao.insertPage(newPage)
-                    Log.d(TAG, "Added new page to history with title '$finalTitle', preview: ${previewBitmap != null}, favicon: ${faviconBitmap != null}: $url")
+                    Log.d(TAG, "Added new page to history with title '$finalTitle', preview URL: $previewImageUrl, favicon URL: $faviconUrl: $url")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error saving to history for $url", e)
@@ -390,8 +377,8 @@ class BubbleIntentProcessor(
         }
     }
 
-    private suspend fun fetchDocument(url: String): Document? = withContext(Dispatchers.IO) {
-        try {
+    private suspend fun fetchDocument(url: String): Document? {
+        return try {
             Log.d(TAG, "Fetching document for URL: $url")
             Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
@@ -485,8 +472,8 @@ class BubbleIntentProcessor(
      * @return The title from the HTML or null if it couldn't be extracted
      */
     @Deprecated("Use fetchDocument and extractTitleFromDocument instead")
-    suspend fun extractTitleFromHtmlAsync(url: String): String? = withContext(Dispatchers.IO) {
-        try {
+    suspend fun extractTitleFromHtmlAsync(url: String): String? {
+        return try {
             Log.d(TAG, "Fetching HTML title for URL: $url")
             val document = fetchDocument(url)
             document?.let { extractTitleFromDocument(it) }

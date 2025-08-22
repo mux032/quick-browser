@@ -14,7 +14,7 @@ import com.quick.browser.model.WebPage
 /**
  * Room database for the QB app
  */
-@Database(entities = [WebPage::class, Settings::class, SavedArticle::class], version = 4, exportSchema = false)
+@Database(entities = [WebPage::class, Settings::class, SavedArticle::class], version = 5, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     
@@ -57,6 +57,38 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
         
+        // Migration from version 4 to version 5 (remove previewImage BLOB, add previewImageUrl)
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create new table without previewImage BLOB column
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `web_pages_new` (
+                        `url` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `content` TEXT NOT NULL,
+                        `isAvailableOffline` INTEGER NOT NULL,
+                        `visitCount` INTEGER NOT NULL,
+                        `favicon` BLOB,
+                        `faviconUrl` TEXT,
+                        `previewImageUrl` TEXT,
+                        PRIMARY KEY(`url`)
+                    )
+                """.trimIndent())
+                
+                // Copy data from old table (excluding previewImage)
+                db.execSQL("""
+                    INSERT INTO web_pages_new (url, title, timestamp, content, isAvailableOffline, visitCount, favicon, faviconUrl, previewImageUrl)
+                    SELECT url, title, timestamp, content, isAvailableOffline, visitCount, favicon, faviconUrl, NULL
+                    FROM web_pages
+                """.trimIndent())
+                
+                // Drop old table and rename new one
+                db.execSQL("DROP TABLE web_pages")
+                db.execSQL("ALTER TABLE web_pages_new RENAME TO web_pages")
+            }
+        }
+        
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -64,7 +96,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     // Keep fallback for other migrations
                     .fallbackToDestructiveMigration(false)
                     .build()

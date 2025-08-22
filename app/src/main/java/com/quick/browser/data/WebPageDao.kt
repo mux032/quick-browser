@@ -55,7 +55,7 @@ interface WebPageDao {
     /**
      * Search pages by title or URL without BLOB data for efficient loading
      */
-    @Query("SELECT url, title, timestamp, content, isAvailableOffline, visitCount, faviconUrl FROM web_pages WHERE title LIKE :query OR url LIKE :query ORDER BY timestamp DESC")
+    @Query("SELECT url, title, timestamp, content, isAvailableOffline, visitCount, faviconUrl, previewImageUrl FROM web_pages WHERE title LIKE :query OR url LIKE :query ORDER BY timestamp DESC")
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     fun searchPagesWithoutBlobs(query: String): LiveData<List<WebPage>>
     
@@ -68,7 +68,7 @@ interface WebPageDao {
     /**
      * Get the most recent pages without BLOB data for efficient loading in lists
      */
-    @Query("SELECT url, title, timestamp, content, isAvailableOffline, visitCount, faviconUrl FROM web_pages ORDER BY timestamp DESC LIMIT :limit")
+    @Query("SELECT url, title, timestamp, content, isAvailableOffline, visitCount, faviconUrl, previewImageUrl FROM web_pages ORDER BY timestamp DESC LIMIT :limit")
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     fun getRecentPagesWithoutBlobs(limit: Int): LiveData<List<WebPage>>
     

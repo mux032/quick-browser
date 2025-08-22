@@ -10,14 +10,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.quick.browser.R
 import com.quick.browser.model.HistoryItem
 import com.quick.browser.model.WebPage
 import com.quick.browser.util.OfflineArticleSaver
-import com.quick.browser.utils.ImageDownloadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.random.Random
@@ -30,12 +30,12 @@ class HistoryAdapter(
     companion object {
         private const val TYPE_HEADER = 0
         private const val TYPE_WEBPAGE = 1
+        private const val TAG = "HistoryAdapter"
     }
 
     private var items = listOf<HistoryItem>()
     private val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
     private val colorCache = mutableMapOf<String, Int>()
-    private lateinit var imageDownloadManager: ImageDownloadManager
 
     fun submitList(newItems: List<WebPage>) {
         items = groupWebPagesByTime(newItems.sortedByDescending { it.timestamp })
@@ -101,10 +101,6 @@ class HistoryAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        if (!::imageDownloadManager.isInitialized) {
-            imageDownloadManager = ImageDownloadManager.getInstance(parent.context)
-        }
-        
         return when (viewType) {
             TYPE_HEADER -> {
                 val view = LayoutInflater.from(parent.context)
@@ -170,39 +166,15 @@ class HistoryAdapter(
             // Set date (without year)
             dateText.text = dateFormat.format(Date(page.timestamp))
 
-            // Set offline indicator
-            offlineIndicator.visibility = if (page.isAvailableOffline) View.GONE else View.GONE
-            
-            // Set save button visibility and icon based on whether the article is saved
+            // Set save button visibility and icon (always show the download icon)
             saveButton.visibility = View.VISIBLE
-            if (page.isAvailableOffline) {
-                saveButton.setImageResource(R.drawable.ic_article_saved)
-            } else {
-                saveButton.setImageResource(R.drawable.ic_save_article)
-            }
+            saveButton.setImageResource(R.drawable.ic_download)
 
-            // Set preview image
-            if (page.previewImage != null) {
-                previewImage.setImageBitmap(page.previewImage)
-                previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
-                previewImage.setBackgroundColor(Color.TRANSPARENT)
-            } else {
-                // Set random color background
-                val randomColor = getRandomColorForUrl(page.url)
-                previewImage.setBackgroundColor(randomColor)
-                previewImage.setImageResource(R.drawable.ic_web_page)
-                previewImage.scaleType = ImageView.ScaleType.CENTER
-                loadPreviewImage(page)
-            }
+            // Set preview image using Glide
+            loadPreviewImage(page)
 
-            // Set favicon
-            if (page.favicon != null) {
-                faviconImage.setImageBitmap(page.favicon)
-            } else {
-                // Set placeholder or try to load from URL
-                faviconImage.setImageResource(R.drawable.ic_website)
-                loadFavicon(page)
-            }
+            // Set favicon using Glide
+            loadFavicon(page)
 
             // Set share button click listener
             shareButton.setOnClickListener {
@@ -308,11 +280,7 @@ class HistoryAdapter(
                     // Update the page's offline status
                     page.isAvailableOffline = true
                     
-                    // Update the save button icon to show that the article is saved
-                    saveButton.setImageResource(R.drawable.ic_article_saved)
-                    
-                    // Hide the offline indicator (it's not needed since we're using the save button icon)
-                    offlineIndicator.visibility = View.GONE
+                    // The icon stays the same (download icon) for both saved and unsaved states
                 }
             )
         }
@@ -333,75 +301,30 @@ class HistoryAdapter(
         }
 
         private fun loadPreviewImage(page: WebPage) {
-            // Try to load a real preview image from common sources
-            val possibleImageUrls = generatePossibleImageUrls(page.url)
-            
-            // Try to load the first available image using ImageDownloadManager
-            CoroutineScope(Dispatchers.Main).launch {
-                for (imageUrl in possibleImageUrls) {
-                    try {
-                        val bitmap = imageDownloadManager.downloadAndCacheImage(imageUrl)
-                        if (bitmap != null) {
-                            previewImage.setImageBitmap(bitmap)
-                            previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
-                            previewImage.setBackgroundColor(Color.TRANSPARENT)
-                            break
-                        }
-                    } catch (e: Exception) {
-                        // Continue to next URL
-                        continue
-                    }
-                }
+            if (page.previewImageUrl != null) {
+                Glide.with(itemView.context)
+                    .load(page.previewImageUrl)
+                    .placeholder(R.drawable.ic_web_page)
+                    .error(R.drawable.ic_web_page)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .into(previewImage)
+            } else {
+                // Set random color background as fallback
+                val randomColor = getRandomColorForUrl(page.url)
+                previewImage.setBackgroundColor(randomColor)
+                previewImage.setImageResource(R.drawable.ic_web_page)
+                previewImage.scaleType = ImageView.ScaleType.CENTER
             }
-        }
-        
-        private fun generatePossibleImageUrls(url: String): List<String> {
-            // Generate common image URLs that websites might use
-            val possibleUrls = mutableListOf<String>()
-            
-            try {
-                val uri = Uri.parse(url)
-                val baseUrl = "${uri.scheme}://${uri.host}"
-                
-                // Common image paths
-                possibleUrls.addAll(listOf(
-                    "$baseUrl/og-image.jpg",
-                    "$baseUrl/images/og-image.jpg",
-                    "$baseUrl/assets/og-image.jpg",
-                    "$baseUrl/static/og-image.jpg",
-                    "$baseUrl/img/og-image.jpg",
-                    "$baseUrl/og-image.png",
-                    "$baseUrl/images/og-image.png",
-                    "$baseUrl/assets/og-image.png",
-                    "$baseUrl/static/og-image.png",
-                    "$baseUrl/img/og-image.png",
-                    "$baseUrl/logo.png",
-                    "$baseUrl/images/logo.png",
-                    "$baseUrl/assets/logo.png",
-                    "$baseUrl/logo.jpg",
-                    "$baseUrl/images/logo.jpg",
-                    "$baseUrl/assets/logo.jpg"
-                ))
-            } catch (e: Exception) {
-                Log.e("HistoryAdapter", "Error generating image URLs", e)
-            }
-            
-            return possibleUrls
         }
 
         private fun loadFavicon(page: WebPage) {
             if (page.faviconUrl != null) {
-                // Load favicon from URL using ImageDownloadManager
-                CoroutineScope(Dispatchers.Main).launch {
-                    try {
-                        val bitmap = imageDownloadManager.downloadAndCacheImage(page.faviconUrl!!)
-                        if (bitmap != null) {
-                            faviconImage.setImageBitmap(bitmap)
-                        }
-                    } catch (e: Exception) {
-                        Log.e("HistoryAdapter", "Error loading favicon", e)
-                    }
-                }
+                Glide.with(itemView.context)
+                    .load(page.faviconUrl)
+                    .placeholder(R.drawable.ic_website)
+                    .error(R.drawable.ic_website)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .into(faviconImage)
             } else {
                 // Try to construct favicon URL from domain
                 try {
@@ -409,19 +332,18 @@ class HistoryAdapter(
                     val domain = uri.host
                     if (domain != null) {
                         val faviconUrl = "https://$domain/favicon.ico"
-                        CoroutineScope(Dispatchers.Main).launch {
-                            try {
-                                val bitmap = imageDownloadManager.downloadAndCacheImage(faviconUrl)
-                                if (bitmap != null) {
-                                    faviconImage.setImageBitmap(bitmap)
-                                }
-                            } catch (e: Exception) {
-                                Log.e("HistoryAdapter", "Error loading favicon", e)
-                            }
-                        }
+                        Glide.with(itemView.context)
+                            .load(faviconUrl)
+                            .placeholder(R.drawable.ic_website)
+                            .error(R.drawable.ic_website)
+                            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                            .into(faviconImage)
+                    } else {
+                        faviconImage.setImageResource(R.drawable.ic_website)
                     }
                 } catch (e: Exception) {
-                    Log.e("HistoryAdapter", "Error loading favicon", e)
+                    Log.e(TAG, "Error constructing favicon URL", e)
+                    faviconImage.setImageResource(R.drawable.ic_website)
                 }
             }
         }

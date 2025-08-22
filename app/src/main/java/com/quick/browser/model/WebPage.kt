@@ -21,8 +21,8 @@ data class WebPage(
     var isAvailableOffline: Boolean = false,
     var visitCount: Int = 1,
     var favicon: Bitmap? = null,
-    var previewImage: Bitmap? = null,
-    var faviconUrl: String? = null
+    var faviconUrl: String? = null,
+    var previewImageUrl: String? = null
 ) : Parcelable {
 
     // Transient fields not stored in the database
@@ -43,8 +43,8 @@ data class WebPage(
         isAvailableOffline = false,
         visitCount = 0,
         favicon = null,
-        previewImage = null,
-        faviconUrl = null
+        faviconUrl = null,
+        previewImageUrl = null
     )
 
     /**
@@ -60,12 +60,8 @@ data class WebPage(
             @Suppress("DEPRECATION")
             parcel.readParcelable(Bitmap::class.java.classLoader)
         },
-        previewImage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            parcel.readParcelable(Bitmap::class.java.classLoader, Bitmap::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            parcel.readParcelable(Bitmap::class.java.classLoader)
-        },
+        faviconUrl = parcel.readString(),
+        previewImageUrl = parcel.readString(),
         timestamp = parcel.readLong(),
         visitCount = parcel.readInt()
     ) {
@@ -93,8 +89,8 @@ data class WebPage(
         parcel.writeInt(if (isAvailableOffline) 1 else 0)
         parcel.writeInt(visitCount)
         parcel.writeParcelable(favicon, flags)
-        parcel.writeParcelable(previewImage, flags)
         parcel.writeString(faviconUrl)
+        parcel.writeString(previewImageUrl)
         parcel.writeStringList(summary)
         parcel.writeString(parentBubbleId)
     }

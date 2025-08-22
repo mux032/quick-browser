@@ -1287,15 +1287,6 @@ class BubbleView @JvmOverloads constructor(
             else -> uiManager.setProgressVisible(false)
         }
     }
-    
-    /**
-     * Update the save article button icon based on whether the article is saved
-     */
-    private fun updateSaveButtonIcon() {
-        // For now, we'll just set the default icon
-        // In a more complete implementation, we would check if the article is actually saved
-        uiManager.getBtnSaveArticle().setIconResource(R.drawable.ic_save_article)
-    }
 
     /**
      * Update the progress bar color based on progress value
@@ -1601,8 +1592,7 @@ class BubbleView @JvmOverloads constructor(
             scope = (context as LifecycleOwner).lifecycleScope
         )
         
-        // Update the save button icon to show that the article is saved
-        uiManager.getBtnSaveArticle().setIconResource(R.drawable.ic_article_saved)
+        // The icon stays the same (download icon) for both saved and unsaved states
     }
 
     override fun onShareButtonClicked() {
