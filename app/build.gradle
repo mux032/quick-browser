@@ -28,8 +28,8 @@ android {
         applicationId "com.quick.browser"
         minSdk 26
         targetSdk 36
-        versionCode 24
-        versionName "0.1.13"
+        versionCode 25
+        versionName "0.1.14"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -140,6 +140,10 @@ dependencies {
 
     // Fragment dependencies (required for AppCompatActivity) - force specific version
     implementation 'androidx.fragment:fragment-ktx:1.8.8'
+
+    // Glide for image loading
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    ksp 'com.github.bumptech.glide:ksp:4.16.0'
 
     // Hilt for dependency injection
     def hilt_version = "2.56"

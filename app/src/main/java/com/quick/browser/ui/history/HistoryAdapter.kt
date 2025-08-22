@@ -10,16 +10,16 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.quick.browser.R
-import com.quick.browser.model.WebPage
 import com.quick.browser.model.HistoryItem
-import com.quick.browser.utils.ImageDownloadManager
+import com.quick.browser.model.WebPage
+import com.quick.browser.util.OfflineArticleSaver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 import kotlin.random.Random
 
 class HistoryAdapter(
@@ -30,12 +30,12 @@ class HistoryAdapter(
     companion object {
         private const val TYPE_HEADER = 0
         private const val TYPE_WEBPAGE = 1
+        private const val TAG = "HistoryAdapter"
     }
 
     private var items = listOf<HistoryItem>()
     private val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
     private val colorCache = mutableMapOf<String, Int>()
-    private lateinit var imageDownloadManager: ImageDownloadManager
 
     fun submitList(newItems: List<WebPage>) {
         items = groupWebPagesByTime(newItems.sortedByDescending { it.timestamp })
@@ -101,10 +101,6 @@ class HistoryAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        if (!::imageDownloadManager.isInitialized) {
-            imageDownloadManager = ImageDownloadManager.getInstance(parent.context)
-        }
-        
         return when (viewType) {
             TYPE_HEADER -> {
                 val view = LayoutInflater.from(parent.context)
@@ -150,6 +146,7 @@ class HistoryAdapter(
         private val offlineIndicator: ImageView = itemView.findViewById(R.id.offline_indicator)
         private val websiteName: TextView = itemView.findViewById(R.id.website_name)
         private val shareButton: ImageView = itemView.findViewById(R.id.share_button)
+        private val saveButton: ImageView = itemView.findViewById(R.id.save_button)
         private val deleteOverlay: View = itemView.findViewById(R.id.delete_overlay)
         private val deleteButton: ImageView = itemView.findViewById(R.id.delete_button)
 
@@ -169,35 +166,24 @@ class HistoryAdapter(
             // Set date (without year)
             dateText.text = dateFormat.format(Date(page.timestamp))
 
-            // Set offline indicator
-            offlineIndicator.visibility = if (page.isAvailableOffline) View.VISIBLE else View.GONE
+            // Set save button visibility and icon (always show the download icon)
+            saveButton.visibility = View.VISIBLE
+            saveButton.setImageResource(R.drawable.ic_download)
 
-            // Set preview image
-            if (page.previewImage != null) {
-                previewImage.setImageBitmap(page.previewImage)
-                previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
-                previewImage.setBackgroundColor(Color.TRANSPARENT)
-            } else {
-                // Set random color background
-                val randomColor = getRandomColorForUrl(page.url)
-                previewImage.setBackgroundColor(randomColor)
-                previewImage.setImageResource(R.drawable.ic_web_page)
-                previewImage.scaleType = ImageView.ScaleType.CENTER
-                loadPreviewImage(page)
-            }
+            // Set preview image using Glide
+            loadPreviewImage(page)
 
-            // Set favicon
-            if (page.favicon != null) {
-                faviconImage.setImageBitmap(page.favicon)
-            } else {
-                // Set placeholder or try to load from URL
-                faviconImage.setImageResource(R.drawable.ic_website)
-                loadFavicon(page)
-            }
+            // Set favicon using Glide
+            loadFavicon(page)
 
             // Set share button click listener
             shareButton.setOnClickListener {
                 shareWebPage(page)
+            }
+            
+            // Set save button click listener
+            saveButton.setOnClickListener {
+                saveWebPageForOffline(page)
             }
 
             // Set click listener for the card
@@ -281,6 +267,23 @@ class HistoryAdapter(
             val chooser = Intent.createChooser(shareIntent, "Share webpage")
             itemView.context.startActivity(chooser)
         }
+        
+        private fun saveWebPageForOffline(page: WebPage) {
+            // Create OfflineArticleSaver instance
+            val offlineSaver = OfflineArticleSaver(itemView.context)
+            
+            // Save the article
+            offlineSaver.saveArticleForOfflineReading(
+                url = page.url,
+                scope = CoroutineScope(Dispatchers.Main),
+                onSuccess = {
+                    // Update the page's offline status
+                    page.isAvailableOffline = true
+                    
+                    // The icon stays the same (download icon) for both saved and unsaved states
+                }
+            )
+        }
 
         private fun getRandomColorForUrl(url: String): Int {
             // Use cache to ensure consistent colors for the same URL
@@ -298,75 +301,69 @@ class HistoryAdapter(
         }
 
         private fun loadPreviewImage(page: WebPage) {
-            // Try to load a real preview image from common sources
-            val possibleImageUrls = generatePossibleImageUrls(page.url)
+            // Reset image view properties
+            previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
+            previewImage.setBackgroundColor(android.graphics.Color.TRANSPARENT)
             
-            // Try to load the first available image using ImageDownloadManager
-            CoroutineScope(Dispatchers.Main).launch {
-                for (imageUrl in possibleImageUrls) {
-                    try {
-                        val bitmap = imageDownloadManager.downloadAndCacheImage(imageUrl)
-                        if (bitmap != null) {
-                            previewImage.setImageBitmap(bitmap)
-                            previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
-                            previewImage.setBackgroundColor(Color.TRANSPARENT)
-                            break
+            Log.d(TAG, "Attempting to load preview image for ${page.url}, previewImageUrl: ${page.previewImageUrl}")
+            
+            if (page.previewImageUrl != null && page.previewImageUrl!!.isNotBlank()) {
+                Log.d(TAG, "Loading preview image for ${page.url}: ${page.previewImageUrl}")
+                Glide.with(itemView.context)
+                    .load(page.previewImageUrl)
+                    .placeholder(R.drawable.ic_web_page)
+                    .error(R.drawable.ic_web_page)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .addListener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
+                        override fun onLoadFailed(
+                            e: com.bumptech.glide.load.engine.GlideException?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Log.e(TAG, "Failed to load preview image for ${page.url}: ${page.previewImageUrl}", e)
+                            // Show a colored background with icon as fallback
+                            showFallbackPreview(page)
+                            return true // We handled the error
                         }
-                    } catch (e: Exception) {
-                        // Continue to next URL
-                        continue
-                    }
-                }
+                        
+                        override fun onResourceReady(
+                            resource: android.graphics.drawable.Drawable,
+                            model: Any,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>,
+                            dataSource: com.bumptech.glide.load.DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Log.d(TAG, "Successfully loaded preview image for ${page.url}")
+                            // Reset background when image is successfully loaded
+                            previewImage.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
+                            return false
+                        }
+                    })
+                    .into(previewImage)
+            } else {
+                Log.d(TAG, "No preview image URL for ${page.url}, using fallback")
+                showFallbackPreview(page)
             }
         }
         
-        private fun generatePossibleImageUrls(url: String): List<String> {
-            // Generate common image URLs that websites might use
-            val possibleUrls = mutableListOf<String>()
-            
-            try {
-                val uri = Uri.parse(url)
-                val baseUrl = "${uri.scheme}://${uri.host}"
-                
-                // Common image paths
-                possibleUrls.addAll(listOf(
-                    "$baseUrl/og-image.jpg",
-                    "$baseUrl/images/og-image.jpg",
-                    "$baseUrl/assets/og-image.jpg",
-                    "$baseUrl/static/og-image.jpg",
-                    "$baseUrl/img/og-image.jpg",
-                    "$baseUrl/og-image.png",
-                    "$baseUrl/images/og-image.png",
-                    "$baseUrl/assets/og-image.png",
-                    "$baseUrl/static/og-image.png",
-                    "$baseUrl/img/og-image.png",
-                    "$baseUrl/logo.png",
-                    "$baseUrl/images/logo.png",
-                    "$baseUrl/assets/logo.png",
-                    "$baseUrl/logo.jpg",
-                    "$baseUrl/images/logo.jpg",
-                    "$baseUrl/assets/logo.jpg"
-                ))
-            } catch (e: Exception) {
-                Log.e("HistoryAdapter", "Error generating image URLs", e)
-            }
-            
-            return possibleUrls
+        private fun showFallbackPreview(page: WebPage) {
+            // Set random color background as fallback
+            val randomColor = getRandomColorForUrl(page.url)
+            previewImage.setBackgroundColor(randomColor)
+            previewImage.setImageResource(R.drawable.ic_web_page)
+            previewImage.scaleType = ImageView.ScaleType.CENTER
         }
 
         private fun loadFavicon(page: WebPage) {
             if (page.faviconUrl != null) {
-                // Load favicon from URL using ImageDownloadManager
-                CoroutineScope(Dispatchers.Main).launch {
-                    try {
-                        val bitmap = imageDownloadManager.downloadAndCacheImage(page.faviconUrl!!)
-                        if (bitmap != null) {
-                            faviconImage.setImageBitmap(bitmap)
-                        }
-                    } catch (e: Exception) {
-                        Log.e("HistoryAdapter", "Error loading favicon", e)
-                    }
-                }
+                Glide.with(itemView.context)
+                    .load(page.faviconUrl)
+                    .placeholder(R.drawable.ic_website)
+                    .error(R.drawable.ic_website)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .into(faviconImage)
             } else {
                 // Try to construct favicon URL from domain
                 try {
@@ -374,19 +371,18 @@ class HistoryAdapter(
                     val domain = uri.host
                     if (domain != null) {
                         val faviconUrl = "https://$domain/favicon.ico"
-                        CoroutineScope(Dispatchers.Main).launch {
-                            try {
-                                val bitmap = imageDownloadManager.downloadAndCacheImage(faviconUrl)
-                                if (bitmap != null) {
-                                    faviconImage.setImageBitmap(bitmap)
-                                }
-                            } catch (e: Exception) {
-                                Log.e("HistoryAdapter", "Error loading favicon", e)
-                            }
-                        }
+                        Glide.with(itemView.context)
+                            .load(faviconUrl)
+                            .placeholder(R.drawable.ic_website)
+                            .error(R.drawable.ic_website)
+                            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                            .into(faviconImage)
+                    } else {
+                        faviconImage.setImageResource(R.drawable.ic_website)
                     }
                 } catch (e: Exception) {
-                    Log.e("HistoryAdapter", "Error loading favicon", e)
+                    Log.e(TAG, "Error constructing favicon URL", e)
+                    faviconImage.setImageResource(R.drawable.ic_website)
                 }
             }
         }

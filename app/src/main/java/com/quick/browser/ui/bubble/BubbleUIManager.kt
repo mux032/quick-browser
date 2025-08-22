@@ -66,6 +66,7 @@ class BubbleUIManager(
     private lateinit var btnOpenFull: MaterialButton
     private lateinit var btnReadMode: MaterialButton
     private lateinit var btnSummarize: MaterialButton
+    private lateinit var btnSaveArticle: MaterialButton
     
     // Utility
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -77,6 +78,7 @@ class BubbleUIManager(
         fun onOpenFullWebView()
         fun onToggleReadMode()
         fun onToggleSummaryMode()
+        fun onSaveArticle()
         fun onSettingsButtonClicked()
         fun onShareButtonClicked()
         fun onUrlSubmitted(url: String)
@@ -136,6 +138,7 @@ class BubbleUIManager(
             btnOpenFull = bubbleView.findViewById(R.id.btn_open_full) ?: throw IllegalStateException("btn_open_full not found")
             btnReadMode = bubbleView.findViewById(R.id.btn_read_mode) ?: throw IllegalStateException("btn_read_mode not found")
             btnSummarize = bubbleView.findViewById(R.id.btn_summarize) ?: throw IllegalStateException("btn_summarize not found")
+            btnSaveArticle = bubbleView.findViewById(R.id.btn_save_article) ?: throw IllegalStateException("btn_save_article not found")
             
             Log.d(TAG, "UI components initialized successfully for bubble: $bubbleId")
             
@@ -171,6 +174,10 @@ class BubbleUIManager(
         
         btnSummarize.setOnClickListener { 
             uiListener?.onToggleSummaryMode()
+        }
+        
+        btnSaveArticle.setOnClickListener {
+            uiListener?.onSaveArticle()
         }
 
         btnUrlBarShare.setOnClickListener { 
@@ -414,6 +421,8 @@ class BubbleUIManager(
     fun getResizeHandleTopRight(): ImageView = resizeHandleTopRight
     fun getResizeHandleBottomLeft(): ImageView = resizeHandleBottomLeft
     fun getResizeHandleBottomRight(): ImageView = resizeHandleBottomRight
+    
+    fun getBtnSaveArticle(): MaterialButton = btnSaveArticle
     
     /**
      * Clean up resources and references

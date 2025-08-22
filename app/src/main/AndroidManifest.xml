@@ -71,6 +71,18 @@
             android:theme="@style/Theme.QBrowser"
             android:parentActivityName=".ui.main.MainActivity" />
         
+        <activity
+            android:name=".ui.SavedArticlesActivity"
+            android:label="@string/saved_articles"
+            android:theme="@style/Theme.QBrowser"
+            android:parentActivityName=".ui.main.MainActivity" />
+        
+        <activity
+            android:name=".ui.OfflineReaderActivity"
+            android:label="@string/offline_reader"
+            android:theme="@style/Theme.QBrowser"
+            android:parentActivityName=".ui.SavedArticlesActivity" />
+        
 
         <service
             android:name=".service.BubbleService"

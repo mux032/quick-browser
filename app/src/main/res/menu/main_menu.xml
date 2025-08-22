@@ -2,13 +2,18 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/menu_saved_articles"
+        android:icon="@drawable/ic_save"
+        android:title="@string/saved_articles"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/menu_history"
         android:icon="@drawable/ic_history"
         android:title="@string/history"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/menu_settings"
         android:icon="@drawable/ic_settings"
         android:title="@string/settings"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
 </menu>
