@@ -132,7 +132,7 @@
                         <!-- Share button -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_url_bar_share"
-                            style="@style/Widget.Material3.Button.IconButton"
+                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                             android:layout_width="28dp"
                             android:layout_height="match_parent"
                             android:layout_marginStart="4dp"
@@ -151,7 +151,7 @@
                         <!-- Settings button -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_url_bar_settings"
-                            style="@style/Widget.Material3.Button.IconButton"
+                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                             android:layout_width="22dp"
                             android:layout_height="match_parent"
                             android:layout_marginStart="0dp"
@@ -417,12 +417,11 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_font_decrease"
-                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                             android:layout_width="32dp"
                                             android:layout_height="32dp"
                                             android:minWidth="0dp"
                                             android:minHeight="0dp"
-                                            android:backgroundTint="@android:color/white"
                                             app:strokeColor="@color/button_stroke_color"
                                             app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_chevron_left"
@@ -444,12 +443,11 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_font_increase"
-                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                             android:layout_width="32dp"
                                             android:layout_height="32dp"
                                             android:minWidth="0dp"
                                             android:minHeight="0dp"
-                                            android:backgroundTint="@android:color/white"
                                             app:strokeColor="@color/button_stroke_color"
                                             app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_chevron_right"
@@ -484,7 +482,7 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_bg_white"
-                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                             android:layout_width="0dp"
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
@@ -493,7 +491,7 @@
 
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_bg_sepia"
-                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                             android:layout_width="0dp"
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
@@ -502,7 +500,7 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_bg_dark"
-                                            style="@style/Widget.Material3.Button.OutlinedButton"
+                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                             android:layout_width="0dp"
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
@@ -533,12 +531,11 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_align_left"
-                                            style="@style/Widget.Material3.Button.IconButton"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                                             android:layout_width="0dp"
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
-                                            android:backgroundTint="@android:color/white"
                                             app:strokeColor="@color/button_stroke_color"
                                             app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_left"
@@ -549,12 +546,11 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_align_center"
-                                            style="@style/Widget.Material3.Button.IconButton"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                                             android:layout_width="0dp"
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
-                                            android:backgroundTint="@android:color/white"
                                             app:strokeColor="@color/button_stroke_color"
                                             app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_center"
@@ -565,12 +561,11 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_align_right"
-                                            style="@style/Widget.Material3.Button.IconButton"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                                             android:layout_width="0dp"
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
-                                            android:backgroundTint="@android:color/white"
                                             app:strokeColor="@color/button_stroke_color"
                                             app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_right"
@@ -581,12 +576,11 @@
                                         
                                         <com.google.android.material.button.MaterialButton
                                             android:id="@+id/btn_align_justify"
-                                            style="@style/Widget.Material3.Button.IconButton"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
                                             android:layout_width="0dp"
                                             android:layout_height="32dp"
                                             android:layout_weight="1"
                                             android:minHeight="0dp"
-                                            android:backgroundTint="@android:color/white"
                                             app:strokeColor="@color/button_stroke_color"
                                             app:strokeWidth="1dp"
                                             app:icon="@drawable/ic_format_align_justify"

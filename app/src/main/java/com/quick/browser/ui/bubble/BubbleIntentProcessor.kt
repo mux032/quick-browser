@@ -99,11 +99,16 @@ class BubbleIntentProcessor(
                     var faviconUrl: String? = null
 
                     try {
+                        Log.d(TAG, "Attempting to fetch document for URL: $url")
                         val document = fetchDocument(url) // Helper to fetch Jsoup document
                         if (document != null) {
+                            Log.d(TAG, "Successfully fetched document for URL: $url")
                             title = extractTitleFromDocument(document)
                             previewImageUrl = extractPreviewImageUrlFromDocument(document)
                             faviconUrl = extractFaviconUrlFromDocument(document, url)
+                            Log.d(TAG, "Extracted data - Title: $title, Preview Image: $previewImageUrl, Favicon: $faviconUrl")
+                        } else {
+                            Log.d(TAG, "Document fetch returned null for URL: $url")
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error extracting data from HTML for $url", e)
@@ -380,11 +385,13 @@ class BubbleIntentProcessor(
     private suspend fun fetchDocument(url: String): Document? {
         return try {
             Log.d(TAG, "Fetching document for URL: $url")
-            Jsoup.connect(url)
+            val document = Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                 .timeout(5000) // 5 seconds
                 .followRedirects(true)
                 .get()
+            Log.d(TAG, "Successfully fetched document for URL: $url, title: ${document.title()}")
+            document
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching document for $url: ${e.message}", e)
             null
@@ -411,32 +418,74 @@ class BubbleIntentProcessor(
     }
 
     private fun extractPreviewImageUrlFromDocument(document: Document): String? {
+        Log.d(TAG, "Extracting preview image URL from document")
+        
         // 1. Try OpenGraph image
         document.select("meta[property=og:image]").firstOrNull()?.absUrl("content")?.let {
-            if (it.isNotBlank()) return it
+            if (it.isNotBlank()) {
+                Log.d(TAG, "Found OpenGraph image: $it")
+                return it
+            }
         }
 
         // 2. Try Twitter card image
         document.select("meta[name=twitter:image]").firstOrNull()?.absUrl("content")?.let {
-            if (it.isNotBlank()) return it
+            if (it.isNotBlank()) {
+                Log.d(TAG, "Found Twitter card image: $it")
+                return it
+            }
         }
 
         // 3. Try <link rel="image_src">
         document.select("link[rel=image_src]").firstOrNull()?.absUrl("href")?.let {
-            if (it.isNotBlank()) return it
+            if (it.isNotBlank()) {
+                Log.d(TAG, "Found image_src link: $it")
+                return it
+            }
         }
 
-        // 4. Fallback: First large <img> element on page (you can add width/height filter if needed)
-        document.select("img").firstOrNull()?.absUrl("src")?.let {
-            if (it.isNotBlank()) return it
+        // 4. Fallback: First large <img> element on page (with size filtering)
+        document.select("img").firstOrNull { element ->
+            val src = element.absUrl("src")
+            src.isNotBlank() && isImageUrlValid(src) && isImageLargeEnough(element)
+        }?.absUrl("src")?.let {
+            Log.d(TAG, "Found large image element: $it")
+            return it
         }
 
         // 5. Final fallback: favicon
         document.select("link[rel~=(?i)icon]").firstOrNull()?.absUrl("href")?.let {
-            if (it.isNotBlank()) return it
+            if (it.isNotBlank()) {
+                Log.d(TAG, "Found favicon as fallback: $it")
+                return it
+            }
         }
 
+        Log.d(TAG, "No preview image found in document")
         return null
+    }
+
+    private fun isImageUrlValid(url: String): Boolean {
+        return url.startsWith("http") && !url.contains("data:image") && !url.contains("base64")
+    }
+
+    private fun isImageLargeEnough(element: org.jsoup.nodes.Element): Boolean {
+        try {
+            val width = element.attr("width").toIntOrNull() ?: 0
+            val height = element.attr("height").toIntOrNull() ?: 0
+            
+            // Check if width and height attributes exist and are large enough
+            if (width > 100 && height > 100) {
+                return true
+            }
+            
+            // If no width/height attributes, we'll assume it's large enough
+            // In a production app, you might want to actually download the image to check dimensions
+            return !element.attr("width").isBlank() || !element.attr("height").isBlank()
+        } catch (e: Exception) {
+            Log.d(TAG, "Error checking image size: ${e.message}")
+            return true // Assume it's okay if we can't determine size
+        }
     }
 
     private fun extractFaviconUrlFromDocument(document: Document, baseUrl: String): String? {

@@ -301,20 +301,59 @@ class HistoryAdapter(
         }
 
         private fun loadPreviewImage(page: WebPage) {
-            if (page.previewImageUrl != null) {
+            // Reset image view properties
+            previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
+            previewImage.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            
+            Log.d(TAG, "Attempting to load preview image for ${page.url}, previewImageUrl: ${page.previewImageUrl}")
+            
+            if (page.previewImageUrl != null && page.previewImageUrl!!.isNotBlank()) {
+                Log.d(TAG, "Loading preview image for ${page.url}: ${page.previewImageUrl}")
                 Glide.with(itemView.context)
                     .load(page.previewImageUrl)
                     .placeholder(R.drawable.ic_web_page)
                     .error(R.drawable.ic_web_page)
                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .addListener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
+                        override fun onLoadFailed(
+                            e: com.bumptech.glide.load.engine.GlideException?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Log.e(TAG, "Failed to load preview image for ${page.url}: ${page.previewImageUrl}", e)
+                            // Show a colored background with icon as fallback
+                            showFallbackPreview(page)
+                            return true // We handled the error
+                        }
+                        
+                        override fun onResourceReady(
+                            resource: android.graphics.drawable.Drawable,
+                            model: Any,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>,
+                            dataSource: com.bumptech.glide.load.DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Log.d(TAG, "Successfully loaded preview image for ${page.url}")
+                            // Reset background when image is successfully loaded
+                            previewImage.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
+                            return false
+                        }
+                    })
                     .into(previewImage)
             } else {
-                // Set random color background as fallback
-                val randomColor = getRandomColorForUrl(page.url)
-                previewImage.setBackgroundColor(randomColor)
-                previewImage.setImageResource(R.drawable.ic_web_page)
-                previewImage.scaleType = ImageView.ScaleType.CENTER
+                Log.d(TAG, "No preview image URL for ${page.url}, using fallback")
+                showFallbackPreview(page)
             }
+        }
+        
+        private fun showFallbackPreview(page: WebPage) {
+            // Set random color background as fallback
+            val randomColor = getRandomColorForUrl(page.url)
+            previewImage.setBackgroundColor(randomColor)
+            previewImage.setImageResource(R.drawable.ic_web_page)
+            previewImage.scaleType = ImageView.ScaleType.CENTER
         }
 
         private fun loadFavicon(page: WebPage) {
