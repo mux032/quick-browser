@@ -2,14 +2,12 @@ package com.quick.browser.manager
 
 import android.content.Context
 import android.webkit.WebResourceResponse
-import androidx.core.content.edit
+import com.quick.browser.util.ErrorHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import java.net.URL
-import java.util.HashSet
 import java.util.concurrent.ConcurrentHashMap
-import com.quick.browser.util.ErrorHandler
 
 /**
  * AdBlocker utility to block ads and trackers
@@ -20,6 +18,7 @@ class AdBlocker(private val context: Context) {
     private val cachedResults = ConcurrentHashMap<String, Boolean>()
     private val whitelistedDomains = HashSet<String>()
     private val blacklistedDomains = HashSet<String>()
+    private val encryptedPrefs = EncryptedPreferences.getInstance(context, "adblocker_encrypted_settings")
 
     // Class tag for logging
     private val TAG = "AdBlocker"
@@ -50,9 +49,11 @@ class AdBlocker(private val context: Context) {
     fun shouldBlockRequest(url: String): WebResourceResponse? {
         return runCatching {
             // Quick check for common non-ad resources to improve performance
-            if (url.endsWith(".css") || url.endsWith(".png") || url.endsWith(".jpg") ||
-                url.endsWith(".jpeg") || url.endsWith(".gif") || url.endsWith(".svg") ||
-                url.endsWith(".woff") || url.endsWith(".woff2") || url.endsWith(".ttf")
+            if (url.endsWith(".css") || url.endsWith(".png") ||
+                url.endsWith(".jpg") || url.endsWith(".jpeg") ||
+                url.endsWith(".gif") || url.endsWith(".svg") ||
+                url.endsWith(".woff") || url.endsWith(".woff2") ||
+                url.endsWith(".ttf")
             ) {
                 return@runCatching null
             }
@@ -233,8 +234,7 @@ class AdBlocker(private val context: Context) {
      * Load ad blocking rules from preferences
      */
     private fun loadRules() {
-        val prefs = context.getSharedPreferences(PREFS_AD_SERVERS, Context.MODE_PRIVATE)
-        val serializedRules = prefs.getStringSet("rules", null) ?: getDefaultRules()
+        val serializedRules = encryptedPrefs.getStringSet("rules", null) ?: getDefaultRules()
         adServerHosts.clear()
         adServerHosts.addAll(serializedRules)
     }
@@ -243,19 +243,14 @@ class AdBlocker(private val context: Context) {
      * Save ad blocking rules to preferences
      */
     private fun saveRules() {
-        val prefs = context.getSharedPreferences(PREFS_AD_SERVERS, Context.MODE_PRIVATE)
-        prefs.edit {
-            putStringSet("rules", adServerHosts)
-            apply()
-        }
+        encryptedPrefs.putStringSet("rules", adServerHosts)
     }
 
     /**
      * Load whitelist from preferences
      */
     private fun loadWhitelist() {
-        val prefs = context.getSharedPreferences(PREFS_WHITELIST, Context.MODE_PRIVATE)
-        val whitelist = prefs.getStringSet("domains", null) ?: emptySet()
+        val whitelist = encryptedPrefs.getStringSet("whitelist_domains", null) ?: emptySet()
         whitelistedDomains.clear()
         whitelistedDomains.addAll(whitelist)
     }
@@ -264,19 +259,14 @@ class AdBlocker(private val context: Context) {
      * Save whitelist to preferences
      */
     private fun saveWhitelist() {
-        val prefs = context.getSharedPreferences(PREFS_WHITELIST, Context.MODE_PRIVATE)
-        prefs.edit {
-            putStringSet("domains", whitelistedDomains)
-            apply()
-        }
+        encryptedPrefs.putStringSet("whitelist_domains", whitelistedDomains)
     }
 
     /**
      * Load blacklist from preferences
      */
     private fun loadBlacklist() {
-        val prefs = context.getSharedPreferences(PREFS_BLACKLIST, Context.MODE_PRIVATE)
-        val blacklist = prefs.getStringSet("domains", null) ?: emptySet()
+        val blacklist = encryptedPrefs.getStringSet("blacklist_domains", null) ?: emptySet()
         blacklistedDomains.clear()
         blacklistedDomains.addAll(blacklist)
     }
@@ -285,11 +275,7 @@ class AdBlocker(private val context: Context) {
      * Save blacklist to preferences
      */
     private fun saveBlacklist() {
-        val prefs = context.getSharedPreferences(PREFS_BLACKLIST, Context.MODE_PRIVATE)
-        prefs.edit {
-            putStringSet("domains", blacklistedDomains)
-            apply()
-        }
+        encryptedPrefs.putStringSet("blacklist_domains", blacklistedDomains)
     }
 
     /**

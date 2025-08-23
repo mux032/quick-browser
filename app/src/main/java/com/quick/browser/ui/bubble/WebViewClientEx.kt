@@ -9,9 +9,11 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.quick.browser.manager.AdBlocker
 import com.quick.browser.manager.AuthenticationHandler
+import com.quick.browser.manager.SecurityPolicyManager
 import com.quick.browser.manager.SettingsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import java.io.ByteArrayInputStream
 
 /**
  * Extended WebViewClient with ad blocking and other features
@@ -23,12 +25,18 @@ open class WebViewClientEx(
     private val settingsManager: SettingsManager,
     private val adBlocker: AdBlocker
 ) : WebViewClient() {
+    private val securityPolicyManager = SecurityPolicyManager(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     override open fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
         val url = request.url.toString()
+
+        // Validate URL for security
+        if (!securityPolicyManager.isUrlSafeToLoad(url)) {
+            return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream("".toByteArray()))
+        }
 
         // Only block ads if enabled in settings
         if (settingsManager.isAdBlockEnabled()) {

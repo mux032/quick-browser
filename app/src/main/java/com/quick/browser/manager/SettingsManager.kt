@@ -12,6 +12,7 @@ class SettingsManager(context: Context) {
 
     private val preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val encryptedPrefs = EncryptedPreferences.getInstance(context, "encrypted_settings")
     private val appContext = context.applicationContext
 
     companion object {
@@ -355,21 +356,21 @@ class SettingsManager(context: Context) {
      * Save the last shared URL (used when permission is requested during link sharing)
      */
     fun saveLastSharedUrl(url: String) {
-        preferences.edit().putString(KEY_LAST_SHARED_URL, url).apply()
+        encryptedPrefs.putString(KEY_LAST_SHARED_URL, url)
     }
 
     /**
      * Get the last shared URL
      */
     fun getLastSharedUrl(): String? {
-        return preferences.getString(KEY_LAST_SHARED_URL, null)
+        return encryptedPrefs.getString(KEY_LAST_SHARED_URL, null)
     }
 
     /**
      * Clear the last shared URL
      */
     fun clearLastSharedUrl() {
-        preferences.edit().remove(KEY_LAST_SHARED_URL).apply()
+        encryptedPrefs.remove(KEY_LAST_SHARED_URL)
     }
 
     // ============== READER MODE SETTINGS ==============

@@ -2,6 +2,7 @@ package com.quick.browser.di
 
 import android.content.Context
 import com.quick.browser.manager.AdBlocker
+import com.quick.browser.manager.SecurityPolicyManager
 import com.quick.browser.manager.SettingsManager
 import com.quick.browser.manager.SummarizationManager
 import com.quick.browser.ui.bubble.BubbleView
@@ -31,7 +32,8 @@ class BubbleComponentFactory @Inject constructor(
             bubbleId = bubbleId,
             bubbleView = bubbleView,
             settingsManager = settingsManager,
-            adBlocker = adBlocker
+            adBlocker = adBlocker,
+            securityPolicyManager = SecurityPolicyManager(context)
         )
     }
 
