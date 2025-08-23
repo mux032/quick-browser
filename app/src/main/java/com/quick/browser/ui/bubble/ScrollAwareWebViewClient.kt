@@ -3,7 +3,9 @@ package com.quick.browser.ui.bubble
 import android.content.Context
 import android.webkit.WebView
 import com.quick.browser.manager.AdBlocker
+import com.quick.browser.manager.SecurityPolicyManager
 import com.quick.browser.manager.SettingsManager
+import com.quick.browser.util.JavaScriptSanitizer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,6 +23,7 @@ class ScrollAwareWebViewClient(
     adBlocker: AdBlocker
 ) : WebViewClientEx(context, onPageUrlChanged, settingsManager, adBlocker) {
 
+    private val securityPolicyManager = SecurityPolicyManager(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
     override fun onPageFinished(view: WebView?, url: String?) {
@@ -75,6 +78,12 @@ class ScrollAwareWebViewClient(
                     // Inject JavaScript to monitor scrolling in real-time with improved responsiveness
                     val js = """
                         (function() {
+                            // Add Content Security Policy
+                            var meta = document.createElement('meta');
+                            meta.httpEquiv = 'Content-Security-Policy';
+                            meta.content = '${JavaScriptSanitizer.generateCSPHeader()}';
+                            document.getElementsByTagName('head')[0].appendChild(meta);
+                            
                             // Variables for scroll tracking
                             var lastScrollY = window.scrollY || document.documentElement.scrollTop;
                             var lastScrollDirection = null;

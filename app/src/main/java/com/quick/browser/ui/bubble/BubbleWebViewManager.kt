@@ -9,7 +9,9 @@ import android.webkit.WebView
 import android.widget.ProgressBar
 import androidx.core.content.ContextCompat
 import com.quick.browser.manager.AdBlocker
+import com.quick.browser.manager.SecurityPolicyManager
 import com.quick.browser.manager.SettingsManager
+import com.quick.browser.util.JavaScriptSanitizer
 import com.quick.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,13 +33,15 @@ import kotlinx.coroutines.launch
  * @param bubbleView Reference to the parent BubbleView for callbacks
  * @param settingsManager Manager for app settings
  * @param adBlocker Ad blocking functionality
+ * @param securityPolicyManager Security policy manager for WebView security
  */
 class BubbleWebViewManager(
     private val context: Context,
     private val bubbleId: String,
     private val bubbleView: BubbleView,
     private val settingsManager: SettingsManager,
-    private val adBlocker: AdBlocker
+    private val adBlocker: AdBlocker,
+    private val securityPolicyManager: SecurityPolicyManager
 ) {
 
     companion object {
@@ -96,6 +100,9 @@ class BubbleWebViewManager(
             // Set WebView background
             webView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
 
+            // Apply security settings first
+            securityPolicyManager.applySecuritySettings(webView)
+
             // Configure WebView settings
             configureWebViewSettings(webView)
 
@@ -129,24 +136,21 @@ class BubbleWebViewManager(
             // Default encoding
             defaultTextEncodingName = "UTF-8"
 
-            // JavaScript settings based on user preferences
-            javaScriptEnabled = settingsManager.isJavaScriptEnabled()
-            javaScriptCanOpenWindowsAutomatically = settingsManager.isJavaScriptEnabled()
+            // JavaScript settings based on user preferences and security policies
+            val isJavaScriptAllowed = settingsManager.isJavaScriptEnabled()
+            javaScriptEnabled = isJavaScriptAllowed
+            javaScriptCanOpenWindowsAutomatically = isJavaScriptAllowed
 
-            // Mixed content settings
-            mixedContentMode = if (settingsManager.isSecureMode()) {
-                android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            } else {
-                android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            }
+            // Mixed content settings - always strict for security
+            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
-            // File access settings
-            allowContentAccess = !settingsManager.isSecureMode()
-            allowFileAccess = !settingsManager.isSecureMode()
+            // File access settings - always disabled for security
+            allowContentAccess = false
+            allowFileAccess = false
 
             // Storage settings
             domStorageEnabled = true
-            databaseEnabled = true
+            databaseEnabled = false
             cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
 
             // Content settings
@@ -155,13 +159,13 @@ class BubbleWebViewManager(
             blockNetworkLoads = false
 
             // Media settings
-            mediaPlaybackRequiresUserGesture = false
+            mediaPlaybackRequiresUserGesture = true
 
             // Location settings
-            setGeolocationEnabled(true)
+            setGeolocationEnabled(false) // Disabled for security
 
             // Window settings
-            setSupportMultipleWindows(true)
+            setSupportMultipleWindows(false) // Disabled for security
         }
 
         // Configure performance settings
@@ -311,15 +315,16 @@ class BubbleWebViewManager(
             return
         }
 
-        val formattedUrl = formatUrl(url)
-        if (formattedUrl.isEmpty()) {
-            Log.d(TAG, "Invalid URL format for bubble $bubbleId: $url")
+        // Use security policy manager to validate and format URL
+        val validatedUrl = securityPolicyManager.validateAndFormatUrl(url)
+        if (validatedUrl == null || !securityPolicyManager.isUrlSafeToLoad(validatedUrl)) {
+            Log.d(TAG, "Invalid or unsafe URL provided for bubble $bubbleId: $url")
             webView.loadUrl("about:blank")
             return
         }
 
         try {
-            Log.d(TAG, "Loading URL in WebView for bubble $bubbleId: $formattedUrl")
+            Log.d(TAG, "Loading URL in WebView for bubble $bubbleId: $validatedUrl")
 
             // Clear any existing page
             webView.clearHistory()
@@ -333,8 +338,9 @@ class BubbleWebViewManager(
             headers["User-Agent"] = webView.settings.userAgentString
             headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
             headers["Accept-Language"] = "en-US,en;q=0.5"
+            headers["Content-Security-Policy"] = JavaScriptSanitizer.generateCSPHeader()
 
-            webView.loadUrl(formattedUrl, headers)
+            webView.loadUrl(validatedUrl, headers)
 
             Log.d(TAG, "URL load initiated for bubble $bubbleId")
 
@@ -387,7 +393,16 @@ class BubbleWebViewManager(
      * @param callback Optional callback to receive the result
      */
     fun evaluateJavaScript(script: String, callback: ((String?) -> Unit)? = null) {
-        webView?.evaluateJavascript(script, callback)
+        // Sanitize the JavaScript code for security
+        val sanitizedScript = JavaScriptSanitizer.sanitizeJavaScript(script)
+        
+        // Only execute if the script is considered safe
+        if (JavaScriptSanitizer.isJavaScriptSafe(sanitizedScript)) {
+            webView?.evaluateJavascript(sanitizedScript, callback)
+        } else {
+            Log.w(TAG, "Blocked potentially unsafe JavaScript execution")
+            callback?.invoke(null)
+        }
     }
 
     /**

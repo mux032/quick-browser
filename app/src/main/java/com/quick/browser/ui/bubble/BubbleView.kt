@@ -36,10 +36,7 @@ import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.Constants
 import com.quick.browser.R
-import com.quick.browser.manager.AdBlocker
-import com.quick.browser.manager.AuthenticationHandler
-import com.quick.browser.manager.SettingsManager
-import com.quick.browser.manager.SummarizationManager
+import com.quick.browser.manager.*
 import com.quick.browser.service.BubbleService
 import com.quick.browser.ui.custom.HorizontalSwipeRefreshLayout
 import com.quick.browser.util.OfflineArticleSaver
@@ -210,7 +207,7 @@ class BubbleView @JvmOverloads constructor(
             readModeManager = BubbleReadModeManager(context, settingsManager)
 
             // Initialize WebView manager
-            webViewManager = BubbleWebViewManager(context, bubbleId, this, settingsManager, adBlocker)
+            webViewManager = BubbleWebViewManager(context, bubbleId, this, settingsManager, adBlocker, SecurityPolicyManager(context))
 
             Log.d(TAG, "Remaining views initialized successfully for bubble: $bubbleId")
 
