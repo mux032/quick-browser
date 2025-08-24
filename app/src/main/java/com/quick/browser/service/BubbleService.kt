@@ -1,18 +1,13 @@
 package com.quick.browser.service
 
 import android.content.Intent
-import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.quick.browser.Constants
 import com.quick.browser.QBApplication
-import com.quick.browser.manager.AdBlocker
-import com.quick.browser.manager.BubbleDisplayManager
-import com.quick.browser.manager.BubbleManager
-import com.quick.browser.manager.BubbleNotificationManager
-import com.quick.browser.manager.SettingsManager
-import com.quick.browser.manager.SummarizationManager
+import com.quick.browser.manager.*
 import com.quick.browser.ui.bubble.BubbleIntentProcessor
+import com.quick.browser.util.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Inject
@@ -79,7 +74,7 @@ class BubbleService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "BubbleService onCreate()")
+        Logger.d(TAG, "BubbleService onCreate()")
 
         try {
             isServiceRunning = true
@@ -120,20 +115,20 @@ class BubbleService : LifecycleService() {
                 )
             } catch (e: Exception) {
                 // If notification fails (e.g., permission not granted), log but continue
-                Log.e(TAG, "Could not show notification, but service will continue", e)
+                Logger.e(TAG, "Could not show notification, but service will continue", e)
                 // Service will still run, but might be killed by system in low memory situations
             }
 
-            Log.d(TAG, "Service initialized successfully")
+            Logger.d(TAG, "Service initialized successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Error in onCreate", e)
+            Logger.e(TAG, "Error in onCreate", e)
             isServiceRunning = false
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        Log.d(TAG, "onStartCommand | Received intent: ${intent?.action}, data: ${intent?.extras}")
+        Logger.d(TAG, "onStartCommand | Received intent: ${intent?.action}, data: ${intent?.extras}")
         intent?.let { intentProcessor.processIntent(it) }
         return START_STICKY
     }
@@ -152,9 +147,9 @@ class BubbleService : LifecycleService() {
                 app.bubbleService = null
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error clearing service reference", e)
+            Logger.e(TAG, "Error clearing service reference", e)
         }
 
-        Log.d(TAG, "BubbleService onDestroy()")
+        Logger.d(TAG, "BubbleService onDestroy()")
     }
 }

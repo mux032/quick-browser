@@ -11,6 +11,7 @@ import com.quick.browser.manager.AdBlocker
 import com.quick.browser.manager.AuthenticationHandler
 import com.quick.browser.manager.SecurityPolicyManager
 import com.quick.browser.manager.SettingsManager
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.io.ByteArrayInputStream
@@ -85,7 +86,7 @@ open class WebViewClientEx(
 
         // Check for authentication URLs first - before any other processing
         if (AuthenticationHandler.isAuthenticationUrl(url)) {
-            android.util.Log.d("WebViewClientEx", "Authentication URL detected in shouldOverrideUrlLoading: $url")
+            Logger.d("WebViewClientEx", "Authentication URL detected in shouldOverrideUrlLoading: $url")
             view?.context?.let { context ->
                 AuthenticationHandler.openInCustomTab(context, url)
                 return true
@@ -105,7 +106,7 @@ open class WebViewClientEx(
 
         // Check for authentication URLs first - before any other processing
         if (AuthenticationHandler.isAuthenticationUrl(url)) {
-            android.util.Log.d(
+            Logger.d(
                 "WebViewClientEx",
                 "Authentication URL detected in shouldOverrideUrlLoading (legacy): $url"
             )
@@ -125,7 +126,7 @@ open class WebViewClientEx(
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
         // Check if this is an authentication URL before the page starts loading
         if (url != null && AuthenticationHandler.isAuthenticationUrl(url)) {
-            android.util.Log.d("WebViewClientEx", "Authentication URL detected in onPageStarted: $url")
+            Logger.d("WebViewClientEx", "Authentication URL detected in onPageStarted: $url")
             view?.stopLoading() // Stop the WebView from loading this URL
 
             view?.context?.let { context ->

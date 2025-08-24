@@ -1,15 +1,15 @@
 package com.quick.browser.manager
 
 import android.content.Context
-import android.util.Log
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import java.util.concurrent.atomic.AtomicBoolean
-import opennlp.tools.tokenize.SimpleTokenizer
 import opennlp.tools.sentdetect.SentenceDetectorME
 import opennlp.tools.sentdetect.SentenceModel
+import opennlp.tools.tokenize.SimpleTokenizer
+import org.jsoup.Jsoup
 import java.io.InputStream
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Manager class for handling article summarization using NLP techniques
@@ -38,18 +38,24 @@ class SummarizationManager constructor(private val context: Context) {
             // Try to load the sentence model from assets
             try {
                 val inputStream: InputStream = context.assets.open("en-sent.bin")
+                // Add a check to ensure the input stream is valid
+                if (inputStream.available() <= 0) {
+                    Logger.e(TAG, "Sentence model file is empty or not accessible")
+                    return@withContext false
+                }
+                
                 val model = SentenceModel(inputStream)
                 sentenceDetector = SentenceDetectorME(model)
                 isModelLoaded.set(true)
-                Log.d(TAG, "Sentence model loaded successfully")
+                Logger.d(TAG, "Sentence model loaded successfully")
                 return@withContext true
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading sentence model, using fallback", e)
+                Logger.e(TAG, "Error loading sentence model, using fallback", e)
                 // We'll use a simple regex-based approach as fallback
                 return@withContext false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error in loadModel", e)
+            Logger.e(TAG, "Error in loadModel", e)
             return@withContext false
         }
     }
@@ -90,7 +96,7 @@ class SummarizationManager constructor(private val context: Context) {
                 .replace("\\(https?://[^\\s]+\\)".toRegex(), "") // Remove URLs in parentheses
                 .trim()
         } catch (e: Exception) {
-            Log.e(TAG, "Error extracting content", e)
+            Logger.e(TAG, "Error extracting content", e)
             return@withContext ""
         }
     }
@@ -99,12 +105,23 @@ class SummarizationManager constructor(private val context: Context) {
      * Splits text into sentences using the loaded model or a fallback approach
      */
     private fun detectSentences(text: String): Array<String> {
-        return if (isModelLoaded.get() && sentenceDetector != null) {
-            // Use the OpenNLP sentence detector
-            sentenceDetector!!.sentDetect(text)
-        } else {
-            // Fallback: simple regex-based sentence detection
-            text.split("(?<=[.!?])\\s+".toRegex()).toTypedArray()
+        return try {
+            if (isModelLoaded.get() && sentenceDetector != null) {
+                // Use the OpenNLP sentence detector
+                sentenceDetector!!.sentDetect(text)
+            } else {
+                // Fallback: simple regex-based sentence detection
+                // Limit the number of sentences to prevent performance issues
+                text.split("(?<=[.!?])\\s+".toRegex())
+                    .take(MAX_SUMMARY_POINTS * 10) // Limit to a reasonable number
+                    .toTypedArray()
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error in sentence detection, using fallback", e)
+            // Fallback to regex-based approach in case of any error
+            text.split("(?<=[.!?])\\s+".toRegex())
+                .take(MAX_SUMMARY_POINTS * 10) // Limit to a reasonable number
+                .toTypedArray()
         }
     }
 
@@ -184,7 +201,7 @@ class SummarizationManager constructor(private val context: Context) {
             // Extract the main content from the HTML
             val content = extractContent(html)
             if (content.isBlank() || content.length < 100) {
-                Log.d(TAG, "Content too short or empty")
+                Logger.d(TAG, "Content too short or empty")
                 return@withContext emptyList()
             }
 
@@ -192,19 +209,20 @@ class SummarizationManager constructor(private val context: Context) {
             val modelLoaded = try {
                 loadModel()
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading model, using fallback", e)
+                Logger.e(TAG, "Error loading model, using fallback", e)
                 false
             }
 
-            Log.d(TAG, "Using extractive summarization" + if (modelLoaded) " with NLP model" else " (fallback)")
+            Logger.d(TAG, "Using extractive summarization" + if (modelLoaded) " with NLP model" else " (fallback)")
 
             // Split the content into sentences
             val sentences = detectSentences(content)
                 .filter { it.length > 20 && it.length < 300 } // Filter out very short or very long sentences
                 .take(MAX_SUMMARY_POINTS * 5) // Take more sentences to have a better selection
+                .take(200) // Limit to a reasonable number to prevent performance issues
 
             if (sentences.isEmpty()) {
-                Log.d(TAG, "No suitable sentences found")
+                Logger.d(TAG, "No suitable sentences found")
                 return@withContext emptyList()
             }
 
@@ -218,7 +236,7 @@ class SummarizationManager constructor(private val context: Context) {
             val filteredSentences = scoredSentences.filter { it.second > 0 }
 
             if (filteredSentences.isEmpty()) {
-                Log.d(TAG, "No sentences with positive scores found")
+                Logger.d(TAG, "No sentences with positive scores found")
                 return@withContext emptyList()
             }
 
@@ -233,7 +251,7 @@ class SummarizationManager constructor(private val context: Context) {
 
             // Ensure we have at least MIN_SUMMARY_POINTS and at most MAX_SUMMARY_POINTS
             if (summaryPoints.size < MIN_SUMMARY_POINTS) {
-                Log.d(TAG, "Not enough summary points: ${summaryPoints.size}")
+                Logger.d(TAG, "Not enough summary points: ${summaryPoints.size}")
                 return@withContext emptyList()
             }
 
@@ -244,7 +262,7 @@ class SummarizationManager constructor(private val context: Context) {
                 summaryPoints
             }
 
-            Log.d(TAG, "Final summary points count: ${limitedPoints.size}")
+            Logger.d(TAG, "Final summary points count: ${limitedPoints.size}")
 
             // Format and clean the bullet points
             val bulletPoints = limitedPoints.map { sentence ->
@@ -294,10 +312,10 @@ class SummarizationManager constructor(private val context: Context) {
                 }
             }
 
-            Log.d(TAG, "Generated ${uniqueBulletPoints.size} unique summary points")
+            Logger.d(TAG, "Generated ${uniqueBulletPoints.size} unique summary points")
             return@withContext uniqueBulletPoints.take(MAX_SUMMARY_POINTS)
         } catch (e: Exception) {
-            Log.e(TAG, "Error summarizing content", e)
+            Logger.e(TAG, "Error summarizing content", e)
             return@withContext emptyList()
         }
     }

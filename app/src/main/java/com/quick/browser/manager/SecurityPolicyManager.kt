@@ -1,9 +1,9 @@
 package com.quick.browser.manager
 
 import android.content.Context
-import android.util.Log
 import android.webkit.WebSettings
 import android.webkit.WebView
+import com.quick.browser.util.Logger
 import java.security.MessageDigest
 import java.security.cert.Certificate
 
@@ -58,9 +58,9 @@ class SecurityPolicyManager(private val context: Context) {
             // Apply additional security settings
             applyAdvancedSecuritySettings(webView, settings)
             
-            Log.d(TAG, "Applied security settings to WebView")
+            Logger.d(TAG, "Applied security settings to WebView")
         } catch (e: Exception) {
-            Log.e(TAG, "Error applying security settings", e)
+            Logger.e(TAG, "Error applying security settings", e)
         }
     }
     
@@ -78,7 +78,7 @@ class SecurityPolicyManager(private val context: Context) {
             // Disable third-party cookies
             android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(webView, false)
         } catch (e: Exception) {
-            Log.w(TAG, "Could not apply advanced security settings", e)
+            Logger.w(TAG, "Could not apply advanced security settings", e)
         }
     }
     
@@ -95,7 +95,7 @@ class SecurityPolicyManager(private val context: Context) {
             val secureUserAgent = originalUserAgent.replace(Regex("Build/[^\\s]+"), "Build/XYZ")
             settings.userAgentString = secureUserAgent
         } catch (e: Exception) {
-            Log.w(TAG, "Could not set secure user agent", e)
+            Logger.w(TAG, "Could not set secure user agent", e)
         }
     }
     
@@ -185,7 +185,7 @@ class SecurityPolicyManager(private val context: Context) {
             val digest = md.digest(publicKey)
             digest.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating certificate fingerprint", e)
+            Logger.e(TAG, "Error generating certificate fingerprint", e)
             ""
         }
     }

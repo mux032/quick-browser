@@ -2,7 +2,6 @@ package com.quick.browser.ui.bubble
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.quick.browser.Constants
@@ -10,7 +9,10 @@ import com.quick.browser.data.WebPageDao
 import com.quick.browser.manager.AuthenticationHandler
 import com.quick.browser.manager.BubbleManager
 import com.quick.browser.model.WebPage
+import com.quick.browser.util.Logger
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.util.regex.Pattern
@@ -31,7 +33,7 @@ class BubbleIntentProcessor(
     
     fun processIntent(intent: Intent) {
         runCatching {
-            Log.d(TAG, "processIntent | Received intent: ${intent.action}, data: ${intent.extras}")
+            Logger.d(TAG, "processIntent | Received intent: ${intent.action}, data: ${intent.extras}")
             when (intent.action) {
                 Constants.ACTION_CREATE_BUBBLE -> handleCreateBubble(intent)
                 Constants.ACTION_OPEN_URL -> handleOpenUrl(intent)
@@ -40,24 +42,24 @@ class BubbleIntentProcessor(
                 Constants.ACTION_ACTIVATE_BUBBLE -> handleActivateBubble(intent)
                 Intent.ACTION_SEND -> handleSharedContent(intent)
                 Intent.ACTION_VIEW -> handleViewAction(intent)
-                else -> Log.w(TAG, "Unsupported intent action: ${intent.action}")
+                else -> Logger.w(TAG, "Unsupported intent action: ${intent.action}")
             }
         }.onFailure { 
-            Log.e(TAG, "Error processing intent: ${it.message}")
+            Logger.e(TAG, "Error processing intent: ${it.message}")
         }
     }
 
     private fun handleCreateBubble(intent: Intent) {
         val sharedUrl = intent.getStringExtra(Constants.EXTRA_URL)
         val url = sharedUrl?.let { text -> extractUrl(text) ?: text}
-        Log.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: $url")
+        Logger.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: $url")
         
         if (url != null && isValidUrl(url)) {
-            Log.e(TAG, "Creating bubble with URL: $url")
+            Logger.e(TAG, "Creating bubble with URL: $url")
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationHandler.isAuthenticationUrl(url)) {
-                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
+                Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Generate a bubble ID for this URL to track it when returning from authentication
                 val authBubbleId = java.util.UUID.randomUUID().toString()
                 AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
@@ -70,7 +72,7 @@ class BubbleIntentProcessor(
             // Create a new bubble with the shared URL
             bubbleManager.createOrUpdateBubbleWithNewUrl(url, null)
         } else {
-            Log.e(TAG, "No valid URL provided.")
+            Logger.e(TAG, "No valid URL provided.")
         }
     }
     
@@ -91,7 +93,7 @@ class BubbleIntentProcessor(
                     )
                     webPageDao.updatePage(updatedPage)
                     webPageDao.incrementVisitCount(url)
-                    Log.d(TAG, "Updated existing page in history: $url")
+                    Logger.d(TAG, "Updated existing page in history: $url")
                 } else {
                     // Try to get the title and images from HTML asynchronously
                     var title: String? = null
@@ -99,19 +101,19 @@ class BubbleIntentProcessor(
                     var faviconUrl: String? = null
 
                     try {
-                        Log.d(TAG, "Attempting to fetch document for URL: $url")
+                        Logger.d(TAG, "Attempting to fetch document for URL: $url")
                         val document = fetchDocument(url) // Helper to fetch Jsoup document
                         if (document != null) {
-                            Log.d(TAG, "Successfully fetched document for URL: $url")
+                            Logger.d(TAG, "Successfully fetched document for URL: $url")
                             title = extractTitleFromDocument(document)
                             previewImageUrl = extractPreviewImageUrlFromDocument(document)
                             faviconUrl = extractFaviconUrlFromDocument(document, url)
-                            Log.d(TAG, "Extracted data - Title: $title, Preview Image: $previewImageUrl, Favicon: $faviconUrl")
+                            Logger.d(TAG, "Extracted data - Title: $title, Preview Image: $previewImageUrl, Favicon: $faviconUrl")
                         } else {
-                            Log.d(TAG, "Document fetch returned null for URL: $url")
+                            Logger.d(TAG, "Document fetch returned null for URL: $url")
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error extracting data from HTML for $url", e)
+                        Logger.e(TAG, "Error extracting data from HTML for $url", e)
                     }
 
                     // Fallback title if HTML extraction fails
@@ -126,10 +128,10 @@ class BubbleIntentProcessor(
                         previewImageUrl = previewImageUrl
                     )
                     webPageDao.insertPage(newPage)
-                    Log.d(TAG, "Added new page to history with title '$finalTitle', preview URL: $previewImageUrl, favicon URL: $faviconUrl: $url")
+                    Logger.d(TAG, "Added new page to history with title '$finalTitle', preview URL: $previewImageUrl, favicon URL: $faviconUrl: $url")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error saving to history for $url", e)
+                Logger.e(TAG, "Error saving to history for $url", e)
             }
         }
     }
@@ -143,7 +145,7 @@ class BubbleIntentProcessor(
         if (url != null && isValidUrl(url)) {
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationHandler.isAuthenticationUrl(url)) {
-                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
+                Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Generate a bubble ID for this URL to track it when returning from authentication
                 val authBubbleId = java.util.UUID.randomUUID().toString()
                 AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
@@ -153,7 +155,7 @@ class BubbleIntentProcessor(
             saveToHistory(url)
             handler(url)
         } else {
-            Log.w(TAG, "Invalid or missing URL for handleSharedContent")
+            Logger.w(TAG, "Invalid or missing URL for handleSharedContent")
         }
     }
     
@@ -164,7 +166,7 @@ class BubbleIntentProcessor(
         if (url != null && isValidUrl(url)) {
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationHandler.isAuthenticationUrl(url)) {
-                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
+                Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Use the provided bubble ID or generate a new one
                 val authBubbleId = bubbleId ?: java.util.UUID.randomUUID().toString()
                 AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
@@ -176,7 +178,7 @@ class BubbleIntentProcessor(
             
             bubbleManager.createOrUpdateBubbleWithNewUrl(url, bubbleId)
         } else {
-            Log.w(TAG, "Invalid or missing URL for handleOpenUrl. URL: $url")
+            Logger.w(TAG, "Invalid or missing URL for handleOpenUrl. URL: $url")
         }
     }
 
@@ -185,7 +187,7 @@ class BubbleIntentProcessor(
         if (bubbleId != null) {
             bubbleManager.removeBubble(bubbleId)
         }
-        Log.d(TAG, "Bubble closed via intent")
+        Logger.d(TAG, "Bubble closed via intent")
     }
 
     private fun handleActivateBubble(intent: Intent) {
@@ -197,12 +199,12 @@ class BubbleIntentProcessor(
             if (bubble != null) {
                 // The BubbleView now handles expansion directly
                 // Just log that the bubble was activated
-                Log.d(TAG, "Bubble activated with ID: $bubbleId, URL: ${bubble.url}")
+                Logger.d(TAG, "Bubble activated with ID: $bubbleId, URL: ${bubble.url}")
             } else {
-                Log.w(TAG, "No bubble found to activate with ID: $bubbleId")
+                Logger.w(TAG, "No bubble found to activate with ID: $bubbleId")
             }
         } else {
-            Log.w(TAG, "No bubble ID provided in handleActivateBubble")
+            Logger.w(TAG, "No bubble ID provided in handleActivateBubble")
         }
     }
 
@@ -212,9 +214,9 @@ class BubbleIntentProcessor(
         if (bubbles.isNotEmpty()) {
             // We now have multiple bubbles, so we'll just log this action
             // The main bubble will show all bubbles in its expanded state
-            Log.d(TAG, "Toggle bubbles requested with ${bubbles.size} bubbles")
+            Logger.d(TAG, "Toggle bubbles requested with ${bubbles.size} bubbles")
         } else {
-            Log.d(TAG, "Toggle bubbles requested, but no bubbles exist.")
+            Logger.d(TAG, "Toggle bubbles requested, but no bubbles exist.")
         }
     }
 
@@ -224,13 +226,13 @@ class BubbleIntentProcessor(
      */
     private fun handleSharedContent(intent: Intent) {
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-        Log.d(TAG, "handleSharedContent | Received shared text: $sharedText")
+        Logger.d(TAG, "handleSharedContent | Received shared text: $sharedText")
         
         // Extract URL from shared text if possible
         val url = sharedText?.let { text ->
             extractUrl(text) ?: text
         }
-        Log.d(TAG, "handleSharedContent | Received url: $url")
+        Logger.d(TAG, "handleSharedContent | Received url: $url")
         processValidUrl(url) { validUrl ->
             bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl, null)
         }
@@ -244,7 +246,7 @@ class BubbleIntentProcessor(
         val googleAppPattern = "(https?://)?search\\.app/\\S+"
         val googleAppMatcher = Pattern.compile(googleAppPattern).matcher(text)
         if (googleAppMatcher.find()) {
-            Log.d(TAG, "Found Google App URL: ${googleAppMatcher.group()}")
+            Logger.d(TAG, "Found Google App URL: ${googleAppMatcher.group()}")
             return googleAppMatcher.group()
         }
         
@@ -271,7 +273,7 @@ class BubbleIntentProcessor(
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationHandler.isAuthenticationUrl(url)) {
-                Log.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
+                Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Generate a bubble ID for this URL to track it when returning from authentication
                 val authBubbleId = java.util.UUID.randomUUID().toString()
                 AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
@@ -323,18 +325,18 @@ class BubbleIntentProcessor(
                 val document = connection.get()
                 document.title()
             } catch (e: Exception) {
-                Log.d(TAG, "Failed to fetch HTML title, falling back to URL parsing: ${e.message}")
+                Logger.d(TAG, "Failed to fetch HTML title, falling back to URL parsing: ${e.message}")
                 null
             }
             
             // If we successfully got a title from HTML, use it
             if (!htmlTitle.isNullOrBlank()) {
-                Log.d(TAG, "Using HTML title: $htmlTitle")
+                Logger.d(TAG, "Using HTML title: $htmlTitle")
                 return htmlTitle
             }
             
             // Otherwise fall back to extracting from URL
-            Log.d(TAG, "Falling back to URL-based title extraction")
+            Logger.d(TAG, "Falling back to URL-based title extraction")
             
             // Remove protocol (http://, https://, etc.)
             var title = url.replace(Regex("^(https?://|www\\.)"), "")
@@ -377,23 +379,28 @@ class BubbleIntentProcessor(
             
             return title
         } catch (e: Exception) {
-            Log.e(TAG, "Error extracting title from URL: $url", e)
+            Logger.e(TAG, "Error extracting title from URL: $url", e)
             return "Web Page" // Fallback title
         }
     }
 
-    private suspend fun fetchDocument(url: String): Document? {
-        return try {
-            Log.d(TAG, "Fetching document for URL: $url")
+    /**
+     * Fetches a document from a URL using Jsoup
+     * @param url The URL to fetch
+     * @return The fetched Document or null if an error occurred
+     */
+    private suspend fun fetchDocument(url: String): Document? = withContext(Dispatchers.IO) {
+        return@withContext try {
+            Logger.d(TAG, "Fetching document for URL: $url")
             val document = Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                 .timeout(5000) // 5 seconds
                 .followRedirects(true)
                 .get()
-            Log.d(TAG, "Successfully fetched document for URL: $url, title: ${document.title()}")
+            Logger.d(TAG, "Successfully fetched document for URL: $url, title: ${document.title()}")
             document
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching document for $url: ${e.message}", e)
+            Logger.e(TAG, "Error fetching document for $url: ${e.message}", e)
             null
         }
     }
@@ -418,12 +425,12 @@ class BubbleIntentProcessor(
     }
 
     private fun extractPreviewImageUrlFromDocument(document: Document): String? {
-        Log.d(TAG, "Extracting preview image URL from document")
+        Logger.d(TAG, "Extracting preview image URL from document")
         
         // 1. Try OpenGraph image
         document.select("meta[property=og:image]").firstOrNull()?.absUrl("content")?.let {
             if (it.isNotBlank()) {
-                Log.d(TAG, "Found OpenGraph image: $it")
+                Logger.d(TAG, "Found OpenGraph image: $it")
                 return it
             }
         }
@@ -431,7 +438,7 @@ class BubbleIntentProcessor(
         // 2. Try Twitter card image
         document.select("meta[name=twitter:image]").firstOrNull()?.absUrl("content")?.let {
             if (it.isNotBlank()) {
-                Log.d(TAG, "Found Twitter card image: $it")
+                Logger.d(TAG, "Found Twitter card image: $it")
                 return it
             }
         }
@@ -439,7 +446,7 @@ class BubbleIntentProcessor(
         // 3. Try <link rel="image_src">
         document.select("link[rel=image_src]").firstOrNull()?.absUrl("href")?.let {
             if (it.isNotBlank()) {
-                Log.d(TAG, "Found image_src link: $it")
+                Logger.d(TAG, "Found image_src link: $it")
                 return it
             }
         }
@@ -449,19 +456,19 @@ class BubbleIntentProcessor(
             val src = element.absUrl("src")
             src.isNotBlank() && isImageUrlValid(src) && isImageLargeEnough(element)
         }?.absUrl("src")?.let {
-            Log.d(TAG, "Found large image element: $it")
+            Logger.d(TAG, "Found large image element: $it")
             return it
         }
 
         // 5. Final fallback: favicon
         document.select("link[rel~=(?i)icon]").firstOrNull()?.absUrl("href")?.let {
             if (it.isNotBlank()) {
-                Log.d(TAG, "Found favicon as fallback: $it")
+                Logger.d(TAG, "Found favicon as fallback: $it")
                 return it
             }
         }
 
-        Log.d(TAG, "No preview image found in document")
+        Logger.d(TAG, "No preview image found in document")
         return null
     }
 
@@ -483,7 +490,7 @@ class BubbleIntentProcessor(
             // In a production app, you might want to actually download the image to check dimensions
             return !element.attr("width").isBlank() || !element.attr("height").isBlank()
         } catch (e: Exception) {
-            Log.d(TAG, "Error checking image size: ${e.message}")
+            Logger.d(TAG, "Error checking image size: ${e.message}")
             return true // Assume it's okay if we can't determine size
         }
     }
@@ -508,7 +515,7 @@ class BubbleIntentProcessor(
             val domain = uri.host ?: return null
             "$scheme://$domain/favicon.ico"
         } catch (e: Exception) {
-            Log.w(TAG, "Could not construct default favicon URL from $baseUrl", e)
+            Logger.w(TAG, "Could not construct default favicon URL from $baseUrl", e)
             null
         }
     }
@@ -523,11 +530,11 @@ class BubbleIntentProcessor(
     @Deprecated("Use fetchDocument and extractTitleFromDocument instead")
     suspend fun extractTitleFromHtmlAsync(url: String): String? {
         return try {
-            Log.d(TAG, "Fetching HTML title for URL: $url")
+            Logger.d(TAG, "Fetching HTML title for URL: $url")
             val document = fetchDocument(url)
             document?.let { extractTitleFromDocument(it) }
         } catch (e: Exception) {
-            Log.e(TAG, "Error extracting title from HTML: ${e.message}", e)
+            Logger.e(TAG, "Error extracting title from HTML: ${e.message}", e)
             null
         }
     }

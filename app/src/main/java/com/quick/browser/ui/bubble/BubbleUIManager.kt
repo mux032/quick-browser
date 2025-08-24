@@ -2,7 +2,6 @@ package com.quick.browser.ui.bubble
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +14,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
+import com.quick.browser.util.Logger
 
 /**
  * BubbleUIManager handles all UI components and interactions for a single BubbleView.
@@ -103,15 +103,16 @@ class BubbleUIManager(
      * Initialize all view components from the layout
      */
     private fun initializeViews() {
-        Log.d(TAG, "Initializing UI components for bubble: $bubbleId")
+        Logger.d(TAG, "Initializing UI components for bubble: $bubbleId")
         
         try {
-            // Use application context with theme for inflation (same as original BubbleView)
+            // Create a themed context with the app's theme to ensure Material Components work properly
+            // This is necessary because bubbles are created as system overlay windows
             val themedContext = ContextThemeWrapper(context.applicationContext, R.style.Theme_QBrowser)
             
-            // Inflate the bubble layout
+            // Inflate the bubble layout with the themed context
             rootView = LayoutInflater.from(themedContext).inflate(R.layout.bubble_layout, bubbleView, true)
-            Log.d(TAG, "Layout inflated successfully for bubble: $bubbleId")
+            Logger.d(TAG, "Layout inflated successfully for bubble: $bubbleId")
             
             // Initialize core UI components
             bubbleIcon = bubbleView.findViewById(R.id.bubble_icon) ?: throw IllegalStateException("bubble_icon not found")
@@ -140,10 +141,10 @@ class BubbleUIManager(
             btnSummarize = bubbleView.findViewById(R.id.btn_summarize) ?: throw IllegalStateException("btn_summarize not found")
             btnSaveArticle = bubbleView.findViewById(R.id.btn_save_article) ?: throw IllegalStateException("btn_save_article not found")
             
-            Log.d(TAG, "UI components initialized successfully for bubble: $bubbleId")
+            Logger.d(TAG, "UI components initialized successfully for bubble: $bubbleId")
             
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing UI components for bubble: $bubbleId", e)
+            Logger.e(TAG, "Error initializing UI components for bubble: $bubbleId", e)
             throw e
         }
     }
@@ -152,7 +153,7 @@ class BubbleUIManager(
      * Set up click listeners for all interactive elements
      */
     private fun setupClickListeners() {
-        Log.d(TAG, "Setting up click listeners for bubble: $bubbleId")
+        Logger.d(TAG, "Setting up click listeners for bubble: $bubbleId")
         
         // Main bubble click listener
         bubbleView.setOnClickListener {
@@ -189,14 +190,14 @@ class BubbleUIManager(
             uiListener?.onSettingsButtonClicked()
         }
         
-        Log.d(TAG, "Click listeners set up successfully for bubble: $bubbleId")
+        Logger.d(TAG, "Click listeners set up successfully for bubble: $bubbleId")
     }
     
     /**
      * Set up URL bar input handling
      */
     private fun setupUrlBarInput() {
-        Log.d(TAG, "Setting up URL bar input for bubble: $bubbleId")
+        Logger.d(TAG, "Setting up URL bar input for bubble: $bubbleId")
         
         // Handle URL input submission
         urlBarText.setOnEditorActionListener { _, actionId, _ ->
@@ -225,7 +226,7 @@ class BubbleUIManager(
             showKeyboard()
         }
         
-        Log.d(TAG, "URL bar input setup complete for bubble: $bubbleId")
+        Logger.d(TAG, "URL bar input setup complete for bubble: $bubbleId")
     }
     
     /**
@@ -244,7 +245,7 @@ class BubbleUIManager(
         // Hide resize handles initially
         resizeHandlesContainer.visibility = View.GONE
         
-        Log.d(TAG, "Default UI states set for bubble: $bubbleId")
+        Logger.d(TAG, "Default UI states set for bubble: $bubbleId")
     }
     
     // ================== PUBLIC INTERFACE METHODS ==================
@@ -255,10 +256,10 @@ class BubbleUIManager(
     fun updateBubbleIcon(bitmap: Bitmap?) {
         if (bitmap != null) {
             bubbleIcon.setImageBitmap(bitmap)
-            Log.d(TAG, "Bubble icon updated for bubble: $bubbleId")
+            Logger.d(TAG, "Bubble icon updated for bubble: $bubbleId")
         } else {
             bubbleIcon.setImageResource(R.drawable.ic_globe)
-            Log.d(TAG, "Bubble icon reset to default for bubble: $bubbleId")
+            Logger.d(TAG, "Bubble icon reset to default for bubble: $bubbleId")
         }
     }
     
@@ -366,7 +367,7 @@ class BubbleUIManager(
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
             windowManager.updateViewLayout(bubbleView, params)
         } catch (e: Exception) {
-            Log.e(TAG, "Error enabling window focus for bubble: $bubbleId", e)
+            Logger.e(TAG, "Error enabling window focus for bubble: $bubbleId", e)
         }
     }
     
@@ -380,7 +381,7 @@ class BubbleUIManager(
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
             windowManager.updateViewLayout(bubbleView, params)
         } catch (e: Exception) {
-            Log.e(TAG, "Error disabling window focus for bubble: $bubbleId", e)
+            Logger.e(TAG, "Error disabling window focus for bubble: $bubbleId", e)
         }
     }
     
@@ -429,6 +430,6 @@ class BubbleUIManager(
      */
     fun cleanup() {
         uiListener = null
-        Log.d(TAG, "UI manager cleaned up for bubble: $bubbleId")
+        Logger.d(TAG, "UI manager cleaned up for bubble: $bubbleId")
     }
 }

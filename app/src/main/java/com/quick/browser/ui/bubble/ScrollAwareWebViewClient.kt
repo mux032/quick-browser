@@ -6,6 +6,7 @@ import com.quick.browser.manager.AdBlocker
 import com.quick.browser.manager.SecurityPolicyManager
 import com.quick.browser.manager.SettingsManager
 import com.quick.browser.util.JavaScriptSanitizer
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,18 +58,18 @@ class ScrollAwareWebViewClient(
                                         .replace("\\\\", "\\")
 
                                     // Pass the HTML content to the callback for background summarization
-                                    android.util.Log.d(
+                                    Logger.d(
                                         "ScrollAwareWebViewClient",
                                         "Captured HTML content for URL: $url (${unescapedHtml.length} chars)"
                                     )
                                     onHtmlContentLoaded(unescapedHtml)
                                 } catch (e: Exception) {
                                     // Log the error but don't crash
-                                    android.util.Log.e("ScrollAwareWebViewClient", "Error processing HTML", e)
+                                    Logger.e("ScrollAwareWebViewClient", "Error processing HTML", e)
                                 }
                             }
                         } else {
-                            android.util.Log.w(
+                            Logger.w(
                                 "ScrollAwareWebViewClient",
                                 "HTML content too short or null for URL: $url"
                             )
@@ -167,7 +168,7 @@ class ScrollAwareWebViewClient(
 
                     webView.evaluateJavascript(js, null)
                 } catch (e: Exception) {
-                    android.util.Log.e("ScrollAwareWebViewClient", "Error in onPageFinished", e)
+                    Logger.e("ScrollAwareWebViewClient", "Error in onPageFinished", e)
                 }
             }
         }

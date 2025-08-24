@@ -3,7 +3,6 @@ package com.quick.browser.manager
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
-import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -12,6 +11,7 @@ import com.quick.browser.model.Bubble
 import com.quick.browser.service.BubbleService
 import com.quick.browser.ui.bubble.BubbleView
 import com.quick.browser.util.ErrorHandler
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -43,7 +43,7 @@ class BubbleDisplayManager(
         lifecycleScope.launch {
             bubbleManager.bubbles.collectLatest { bubbleMap ->
                 val bubbles = bubbleMap.values.toList()
-                Log.d(TAG, "Bubbles updated: ${bubbles.size}")
+                Logger.d(TAG, "Bubbles updated: ${bubbles.size}")
                 updateBubbleViews(bubbles)
             }
         }
@@ -75,7 +75,7 @@ class BubbleDisplayManager(
             }
         }
 
-        Log.d(TAG, "Updated bubble views: ${bubbleViews.size} views for ${bubbles.size} bubbles")
+        Logger.d(TAG, "Updated bubble views: ${bubbleViews.size} views for ${bubbles.size} bubbles")
     }
 
     /**
@@ -88,7 +88,7 @@ class BubbleDisplayManager(
             showError = true,
             context = context,
             block = {
-                Log.d(TAG, "Adding bubble view: ${bubble.id} with URL: ${bubble.url}")
+                Logger.d(TAG, "Adding bubble view: ${bubble.id} with URL: ${bubble.url}")
 
                 // Create bubble view
                 val bubbleView = BubbleView(
@@ -122,7 +122,7 @@ class BubbleDisplayManager(
                 // Store reference to bubble view
                 bubbleViews[bubble.id] = bubbleView
 
-                Log.d(TAG, "Bubble view added successfully: ${bubble.id}")
+                Logger.d(TAG, "Bubble view added successfully: ${bubble.id}")
             }
         )
     }
@@ -138,7 +138,7 @@ class BubbleDisplayManager(
             // Update favicon if available
             bubble.favicon?.let { bubbleView.updateFavicon(it) }
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating bubble view", e)
+            Logger.e(TAG, "Error updating bubble view", e)
         }
     }
 
@@ -155,9 +155,9 @@ class BubbleDisplayManager(
             // Remove reference to bubble view
             bubbleViews.remove(bubbleId)
 
-            Log.d(TAG, "Bubble view removed: $bubbleId")
+            Logger.d(TAG, "Bubble view removed: $bubbleId")
         } catch (e: Exception) {
-            Log.e(TAG, "Error removing bubble view", e)
+            Logger.e(TAG, "Error removing bubble view", e)
         }
     }
 

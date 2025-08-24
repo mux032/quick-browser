@@ -1,6 +1,5 @@
 package com.quick.browser.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.quick.browser.data.SettingsDao
 import com.quick.browser.model.Bubble
 import com.quick.browser.model.Settings
+import com.quick.browser.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +32,7 @@ class BubbleViewModel @Inject constructor(private val settingsDao: SettingsDao) 
     }
 
     fun addBubble(bubble: Bubble) {
-        Log.e("BubbleViewModel", "Adding bubble: $bubble")
+        Logger.e("BubbleViewModel", "Adding bubble: $bubble")
         viewModelScope.launch {
             val currentList = _bubbles.value.toMutableList()
             currentList.add(bubble)

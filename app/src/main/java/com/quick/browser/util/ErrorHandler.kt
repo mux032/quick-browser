@@ -1,10 +1,9 @@
 package com.quick.browser.util
 
 import android.content.Context
-import android.util.Log
+import android.view.View
 import android.widget.Toast
 import com.google.android.material.snackbar.Snackbar
-import android.view.View
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -53,10 +52,10 @@ object ErrorHandler {
     ) {
         val fullTag = "$TAG:$tag"
         when (level) {
-            LogLevel.DEBUG -> Log.d(fullTag, message, throwable)
-            LogLevel.INFO -> Log.i(fullTag, message, throwable)
-            LogLevel.WARNING -> Log.w(fullTag, message, throwable)
-            LogLevel.ERROR -> Log.e(fullTag, message, throwable)
+            LogLevel.DEBUG -> android.util.Log.d(fullTag, message, throwable)
+            LogLevel.INFO -> android.util.Log.i(fullTag, message, throwable)
+            LogLevel.WARNING -> android.util.Log.w(fullTag, message, throwable)
+            LogLevel.ERROR -> android.util.Log.e(fullTag, message, throwable)
         }
     }
     

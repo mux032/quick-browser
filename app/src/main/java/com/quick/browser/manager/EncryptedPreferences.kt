@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
-import android.util.Log
+import com.quick.browser.util.Logger
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -73,7 +73,7 @@ class EncryptedPreferences private constructor(context: Context, private val pre
                 keyGenerator.generateKey()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating encryption key", e)
+            Logger.e(TAG, "Error generating encryption key", e)
         }
     }
     
@@ -107,7 +107,7 @@ class EncryptedPreferences private constructor(context: Context, private val pre
             
             Base64.encodeToString(combined, Base64.DEFAULT)
         } catch (e: Exception) {
-            Log.e(TAG, "Error encrypting value", e)
+            Logger.e(TAG, "Error encrypting value", e)
             null
         }
     }
@@ -136,7 +136,7 @@ class EncryptedPreferences private constructor(context: Context, private val pre
             val decryptedBytes = cipher.doFinal(encryptedBytes)
             String(decryptedBytes, Charsets.UTF_8)
         } catch (e: Exception) {
-            Log.e(TAG, "Error decrypting value", e)
+            Logger.e(TAG, "Error decrypting value", e)
             null
         }
     }
@@ -197,7 +197,7 @@ class EncryptedPreferences private constructor(context: Context, private val pre
         return try {
             stringValue?.toBoolean() ?: defaultValue
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing boolean value", e)
+            Logger.e(TAG, "Error parsing boolean value", e)
             defaultValue
         }
     }
@@ -224,7 +224,7 @@ class EncryptedPreferences private constructor(context: Context, private val pre
         return try {
             stringValue?.toInt() ?: defaultValue
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing integer value", e)
+            Logger.e(TAG, "Error parsing integer value", e)
             defaultValue
         }
     }

@@ -23,7 +23,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -39,7 +38,9 @@ import com.quick.browser.R
 import com.quick.browser.manager.*
 import com.quick.browser.service.BubbleService
 import com.quick.browser.ui.custom.HorizontalSwipeRefreshLayout
+import com.quick.browser.util.Logger
 import com.quick.browser.util.OfflineArticleSaver
+import com.quick.browser.util.UrlFormatter
 import com.quick.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -122,7 +123,7 @@ class BubbleView @JvmOverloads constructor(
      */
     init {
         try {
-            Log.d(TAG, "Initializing BubbleView for bubble: $bubbleId")
+            Logger.d(TAG, "Initializing BubbleView for bubble: $bubbleId")
 
             // Initialize UI Manager first - this inflates the layout
             uiManager = BubbleUIManager(context, this, bubbleId)
@@ -141,9 +142,9 @@ class BubbleView @JvmOverloads constructor(
             // Initialize touch handler after all views are set up
             touchHandler.initialize(this)
 
-            Log.d(TAG, "BubbleView initialization completed for bubble: $bubbleId")
+            Logger.d(TAG, "BubbleView initialization completed for bubble: $bubbleId")
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing BubbleView for bubble: $bubbleId", e)
+            Logger.e(TAG, "Error initializing BubbleView for bubble: $bubbleId", e)
             throw e
         }
     }
@@ -155,7 +156,7 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun initializeViews() {
         try {
-            Log.d(TAG, "Initializing remaining views for bubble: $bubbleId")
+            Logger.d(TAG, "Initializing remaining views for bubble: $bubbleId")
 
             // WebView container (managed separately due to WebViewManager requirements)
             webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
@@ -209,12 +210,12 @@ class BubbleView @JvmOverloads constructor(
             // Initialize WebView manager
             webViewManager = BubbleWebViewManager(context, bubbleId, this, settingsManager, adBlocker, SecurityPolicyManager(context))
 
-            Log.d(TAG, "Remaining views initialized successfully for bubble: $bubbleId")
+            Logger.d(TAG, "Remaining views initialized successfully for bubble: $bubbleId")
 
             // Note: All basic UI components are now handled by BubbleUIManager
             // Note: Resize handle setup is now handled by BubbleTouchHandler
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing remaining views for bubble: $bubbleId", e)
+            Logger.e(TAG, "Error initializing remaining views for bubble: $bubbleId", e)
             throw e
         }
     }
@@ -235,7 +236,7 @@ class BubbleView @JvmOverloads constructor(
                     webViewModel = ViewModelProvider(viewModelStoreOwner)[WebViewModel::class.java]
                     observeFaviconChanges(lifecycleOwner)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error initializing WebViewModel", e)
+                    Logger.e(TAG, "Error initializing WebViewModel", e)
                 }
             }
 
@@ -244,22 +245,22 @@ class BubbleView @JvmOverloads constructor(
                 val application = context.applicationContext
                 if (application is ViewModelStoreOwner) {
                     try {
-                        Log.d(TAG, "Using application context as ViewModelStoreOwner")
+                        Logger.d(TAG, "Using application context as ViewModelStoreOwner")
                         webViewModel = ViewModelProvider(application)[WebViewModel::class.java]
                         observeFaviconChanges(lifecycleOwner)
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error initializing WebViewModel with application context", e)
+                        Logger.e(TAG, "Error initializing WebViewModel with application context", e)
                         createStandaloneWebViewModel()
                     }
                 } else {
-                    Log.e(TAG, "Could not find ViewModelStoreOwner and application is not a ViewModelStoreOwner")
+                    Logger.e(TAG, "Could not find ViewModelStoreOwner and application is not a ViewModelStoreOwner")
                     createStandaloneWebViewModel()
                 }
             }
 
             // Last resort: Create standalone WebViewModel
             else -> {
-                Log.e(TAG, "Could not find LifecycleOwner")
+                Logger.e(TAG, "Could not find LifecycleOwner")
                 createStandaloneWebViewModel()
             }
         }
@@ -276,7 +277,7 @@ class BubbleView @JvmOverloads constructor(
             webViewModel?.webPages?.collectLatest { pages ->
                 pages[url]?.let { webPage ->
                     webPage.favicon?.let { favicon ->
-                        Log.d(TAG, "Updating bubble icon with favicon for URL: $url")
+                        Logger.d(TAG, "Updating bubble icon with favicon for URL: $url")
                         uiManager.updateBubbleIcon(favicon)
                         // Also update URL bar icon if bubble is expanded
                         if (stateManager.isBubbleExpanded) {
@@ -409,7 +410,7 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun setupWebViewManager() {
         try {
-            Log.d(TAG, "Setting up WebViewManager for bubble: $bubbleId with URL: $url")
+            Logger.d(TAG, "Setting up WebViewManager for bubble: $bubbleId with URL: $url")
 
             // Initialize the manager with WebView components
             webViewManager.initialize(webViewContainer, uiManager.getProgressBar(), webViewModel)
@@ -440,10 +441,10 @@ class BubbleView @JvmOverloads constructor(
                 post { webViewManager.loadUrl(url) }
             }
 
-            Log.d(TAG, "WebViewManager setup complete for bubble: $bubbleId")
+            Logger.d(TAG, "WebViewManager setup complete for bubble: $bubbleId")
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error setting up WebViewManager for bubble $bubbleId", e)
+            Logger.e(TAG, "Error setting up WebViewManager for bubble $bubbleId", e)
         }
     }
 
@@ -492,40 +493,40 @@ class BubbleView @JvmOverloads constructor(
         settingsPanelManager.setListener(object : BubbleSettingsPanel.SettingsPanelListener {
             override fun onAdBlockingChanged(enabled: Boolean) {
                 // Handle ad blocking change - refresh page if needed
-                Log.d(TAG, "Ad blocking ${if (enabled) "enabled" else "disabled"} for bubble $bubbleId")
+                Logger.d(TAG, "Ad blocking ${if (enabled) "enabled" else "disabled"} for bubble $bubbleId")
             }
 
             override fun onJavaScriptChanged(enabled: Boolean) {
                 // Handle JavaScript change - refresh page if needed
-                Log.d(TAG, "JavaScript ${if (enabled) "enabled" else "disabled"} for bubble $bubbleId")
+                Logger.d(TAG, "JavaScript ${if (enabled) "enabled" else "disabled"} for bubble $bubbleId")
             }
 
             override fun onSettingsPanelVisibilityChanged(isVisible: Boolean) {
                 // Update any UI state that depends on settings panel visibility
-                Log.d(TAG, "Settings panel ${if (isVisible) "shown" else "hidden"} for bubble $bubbleId")
+                Logger.d(TAG, "Settings panel ${if (isVisible) "shown" else "hidden"} for bubble $bubbleId")
             }
 
             override fun onReaderFontSizeChanged(size: Int) {
                 // Refresh reader mode content with new font size
-                Log.d(TAG, "Reader font size changed to ${size}px for bubble $bubbleId")
+                Logger.d(TAG, "Reader font size changed to ${size}px for bubble $bubbleId")
                 readModeManager.refreshReaderModeContent()
             }
 
             override fun onReaderBackgroundChanged(background: String) {
                 // Refresh reader mode content with new background
-                Log.d(TAG, "Reader background changed to $background for bubble $bubbleId")
+                Logger.d(TAG, "Reader background changed to $background for bubble $bubbleId")
                 readModeManager.refreshReaderModeContent()
             }
 
             override fun onReaderTextAlignChanged(alignment: String) {
                 // Refresh reader mode content with new text alignment
-                Log.d(TAG, "Reader text alignment changed to $alignment for bubble $bubbleId")
+                Logger.d(TAG, "Reader text alignment changed to $alignment for bubble $bubbleId")
                 readModeManager.refreshReaderModeContent()
             }
             
             override fun onSaveOfflineRequested() {
                 // Handle save for offline reading
-                Log.d(TAG, "Save for offline reading requested for bubble $bubbleId")
+                Logger.d(TAG, "Save for offline reading requested for bubble $bubbleId")
                 saveArticleForOfflineReading()
             }
         })
@@ -548,19 +549,19 @@ class BubbleView @JvmOverloads constructor(
         summaryManager.setListener(object : BubbleSummaryManager.SummaryManagerListener {
             override fun onSummaryModeChanged(isSummaryMode: Boolean) {
                 // Update any UI state that depends on summary mode
-                Log.d(TAG, "Summary mode ${if (isSummaryMode) "enabled" else "disabled"} for bubble $bubbleId")
+                Logger.d(TAG, "Summary mode ${if (isSummaryMode) "enabled" else "disabled"} for bubble $bubbleId")
             }
 
             override fun onSummarizationStarted() {
-                Log.d(TAG, "Summarization started for bubble $bubbleId")
+                Logger.d(TAG, "Summarization started for bubble $bubbleId")
             }
 
             override fun onSummarizationCompleted(success: Boolean) {
-                Log.d(TAG, "Summarization ${if (success) "completed successfully" else "failed"} for bubble $bubbleId")
+                Logger.d(TAG, "Summarization ${if (success) "completed successfully" else "failed"} for bubble $bubbleId")
             }
 
             override fun onSummarizationError(message: String) {
-                Log.e(TAG, "Summarization error for bubble $bubbleId: $message")
+                Logger.e(TAG, "Summarization error for bubble $bubbleId: $message")
             }
 
             override fun onSummaryScrollDown() {
@@ -594,19 +595,19 @@ class BubbleView @JvmOverloads constructor(
         // Set up listener for read mode events
         readModeManager.setListener(object : BubbleReadModeManager.ReadModeManagerListener {
             override fun onReadModeChanged(isReadMode: Boolean) {
-                Log.d(TAG, "Read mode ${if (isReadMode) "enabled" else "disabled"} for bubble $bubbleId")
+                Logger.d(TAG, "Read mode ${if (isReadMode) "enabled" else "disabled"} for bubble $bubbleId")
             }
 
             override fun onReadModeLoadingStarted() {
-                Log.d(TAG, "Read mode loading started for bubble $bubbleId")
+                Logger.d(TAG, "Read mode loading started for bubble $bubbleId")
             }
 
             override fun onReadModeLoadingCompleted(success: Boolean) {
-                Log.d(TAG, "Read mode loading ${if (success) "completed" else "failed"} for bubble $bubbleId")
+                Logger.d(TAG, "Read mode loading ${if (success) "completed" else "failed"} for bubble $bubbleId")
             }
 
             override fun onReadModeError(message: String) {
-                Log.e(TAG, "Read mode error for bubble $bubbleId: $message")
+                Logger.e(TAG, "Read mode error for bubble $bubbleId: $message")
             }
 
             override fun onBubbleExpandRequested() {
@@ -653,7 +654,7 @@ class BubbleView @JvmOverloads constructor(
      * Save the current article for offline reading
      */
     private fun saveArticleForOfflineReading() {
-        Log.d(TAG, "Save article for offline reading requested")
+        Logger.d(TAG, "Save article for offline reading requested")
         
         // Get the current URL
         val currentUrl = url
@@ -668,10 +669,10 @@ class BubbleView @JvmOverloads constructor(
             url = currentUrl,
             scope = (context as LifecycleOwner).lifecycleScope,
             onSuccess = {
-                Log.d(TAG, "Article saved successfully for bubble $bubbleId")
+                Logger.d(TAG, "Article saved successfully for bubble $bubbleId")
             },
             onError = { error ->
-                Log.e(TAG, "Failed to save article for bubble $bubbleId: $error")
+                Logger.e(TAG, "Failed to save article for bubble $bubbleId: $error")
             }
         )
     }
@@ -805,7 +806,7 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun loadContentInExpandedWebView() {
         try {
-            Log.d(TAG, "Making WebView visible for bubble $bubbleId with URL: $url")
+            Logger.d(TAG, "Making WebView visible for bubble $bubbleId with URL: $url")
 
             // Make WebView fully visible with animation
             webViewContainer.visibility = VISIBLE
@@ -816,12 +817,12 @@ class BubbleView @JvmOverloads constructor(
 
             // Check if the page is loaded using WebViewManager
             val currentUrl = webViewManager.getCurrentUrl()
-            Log.d(TAG, "Current WebView URL: $currentUrl")
+            Logger.d(TAG, "Current WebView URL: $currentUrl")
 
             // If the page hasn't loaded yet or is blank, reload it
             if (currentUrl == null || currentUrl == "about:blank" || currentUrl.isEmpty()) {
                 if (url.isNotEmpty()) {
-                    Log.d(TAG, "Loading URL in expanded bubble (fallback): $url")
+                    Logger.d(TAG, "Loading URL in expanded bubble (fallback): $url")
 
                     // Use WebViewManager to load the URL
                     webViewManager.loadUrl(url)
@@ -836,15 +837,15 @@ class BubbleView @JvmOverloads constructor(
                 // Also reapply the stored zoom level
                 applyDynamicZoom(stateManager.currentZoomPercent)
                 webViewContainer.invalidate()
-                Log.d(TAG, "WebView already has content loaded: $currentUrl")
+                Logger.d(TAG, "WebView already has content loaded: $currentUrl")
             }
 
             // Force layout update to ensure content is visible
             webViewContainer.requestLayout()
 
-            Log.d(TAG, "WebView is now visible for bubble $bubbleId")
+            Logger.d(TAG, "WebView is now visible for bubble $bubbleId")
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling WebView visibility for bubble $bubbleId", e)
+            Logger.e(TAG, "Error handling WebView visibility for bubble $bubbleId", e)
         }
     }
 
@@ -957,7 +958,7 @@ class BubbleView @JvmOverloads constructor(
             // Close the bubble if openFullWebView is called
             closeBubbleWithAnimation()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to open in default browser", e)
+            Logger.e(TAG, "Failed to open in default browser", e)
             Toast.makeText(context, "Could not open in browser", Toast.LENGTH_SHORT).show()
         }
     }
@@ -981,20 +982,7 @@ class BubbleView @JvmOverloads constructor(
      * @return A properly formatted URL or empty string if invalid
      */
     private fun formatUrl(inputUrl: String): String {
-        return when {
-            // If it's already a valid URL with scheme, use it as is
-            inputUrl.startsWith("http://") || inputUrl.startsWith("https://") -> inputUrl
-
-            // If it's a special URL like about:blank, use it as is
-            inputUrl.startsWith("about:") || inputUrl.startsWith("file:") ||
-                    inputUrl.startsWith("javascript:") || inputUrl.startsWith("data:") -> inputUrl
-
-            // If it looks like a domain (contains dots), add https://
-            inputUrl.contains(".") -> "https://$inputUrl"
-
-            // If it's not a valid URL, return empty string
-            else -> ""
-        }
+        return UrlFormatter.formatUrl(inputUrl)
     }
 
     /**
@@ -1156,10 +1144,10 @@ class BubbleView @JvmOverloads constructor(
             // Run on UI thread to update the ImageView
             post {
                 uiManager.updateBubbleIcon(favicon)
-                Log.d(TAG, "Bubble icon updated with favicon for bubble: $bubbleId")
+                Logger.d(TAG, "Bubble icon updated with favicon for bubble: $bubbleId")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating bubble icon", e)
+            Logger.e(TAG, "Error updating bubble icon", e)
             // Fallback to default icon if there's an error
             post {
                 uiManager.updateBubbleIcon(null)
@@ -1176,13 +1164,13 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun createStandaloneWebViewModel() {
         try {
-            Log.d(TAG, "Creating standalone WebViewModel instance")
+            Logger.d(TAG, "Creating standalone WebViewModel instance")
             webViewModel = WebViewModel()
 
             // Set up periodic favicon checking
             setupPeriodicFaviconCheck()
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating standalone WebViewModel", e)
+            Logger.e(TAG, "Error creating standalone WebViewModel", e)
         }
     }
 
@@ -1198,16 +1186,16 @@ class BubbleView @JvmOverloads constructor(
             try {
                 action(viewModel)
             } catch (e: Exception) {
-                Log.e(TAG, "Error updating WebViewModel", e)
+                Logger.e(TAG, "Error updating WebViewModel", e)
             }
         } ?: run {
             // If WebViewModel is null, try to create it
             try {
-                Log.d(TAG, "WebViewModel is null, creating new instance")
+                Logger.d(TAG, "WebViewModel is null, creating new instance")
                 webViewModel = WebViewModel()
                 webViewModel?.let { action(it) }
             } catch (e: Exception) {
-                Log.e(TAG, "Error creating WebViewModel on the fly", e)
+                Logger.e(TAG, "Error creating WebViewModel on the fly", e)
             }
         }
     }
@@ -1223,7 +1211,7 @@ class BubbleView @JvmOverloads constructor(
             override fun run() {
                 // Only continue if the view is attached to window
                 if (!isAttachedToWindow) {
-                    Log.d(TAG, "Stopping favicon checks as view is detached")
+                    Logger.d(TAG, "Stopping favicon checks as view is detached")
                     return
                 }
 
@@ -1277,7 +1265,7 @@ class BubbleView @JvmOverloads constructor(
 
                 // Log progress for debugging at 20% intervals
                 if (progress % 20 == 0) {
-                    Log.d(TAG, "Loading progress: $progress%")
+                    Logger.d(TAG, "Loading progress: $progress%")
                 }
             }
             // Hide when complete or not started
@@ -1346,11 +1334,11 @@ class BubbleView @JvmOverloads constructor(
     private fun loadUrlInWebView() {
         val formattedUrl = formatUrl(url)
         if (formattedUrl.isNotEmpty()) {
-            Log.d(TAG, "Loading URL in showWebView: $formattedUrl")
+            Logger.d(TAG, "Loading URL in showWebView: $formattedUrl")
 
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationHandler.isAuthenticationUrl(formattedUrl)) {
-                Log.d(TAG, "Authentication URL detected in loadUrlInWebView, opening in Custom Tab: $formattedUrl")
+                Logger.d(TAG, "Authentication URL detected in loadUrlInWebView, opening in Custom Tab: $formattedUrl")
                 AuthenticationHandler.openInCustomTab(context, formattedUrl, bubbleId)
                 // Load a blank page in the WebView to avoid showing the authentication page
                 webViewContainer.loadUrl("about:blank")
@@ -1359,7 +1347,7 @@ class BubbleView @JvmOverloads constructor(
                 webViewContainer.loadUrl(formattedUrl)
             }
         } else {
-            Log.d(TAG, "Invalid URL format in showWebView: $url")
+            Logger.d(TAG, "Invalid URL format in showWebView: $url")
             webViewContainer.loadUrl("about:blank")
         }
     }
@@ -1416,13 +1404,13 @@ class BubbleView @JvmOverloads constructor(
     // ======================================
 
     override fun onExpansionStateChanged(isExpanded: Boolean) {
-        Log.d(TAG, "Expansion state changed for bubble $bubbleId: $isExpanded")
+        Logger.d(TAG, "Expansion state changed for bubble $bubbleId: $isExpanded")
         // Additional UI updates can be handled here if needed
         // The main expansion/collapse logic is handled in toggleBubbleExpanded()
     }
 
     override fun onActiveStateChanged(isActive: Boolean) {
-        Log.d(TAG, "Active state changed for bubble $bubbleId: $isActive")
+        Logger.d(TAG, "Active state changed for bubble $bubbleId: $isActive")
         // Handle active state UI updates
         if (isActive) {
             uiManager.getExpandedContainer().visibility = VISIBLE
@@ -1434,19 +1422,19 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun onDimensionsChanged(width: Int, height: Int) {
-        Log.d(TAG, "Dimensions changed for bubble $bubbleId: ${width}x${height}")
+        Logger.d(TAG, "Dimensions changed for bubble $bubbleId: ${width}x${height}")
         // Handle dimension changes if needed
         // This is already handled in the updateDimensions method
     }
 
     override fun onZoomChanged(zoomPercent: Float) {
-        Log.d(TAG, "Zoom changed for bubble $bubbleId: $zoomPercent%")
+        Logger.d(TAG, "Zoom changed for bubble $bubbleId: $zoomPercent%")
         // Apply zoom changes to WebView
         applyDynamicZoom(zoomPercent)
     }
 
     override fun onToolbarVisibilityChanged(isVisible: Boolean) {
-        Log.d(TAG, "Toolbar visibility changed for bubble $bubbleId: $isVisible")
+        Logger.d(TAG, "Toolbar visibility changed for bubble $bubbleId: $isVisible")
         // Handle toolbar visibility changes
         if (isVisible) {
             showToolbar()
@@ -1468,7 +1456,7 @@ class BubbleView @JvmOverloads constructor(
         // Clean up WebViewManager resources
         webViewManager.cleanup()
 
-        Log.d(TAG, "BubbleView detached and cleaned up for bubble: $bubbleId")
+        Logger.d(TAG, "BubbleView detached and cleaned up for bubble: $bubbleId")
     }
 
     // ============================================================================
@@ -1487,7 +1475,7 @@ class BubbleView @JvmOverloads constructor(
 
     override fun onWebViewHtmlContentLoaded(htmlContent: String) {
         // HTML content received, cache it for summarization
-        Log.d(TAG, "HTML content received, length: ${htmlContent.length}")
+        Logger.d(TAG, "HTML content received, length: ${htmlContent.length}")
         summaryManager.cacheHtmlContent(htmlContent)
         summaryManager.startBackgroundSummarization(htmlContent)
     }
@@ -1510,11 +1498,11 @@ class BubbleView @JvmOverloads constructor(
         // Update local favicon
         updateFavicon(favicon)
 
-        Log.d(TAG, "Received favicon for bubble: $bubbleId")
+        Logger.d(TAG, "Received favicon for bubble: $bubbleId")
     }
 
     override fun onWebViewTitleReceived(title: String) {
-        Log.d(TAG, "Received page title for bubble $bubbleId: $title")
+        Logger.d(TAG, "Received page title for bubble $bubbleId: $title")
         // Title updates are already handled by the WebViewManager
         // Additional UI updates can be added here if needed
     }
@@ -1605,7 +1593,7 @@ class BubbleView @JvmOverloads constructor(
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
         } catch (e: Exception) {
-            Log.e(TAG, "Error sharing URL", e)
+            Logger.e(TAG, "Error sharing URL", e)
             Toast.makeText(context, context.getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
         }
     }

@@ -1,7 +1,6 @@
 package com.quick.browser.utils
 
 import android.content.Context
-import android.util.Log
 import com.bumptech.glide.Glide
 import com.bumptech.glide.GlideBuilder
 import com.bumptech.glide.Registry
@@ -10,6 +9,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.cache.InternalCacheDiskCacheFactory
 import com.bumptech.glide.load.engine.cache.LruResourceCache
 import com.bumptech.glide.module.AppGlideModule
+import com.quick.browser.util.Logger
 
 /**
  * Custom Glide module for the Quick Browser app
@@ -35,7 +35,7 @@ class QuickBrowserGlideModule : AppGlideModule() {
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
         )
         
-        Log.d(TAG, "Glide module configured with disk cache: ${DISK_CACHE_SIZE_BYTES} bytes, memory cache: ${MEMORY_CACHE_SIZE_BYTES} bytes")
+        Logger.d(TAG, "Glide module configured with disk cache: ${DISK_CACHE_SIZE_BYTES} bytes, memory cache: ${MEMORY_CACHE_SIZE_BYTES} bytes")
     }
 
     override fun registerComponents(context: Context, glide: Glide, registry: Registry) {

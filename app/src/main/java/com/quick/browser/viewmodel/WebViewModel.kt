@@ -1,12 +1,12 @@
 package com.quick.browser.viewmodel
 
 import android.graphics.Bitmap
-import android.util.Log
 import android.webkit.WebView
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quick.browser.model.WebPage
 import com.quick.browser.util.ErrorHandler
+import com.quick.browser.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +35,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
     fun loadUrl(bubbleId: String, url: String) {
         viewModelScope.launch {
             try {
-                Log.d("WebViewModel", "Loading URL for bubble $bubbleId: $url")
+                Logger.d("WebViewModel", "Loading URL for bubble $bubbleId: $url")
 
                 val timestamp = System.currentTimeMillis()
                 val webPage = WebPage(
@@ -52,7 +52,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
 
                 updateWebPage(webPage)
 
-                Log.d("WebViewModel", "Successfully loaded URL for bubble $bubbleId: $url")
+                Logger.d("WebViewModel", "Successfully loaded URL for bubble $bubbleId: $url")
             } catch (e: Exception) {
                 ErrorHandler.logError(
                     tag = "WebViewModel",
@@ -70,7 +70,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
     fun updateWebPage(webPage: WebPage) {
         viewModelScope.launch {
             try {
-                Log.d(
+                Logger.d(
                     "WebViewModel",
                     "Updating web page for URL: ${webPage.url}, parentBubbleId: ${webPage.parentBubbleId}"
                 )
@@ -86,9 +86,9 @@ class WebViewModel @Inject constructor() : ViewModel() {
 
                 currentPages[key] = webPage
                 _webPages.value = currentPages
-                Log.d("WebViewModel", "Web page updated successfully, total pages: ${currentPages.size}")
+                Logger.d("WebViewModel", "Web page updated successfully, total pages: ${currentPages.size}")
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error updating web page: ${e.message}", e)
+                Logger.e("WebViewModel", "Error updating web page: ${e.message}", e)
             }
         }
     }
@@ -100,7 +100,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
     fun closeTab(bubbleId: String) {
         viewModelScope.launch {
             try {
-                Log.d("WebViewModel", "Closing tab for bubble ID: $bubbleId")
+                Logger.d("WebViewModel", "Closing tab for bubble ID: $bubbleId")
                 val currentPages = _webPages.value.toMutableMap()
 
                 // Find web pages associated with this bubble ID using the composite key format
@@ -108,18 +108,18 @@ class WebViewModel @Inject constructor() : ViewModel() {
                     entry.key.startsWith("${bubbleId}_") || entry.value.parentBubbleId == bubbleId
                 }
 
-                Log.d("WebViewModel", "Found ${pagesToRemove.size} pages to remove for bubble ID: $bubbleId")
+                Logger.d("WebViewModel", "Found ${pagesToRemove.size} pages to remove for bubble ID: $bubbleId")
 
                 // Remove the pages
                 pagesToRemove.forEach { entry ->
                     currentPages.remove(entry.key)
-                    Log.d("WebViewModel", "Removed web page with key: ${entry.key}")
+                    Logger.d("WebViewModel", "Removed web page with key: ${entry.key}")
                 }
 
                 _webPages.value = currentPages
-                Log.d("WebViewModel", "Closed tab for bubble ID: $bubbleId, remaining pages: ${currentPages.size}")
+                Logger.d("WebViewModel", "Closed tab for bubble ID: $bubbleId, remaining pages: ${currentPages.size}")
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error closing tab for bubble ID: $bubbleId", e)
+                Logger.e("WebViewModel", "Error closing tab for bubble ID: $bubbleId", e)
             }
         }
     }
@@ -132,7 +132,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
     fun updateTitle(url: String, title: String) {
         // Don't update if title is empty or same as URL (which means no real title was extracted)
         if (title.isEmpty() || title == url) {
-            Log.d("WebViewModel", "Skipping title update for $url - title is empty or same as URL")
+            Logger.d("WebViewModel", "Skipping title update for $url - title is empty or same as URL")
             return
         }
 
@@ -151,12 +151,12 @@ class WebViewModel @Inject constructor() : ViewModel() {
                         val currentPage = entry.value
                         // Only update if the current title is the URL or empty
                         if (currentPage.title == url || currentPage.title.isEmpty()) {
-                            Log.d("WebViewModel", "Updating title for $url from '${currentPage.title}' to '$title'")
+                            Logger.d("WebViewModel", "Updating title for $url from '${currentPage.title}' to '$title'")
                             val updatedPage = currentPage.copy(title = title)
                             currentPage.copyTransientFields(updatedPage)
                             currentPages[entry.key] = updatedPage
                         } else {
-                            Log.d(
+                            Logger.d(
                                 "WebViewModel",
                                 "Skipping title update - page already has a title: ${currentPage.title}"
                             )
@@ -165,7 +165,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
                     _webPages.value = currentPages
                 } else {
                     // If the page doesn't exist yet, create it with the title
-                    Log.d("WebViewModel", "Creating new page with title: $title for URL: $url")
+                    Logger.d("WebViewModel", "Creating new page with title: $title for URL: $url")
                     val webPage = WebPage(
                         url = url,
                         title = title,
@@ -179,7 +179,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
                     _webPages.value = currentPages
                 }
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error updating title for URL: $url", e)
+                Logger.e("WebViewModel", "Error updating title for URL: $url", e)
             }
         }
     }
@@ -209,7 +209,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
 
                 _webPages.value = currentPages
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error updating progress for URL: $url", e)
+                Logger.e("WebViewModel", "Error updating progress for URL: $url", e)
             }
         }
     }
@@ -222,7 +222,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
     fun updateFavicon(url: String, favicon: Bitmap) {
         viewModelScope.launch {
             try {
-                Log.d("WebViewModel", "Updating favicon for URL: $url")
+                Logger.d("WebViewModel", "Updating favicon for URL: $url")
                 val currentPages = _webPages.value.toMutableMap()
 
                 // Find all pages with this URL (might be multiple if opened in different bubbles)
@@ -239,7 +239,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
                         currentPage.copyTransientFields(updatedPage)
                         currentPages[entry.key] = updatedPage
                     }
-                    Log.d("WebViewModel", "Favicon updated successfully for ${matchingPages.size} pages with URL: $url")
+                    Logger.d("WebViewModel", "Favicon updated successfully for ${matchingPages.size} pages with URL: $url")
                 } else {
                     // If the page doesn't exist yet, create it with the favicon
                     val webPage = WebPage(
@@ -253,11 +253,11 @@ class WebViewModel @Inject constructor() : ViewModel() {
                     )
                     // We don't know the bubble ID here, but we'll set it when loadUrl is called
                     currentPages[url] = webPage
-                    Log.d("WebViewModel", "Created new page with favicon for URL: $url")
+                    Logger.d("WebViewModel", "Created new page with favicon for URL: $url")
                 }
                 _webPages.value = currentPages
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error updating favicon for URL: $url", e)
+                Logger.e("WebViewModel", "Error updating favicon for URL: $url", e)
             }
         }
     }
@@ -297,9 +297,9 @@ class WebViewModel @Inject constructor() : ViewModel() {
                 }
 
                 updateWebPage(webPage)
-                Log.d("WebViewModel", "Saved page content from WebView for URL: $url, bubbleId: $bubbleId")
+                Logger.d("WebViewModel", "Saved page content from WebView for URL: $url, bubbleId: $bubbleId")
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error saving page content from WebView: ${e.message}", e)
+                Logger.e("WebViewModel", "Error saving page content from WebView: ${e.message}", e)
             }
         }
     }
@@ -315,7 +315,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
     fun updateSummary(url: String, summary: List<String>, bubbleId: String? = null) {
         viewModelScope.launch {
             try {
-                Log.d("WebViewModel", "Updating summary for URL: $url, bubbleId: $bubbleId")
+                Logger.d("WebViewModel", "Updating summary for URL: $url, bubbleId: $bubbleId")
 
                 // Store in the in-memory cache
                 summaryCache[url] = summary
@@ -348,7 +348,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
                         currentPages[entry.key] = updatedPage
                     }
                     _webPages.value = currentPages
-                    Log.d("WebViewModel", "Summary updated successfully for ${matchingPages.size} pages with URL: $url")
+                    Logger.d("WebViewModel", "Summary updated successfully for ${matchingPages.size} pages with URL: $url")
                 } else {
                     // If the page doesn't exist yet, create it with the summary
                     val webPage = WebPage(
@@ -370,10 +370,10 @@ class WebViewModel @Inject constructor() : ViewModel() {
                     }
 
                     _webPages.value = currentPages
-                    Log.d("WebViewModel", "Created new page with summary for URL: $url")
+                    Logger.d("WebViewModel", "Created new page with summary for URL: $url")
                 }
             } catch (e: Exception) {
-                Log.e("WebViewModel", "Error updating summary for URL: $url", e)
+                Logger.e("WebViewModel", "Error updating summary for URL: $url", e)
             }
         }
     }
@@ -420,7 +420,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
 
             return null
         } catch (e: Exception) {
-            Log.e("WebViewModel", "Error retrieving summary for URL: $url, bubbleId: $bubbleId", e)
+            Logger.e("WebViewModel", "Error retrieving summary for URL: $url, bubbleId: $bubbleId", e)
             return null
         }
     }
