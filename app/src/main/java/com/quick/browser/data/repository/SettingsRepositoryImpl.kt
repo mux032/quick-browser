@@ -1,6 +1,6 @@
 package com.quick.browser.data.repository
 
-import com.quick.browser.data.SettingsDao
+import com.quick.browser.data.local.dao.SettingsDao
 import com.quick.browser.data.local.entity.Settings
 import com.quick.browser.domain.repository.SettingsRepository
 import javax.inject.Inject

@@ -1,4 +1,4 @@
-package com.quick.browser.data
+package com.quick.browser.data.local.database
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -28,7 +28,7 @@ class Converters {
             BitmapFactory.decodeByteArray(it, 0, it.size)
         }
     }
-    
+
     /**
      * Converts a List<String> to a JSON string for storage in the database
      */
@@ -49,7 +49,7 @@ class Converters {
         if (value.isNullOrEmpty()) {
             return emptyList()
         }
-        
+
         val listType = object : TypeToken<List<String>>() {}.type
         return try {
             gson.fromJson(value, listType)

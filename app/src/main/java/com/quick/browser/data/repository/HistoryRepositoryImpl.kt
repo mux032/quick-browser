@@ -2,7 +2,7 @@ package com.quick.browser.data.repository
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
-import com.quick.browser.data.WebPageDao
+import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.data.local.entity.WebPage
 import com.quick.browser.domain.repository.HistoryRepository
 import javax.inject.Inject

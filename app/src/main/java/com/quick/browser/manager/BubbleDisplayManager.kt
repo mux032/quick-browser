@@ -25,7 +25,8 @@ class BubbleDisplayManager(
     private val lifecycleScope: LifecycleCoroutineScope,
     private val settingsManager: SettingsManager,
     private val adBlocker: AdBlocker,
-    private val summarizationManager: SummarizationManager
+    private val summarizationManager: SummarizationManager,
+    private val offlineArticleSaver: com.quick.browser.util.OfflineArticleSaver
 ) {
     private val TAG = "BubbleDisplayManager"
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -97,7 +98,8 @@ class BubbleDisplayManager(
                     url = bubble.url,
                     settingsManager = settingsManager,
                     adBlocker = adBlocker,
-                    summarizationManager = summarizationManager
+                    summarizationManager = summarizationManager,
+                    offlineArticleSaver = offlineArticleSaver
                 )
 
                 // Set close listener

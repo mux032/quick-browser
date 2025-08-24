@@ -1,10 +1,13 @@
-package com.quick.browser.data
+package com.quick.browser.data.local.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.quick.browser.data.SavedArticleDao
+import com.quick.browser.data.local.dao.SettingsDao
+import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.data.local.entity.SavedArticle
 import com.quick.browser.data.local.entity.Settings
 import com.quick.browser.data.local.entity.WebPage
@@ -15,17 +18,17 @@ import com.quick.browser.data.local.entity.WebPage
 @Database(entities = [WebPage::class, Settings::class, SavedArticle::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    
+
     abstract fun webPageDao(): WebPageDao
     abstract fun settingsDao(): SettingsDao
     abstract fun savedArticleDao(): SavedArticleDao
-    
+
     companion object {
         private const val DATABASE_NAME = "quick_browser.db"
-        
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
-        
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -35,7 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                     .fallbackToDestructiveMigration()
                     .build()
-                
+
                 INSTANCE = instance
                 instance
             }

@@ -19,9 +19,13 @@ import com.quick.browser.R
 import com.quick.browser.ui.base.BaseActivity
 import com.quick.browser.viewmodel.HistoryViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class HistoryActivity : BaseActivity() {
+    
+    @Inject
+    lateinit var offlineArticleSaver: com.quick.browser.util.OfflineArticleSaver
 
     companion object {
         private const val TAG = "HistoryActivity"
@@ -83,7 +87,8 @@ class HistoryActivity : BaseActivity() {
             onItemLongClick = { webPage ->
                 historyViewModel.deletePage(webPage)
                 Toast.makeText(this, "\"${webPage.title}\" deleted from history", Toast.LENGTH_SHORT).show()
-            }
+            },
+            offlineArticleSaver = offlineArticleSaver
         )
 
         recyclerView.apply {

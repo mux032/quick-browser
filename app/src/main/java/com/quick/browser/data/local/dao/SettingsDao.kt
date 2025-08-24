@@ -1,4 +1,4 @@
-package com.quick.browser.data
+package com.quick.browser.data.local.dao
 
 import androidx.room.*
 import com.quick.browser.data.local.entity.Settings
@@ -11,8 +11,9 @@ interface SettingsDao {
     @Query("SELECT * FROM settings WHERE id = 1 LIMIT 1") suspend fun getSettings(): Settings?
 
     /** Insert or update settings */
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertSettings(settings: Settings)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE) suspend fun insertSettings(settings: Settings)
 
     /** Update settings */
-    @Update suspend fun updateSettings(settings: Settings)
+    @Update
+    suspend fun updateSettings(settings: Settings)
 }

@@ -2,10 +2,10 @@ package com.quick.browser.di
 
 import android.content.Context
 import androidx.room.Room
-import com.quick.browser.data.AppDatabase
 import com.quick.browser.data.SavedArticleDao
-import com.quick.browser.data.SettingsDao
-import com.quick.browser.data.WebPageDao
+import com.quick.browser.data.local.dao.SettingsDao
+import com.quick.browser.data.local.dao.WebPageDao
+import com.quick.browser.data.local.database.AppDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

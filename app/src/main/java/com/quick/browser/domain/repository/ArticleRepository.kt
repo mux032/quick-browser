@@ -10,6 +10,8 @@ interface ArticleRepository {
     fun getAllSavedArticles(): Flow<List<SavedArticle>>
     suspend fun getSavedArticleByUrl(url: String): SavedArticle?
     suspend fun saveArticle(article: SavedArticle)
+    suspend fun saveArticleByUrl(url: String): Boolean
+    suspend fun saveOriginalPageAsArticle(url: String, title: String, content: String): Boolean
     suspend fun deleteArticle(article: SavedArticle)
     suspend fun deleteArticleByUrl(url: String)
     suspend fun isArticleSaved(url: String): Boolean

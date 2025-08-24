@@ -65,6 +65,7 @@ class BubbleView @JvmOverloads constructor(
     private val settingsManager: SettingsManager,
     private val adBlocker: AdBlocker,
     private val summarizationManager: SummarizationManager,
+    private val offlineArticleSaver: com.quick.browser.util.OfflineArticleSaver,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate,
@@ -662,9 +663,17 @@ class BubbleView @JvmOverloads constructor(
             return
         }
         
-        // TODO: Implement offline article saving functionality
-        // This requires dependency injection of OfflineArticleSaver
-        Logger.d(TAG, "Offline article saving not implemented yet for bubble $bubbleId")
+        // Save the article using OfflineArticleSaver
+        offlineArticleSaver.saveArticleForOfflineReading(
+            url = currentUrl,
+            scope = (context as LifecycleOwner).lifecycleScope,
+            onSuccess = {
+                Logger.d(TAG, "Article saved successfully for bubble $bubbleId")
+            },
+            onError = { error ->
+                Logger.e(TAG, "Failed to save article for bubble $bubbleId: $error")
+            }
+        )
     }
 
     /**
@@ -1558,11 +1567,7 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun onSaveArticle() {
-        // TODO: Implement offline article saving functionality
-        // This requires dependency injection of OfflineArticleSaver
-        Logger.d(TAG, "Offline article saving not implemented yet for URL $url")
-        
-        // The icon stays the same (download icon) for both saved and unsaved states
+        saveArticleForOfflineReading()
     }
 
     override fun onShareButtonClicked() {

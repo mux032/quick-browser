@@ -31,6 +31,62 @@ class ArticleRepositoryImpl @Inject constructor(
         savedArticleDao.insertSavedArticle(domainToEntity(article))
     }
     
+    override suspend fun saveArticleByUrl(url: String): Boolean {
+        return try {
+            // Extract content from URL using ReadabilityExtractor
+            val readableContent = readabilityExtractor.extractFromUrl(url)
+            
+            if (readableContent != null) {
+                // Create saved article with extracted content
+                val savedArticle = com.quick.browser.domain.model.SavedArticle(
+                    url = url,
+                    title = readableContent.title,
+                    content = readableContent.content,
+                    savedDate = System.currentTimeMillis(),
+                    author = readableContent.byline,
+                    siteName = readableContent.siteName,
+                    publishDate = readableContent.publishDate,
+                    excerpt = readableContent.excerpt
+                )
+                
+                // Save to database
+                savedArticleDao.insertSavedArticle(domainToEntity(savedArticle))
+                true
+            } else {
+                // Extraction failed, but we'll handle this in the caller
+                false
+            }
+        } catch (e: Exception) {
+            // Log the error but don't crash
+            e.printStackTrace()
+            false
+        }
+    }
+    
+    override suspend fun saveOriginalPageAsArticle(url: String, title: String, content: String): Boolean {
+        return try {
+            // Create saved article with original page content
+            val savedArticle = com.quick.browser.domain.model.SavedArticle(
+                url = url,
+                title = title.ifEmpty { url },
+                content = content,
+                savedDate = System.currentTimeMillis(),
+                author = null,
+                siteName = null,
+                publishDate = null,
+                excerpt = null
+            )
+            
+            // Save to database
+            savedArticleDao.insertSavedArticle(domainToEntity(savedArticle))
+            true
+        } catch (e: Exception) {
+            // Log the error but don't crash
+            e.printStackTrace()
+            false
+        }
+    }
+    
     override suspend fun deleteArticle(article: com.quick.browser.domain.model.SavedArticle) {
         savedArticleDao.deleteSavedArticle(domainToEntity(article))
     }

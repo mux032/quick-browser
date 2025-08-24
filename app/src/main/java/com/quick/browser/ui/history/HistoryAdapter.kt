@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -21,7 +22,8 @@ import kotlin.random.Random
 
 class HistoryAdapter(
     private val onItemClick: (WebPage) -> Unit,
-    private val onItemLongClick: (WebPage) -> Unit
+    private val onItemLongClick: (WebPage) -> Unit,
+    private val offlineArticleSaver: com.quick.browser.util.OfflineArticleSaver
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -180,7 +182,7 @@ class HistoryAdapter(
             
             // Set save button click listener
             saveButton.setOnClickListener {
-                saveWebPageForOffline(page)
+                saveWebPageForOffline(page, (itemView.context as androidx.lifecycle.LifecycleOwner).lifecycleScope)
             }
 
             // Set click listener for the card
@@ -265,9 +267,27 @@ class HistoryAdapter(
             itemView.context.startActivity(chooser)
         }
         
-        private fun saveWebPageForOffline(page: WebPage) {
-            // TODO: Implement offline saving functionality
-            // This requires dependency injection of OfflineArticleSaver
+        private fun saveWebPageForOffline(page: WebPage, scope: kotlinx.coroutines.CoroutineScope) {
+            offlineArticleSaver.saveArticleForOfflineReading(
+                url = page.url,
+                scope = scope,
+                onSuccess = {
+                    // Article saved successfully
+                    android.widget.Toast.makeText(
+                        itemView.context,
+                        itemView.context.getString(R.string.article_saved_success),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                },
+                onError = { error ->
+                    // Handle error
+                    android.widget.Toast.makeText(
+                        itemView.context,
+                        itemView.context.getString(R.string.article_save_failed),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            )
         }
 
         private fun getRandomColorForUrl(url: String): Int {

@@ -47,19 +47,28 @@ class OfflineArticleSaver @Inject constructor(
                     return@launch
                 }
                 
-                // Save the article
-                // Note: The saveArticle method in the new repository takes a SavedArticle object,
-                // not just a URL. We need to create a SavedArticle object.
-                // For now, we'll just call the method and handle the result.
-                // In a real implementation, we would need to extract the article content first.
+                // Attempt to save the article by extracting readable content
+                val success = repository.saveArticleByUrl(url)
                 
-                launch(Dispatchers.Main) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.article_saved_success),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    onSuccess()
+                if (success) {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.article_saved_success),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        onSuccess()
+                    }
+                } else {
+                    // Extraction failed, notify the caller
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.article_extraction_failed),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        onError(context.getString(R.string.article_extraction_failed))
+                    }
                 }
             } catch (e: Exception) {
                 launch(Dispatchers.Main) {
@@ -69,6 +78,74 @@ class OfflineArticleSaver @Inject constructor(
                         Toast.LENGTH_SHORT
                     ).show()
                     onError(e.message ?: context.getString(R.string.article_save_failed))
+                }
+            }
+        }
+    }
+    
+    /**
+     * Save the original web page content as an article if extraction fails
+     *
+     * @param url The URL of the page to save
+     * @param title The title of the page
+     * @param content The HTML content of the page
+     * @param scope The coroutine scope to launch the save operation
+     * @param onSuccess Callback when save is successful
+     * @param onError Callback when save fails
+     */
+    fun saveOriginalPageAsArticle(
+        url: String,
+        title: String,
+        content: String,
+        scope: CoroutineScope,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                // Check if article is already saved
+                if (repository.isArticleSaved(url)) {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.article_already_saved),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        onError(context.getString(R.string.article_already_saved))
+                    }
+                    return@launch
+                }
+                
+                // Save the original page content
+                val success = repository.saveOriginalPageAsArticle(url, title, content)
+                
+                if (success) {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.original_page_saved_success),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        onSuccess()
+                    }
+                } else {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.original_page_save_failed),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        onError(context.getString(R.string.original_page_save_failed))
+                    }
+                }
+            } catch (e: Exception) {
+                launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.original_page_save_failed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    onError(e.message ?: context.getString(R.string.original_page_save_failed))
                 }
             }
         }

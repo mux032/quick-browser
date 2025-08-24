@@ -48,6 +48,9 @@ class BubbleService : LifecycleService() {
     @Inject
     lateinit var summarizationManager: SummarizationManager
 
+    @Inject
+    lateinit var offlineArticleSaver: com.quick.browser.util.OfflineArticleSaver
+
     companion object {
         private const val TAG = "BubbleService"
         @Volatile
@@ -97,7 +100,8 @@ class BubbleService : LifecycleService() {
                 lifecycleScope = lifecycleScope,
                 settingsManager = settingsManager,
                 adBlocker = adBlocker,
-                summarizationManager = summarizationManager
+                summarizationManager = summarizationManager,
+                offlineArticleSaver = offlineArticleSaver
             )
 
             intentProcessor =
