@@ -2,7 +2,7 @@ package com.quick.browser.data
 
 import androidx.lifecycle.LiveData
 import androidx.room.*
-import com.quick.browser.model.WebPage
+import com.quick.browser.data.local.entity.WebPage
 
 /**
  * Data Access Object for WebPage entities

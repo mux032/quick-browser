@@ -1,7 +1,7 @@
 package com.quick.browser.data
 
 import androidx.room.*
-import com.quick.browser.model.SavedArticle
+import com.quick.browser.data.local.entity.SavedArticle
 import kotlinx.coroutines.flow.Flow
 
 /**

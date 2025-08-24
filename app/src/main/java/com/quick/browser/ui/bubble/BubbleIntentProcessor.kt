@@ -5,10 +5,10 @@ import android.content.Intent
 import android.util.Patterns
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.quick.browser.Constants
-import com.quick.browser.data.WebPageDao
+import com.quick.browser.domain.model.WebPage
+import com.quick.browser.domain.repository.HistoryRepository
 import com.quick.browser.manager.AuthenticationHandler
 import com.quick.browser.manager.BubbleManager
-import com.quick.browser.model.WebPage
 import com.quick.browser.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,7 +24,7 @@ import java.util.regex.Pattern
 class BubbleIntentProcessor(
         private val context: Context,
         private val bubbleManager: BubbleManager,
-        private val webPageDao: WebPageDao,
+        private val historyRepository: HistoryRepository,
         private val lifecycleScope: LifecycleCoroutineScope
 ) {
     companion object {
@@ -76,26 +76,20 @@ class BubbleIntentProcessor(
         }
     }
     
-    /**
-     * Saves a URL to the browsing history
-     */
     private fun saveToHistory(url: String) {
         lifecycleScope.launch {
             try {
-                // Check if the page already exists in history
-                val existingPage = webPageDao.getPageByUrl(url)
+                Logger.d(TAG, "saveToHistory | URL: $url")
                 
+                // Check if page already exists
+                val existingPage = historyRepository.getPageByUrl(url)
                 if (existingPage != null) {
-                    // Update existing page timestamp and increment visit count
-                    val updatedPage = existingPage.copy(
-                        timestamp = System.currentTimeMillis(),
-                        visitCount = existingPage.visitCount + 1
-                    )
-                    webPageDao.updatePage(updatedPage)
-                    webPageDao.incrementVisitCount(url)
-                    Logger.d(TAG, "Updated existing page in history: $url")
+                    Logger.d(TAG, "Page already exists in history, incrementing visit count: $url")
+                    // Increment visit count for existing page
+                    historyRepository.incrementVisitCount(url)
                 } else {
-                    // Try to get the title and images from HTML asynchronously
+                    Logger.d(TAG, "Adding new page to history: $url")
+                    // Extract title, preview image, and favicon from HTML
                     var title: String? = null
                     var previewImageUrl: String? = null
                     var faviconUrl: String? = null
@@ -127,7 +121,7 @@ class BubbleIntentProcessor(
                         faviconUrl = faviconUrl,
                         previewImageUrl = previewImageUrl
                     )
-                    webPageDao.insertPage(newPage)
+                    historyRepository.savePage(newPage)
                     Logger.d(TAG, "Added new page to history with title '$finalTitle', preview URL: $previewImageUrl, favicon URL: $faviconUrl: $url")
                 }
             } catch (e: Exception) {

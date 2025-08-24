@@ -2,7 +2,7 @@ package com.quick.browser.manager
 
 import android.content.Context
 import androidx.lifecycle.LifecycleCoroutineScope
-import com.quick.browser.model.Bubble
+import com.quick.browser.domain.model.Bubble
 import com.quick.browser.util.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

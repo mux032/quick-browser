@@ -11,7 +11,7 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 @HiltAndroidApp
-class QBApplication : Application() {
+class QuickBrowserApplication : Application() {
 
     @Inject
     lateinit var settingsManager: SettingsManager

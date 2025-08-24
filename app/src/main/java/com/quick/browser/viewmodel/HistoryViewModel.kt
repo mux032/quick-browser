@@ -3,8 +3,8 @@ package com.quick.browser.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quick.browser.data.WebPageDao
-import com.quick.browser.model.WebPage
+import com.quick.browser.domain.model.WebPage
+import com.quick.browser.domain.repository.HistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,14 +14,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
-    private val webPageDao: WebPageDao
+    private val historyRepository: HistoryRepository
 ) : ViewModel() {
 
     /**
      * Get all pages from history
      */
     fun getAllPages(): LiveData<List<WebPage>> {
-        return webPageDao.getAllPages()
+        return historyRepository.getAllPages()
     }
 
     /**
@@ -30,7 +30,7 @@ class HistoryViewModel @Inject constructor(
     fun deletePage(page: WebPage) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                webPageDao.deletePage(page)
+                historyRepository.deletePage(page)
             }
         }
     }
@@ -41,51 +41,32 @@ class HistoryViewModel @Inject constructor(
     fun clearAllData() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                webPageDao.deleteAllPages()
+                historyRepository.deleteAllPages()
             }
         }
     }
 
     /**
-     * Search history by query without BLOB data for efficient loading
+     * Search history by query
      */
-    fun searchHistoryWithoutBlobs(query: String): LiveData<List<WebPage>> {
-        return webPageDao.searchPagesWithoutBlobs("%$query%")
+    fun searchHistory(query: String): LiveData<List<WebPage>> {
+        // Note: We're using the regular searchPages method since we've updated the repository
+        // to return domain models instead of entities
+        return historyRepository.searchPages("%$query%")
     }
 
     /**
-     * Get recent pages without BLOB data for efficient loading
+     * Get recent pages
      */
-    fun getRecentPagesWithoutBlobs(limit: Int = 10): LiveData<List<WebPage>> {
-        return webPageDao.getRecentPagesWithoutBlobs(limit)
+    fun getRecentPages(limit: Int = 10): LiveData<List<WebPage>> {
+        return historyRepository.getRecentPages(limit)
     }
 
     /**
      * Get most visited pages
      */
     fun getMostVisitedPages(limit: Int = 10): LiveData<List<WebPage>> {
-        return webPageDao.getMostVisitedPages(limit)
-    }
-    
-    /**
-     * Get today's pages
-     */
-    fun getTodayPages(): LiveData<List<WebPage>> {
-        return webPageDao.getTodayPages(getStartOfDay())
-    }
-    
-    /**
-     * Get this week's pages
-     */
-    fun getThisWeekPages(): LiveData<List<WebPage>> {
-        return webPageDao.getThisWeekPages(getStartOfWeek(), getStartOfDay())
-    }
-    
-    /**
-     * Get older pages
-     */
-    fun getOlderPages(): LiveData<List<WebPage>> {
-        return webPageDao.getOlderPages(getStartOfWeek())
+        return historyRepository.getMostVisitedPages(limit)
     }
     
     /**
@@ -114,34 +95,23 @@ class HistoryViewModel @Inject constructor(
     }
     
     /**
-     * Get 30 days ago timestamp
+     * Increment visit count for a page
      */
-    private fun getThirtyDaysAgo(): Long {
-        val calendar = Calendar.getInstance()
-        calendar.add(Calendar.DAY_OF_MONTH, -30)
-        return calendar.timeInMillis
-    }
-    
-    /**
-     * Delete today's history (since midnight)
-     */
-    fun deleteTodayHistory() {
+    fun incrementVisitCount(url: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val startOfDay = getStartOfDay()
-                webPageDao.deleteTodayPages(startOfDay)
+                historyRepository.incrementVisitCount(url)
             }
         }
     }
     
     /**
-     * Delete last month's history (last 30 days)
+     * Update offline status for a page
      */
-    fun deleteLastMonthHistory() {
+    fun updateOfflineStatus(url: String, isAvailable: Boolean) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val thirtyDaysAgo = getThirtyDaysAgo()
-                webPageDao.deleteLastMonthPages(thirtyDaysAgo)
+                historyRepository.updateOfflineStatus(url, isAvailable)
             }
         }
     }

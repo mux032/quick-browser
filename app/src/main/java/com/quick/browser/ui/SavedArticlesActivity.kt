@@ -8,27 +8,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.quick.browser.R
-import com.quick.browser.data.AppDatabase
-import com.quick.browser.data.SavedArticleRepository
-import com.quick.browser.manager.ReadabilityExtractor
-import com.quick.browser.model.SavedArticle
+import com.quick.browser.domain.model.SavedArticle
+import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Activity to display saved articles for offline reading
  */
+@AndroidEntryPoint
 class SavedArticlesActivity : AppCompatActivity() {
     
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: SavedArticlesAdapter
     
-    private val viewModel: SavedArticlesViewModel by viewModels {
-        SavedArticlesViewModelFactory(
-            SavedArticleRepository(
-                AppDatabase.getInstance(this).savedArticleDao(),
-                ReadabilityExtractor(this)
-            )
-        )
-    }
+    private val viewModel: SavedArticlesViewModel by viewModels()
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,7 +63,7 @@ class SavedArticlesActivity : AppCompatActivity() {
         val intent = Intent(this, OfflineReaderActivity::class.java).apply {
             putExtra(OfflineReaderActivity.EXTRA_ARTICLE_TITLE, article.title)
             putExtra(OfflineReaderActivity.EXTRA_ARTICLE_CONTENT, article.content)
-            putExtra(OfflineReaderActivity.EXTRA_ARTICLE_BYLINE, article.byline)
+            putExtra(OfflineReaderActivity.EXTRA_ARTICLE_BYLINE, article.author)
             putExtra(OfflineReaderActivity.EXTRA_ARTICLE_SITE_NAME, article.siteName)
             putExtra(OfflineReaderActivity.EXTRA_ARTICLE_PUBLISH_DATE, article.publishDate)
         }

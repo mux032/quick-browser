@@ -7,7 +7,7 @@ import android.view.Gravity
 import android.view.WindowManager
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.quick.browser.Constants
-import com.quick.browser.model.Bubble
+import com.quick.browser.domain.model.Bubble
 import com.quick.browser.service.BubbleService
 import com.quick.browser.ui.bubble.BubbleView
 import com.quick.browser.util.ErrorHandler

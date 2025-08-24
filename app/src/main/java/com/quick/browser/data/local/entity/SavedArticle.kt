@@ -1,4 +1,4 @@
-package com.quick.browser.model
+package com.quick.browser.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

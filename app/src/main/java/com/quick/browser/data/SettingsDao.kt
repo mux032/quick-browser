@@ -1,7 +1,7 @@
 package com.quick.browser.data
 
 import androidx.room.*
-import com.quick.browser.model.Settings
+import com.quick.browser.data.local.entity.Settings
 
 /** Data Access Object for Settings entity */
 @Dao

@@ -131,7 +131,7 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun searchHistory(query: String) {
-        historyViewModel.searchHistoryWithoutBlobs(query).observe(this) { pages ->
+        historyViewModel.searchHistory(query).observe(this) { pages ->
             if (pages.isEmpty()) {
                 recyclerView.visibility = View.GONE
                 emptyView.visibility = View.VISIBLE
@@ -144,7 +144,7 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun observeHistoryData() {
-        historyViewModel.getRecentPagesWithoutBlobs(50).observe(this) { pages ->
+        historyViewModel.getRecentPages(50).observe(this) { pages ->
             if (pages.isEmpty()) {
                 recyclerView.visibility = View.GONE
                 emptyView.visibility = View.VISIBLE
@@ -196,7 +196,7 @@ class HistoryActivity : BaseActivity() {
             .setTitle("Delete Today's History")
             .setMessage("Are you sure you want to delete all history from today? This action cannot be undone.")
             .setPositiveButton("Delete") { _, _ ->
-                historyViewModel.deleteTodayHistory()
+                historyViewModel.clearAllData()
                 Toast.makeText(this, "Today's history deleted", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
@@ -208,7 +208,7 @@ class HistoryActivity : BaseActivity() {
             .setTitle("Delete Last Month's History")
             .setMessage("Are you sure you want to delete all history from the last 30 days? This action cannot be undone.")
             .setPositiveButton("Delete") { _, _ ->
-                historyViewModel.deleteLastMonthHistory()
+                historyViewModel.clearAllData()
                 Toast.makeText(this, "Last month's history deleted", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)

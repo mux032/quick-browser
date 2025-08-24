@@ -1,4 +1,4 @@
-package com.quick.browser.model
+package com.quick.browser.data.local.entity
 
 import android.graphics.Bitmap
 import android.os.Build

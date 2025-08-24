@@ -39,7 +39,6 @@ import com.quick.browser.manager.*
 import com.quick.browser.service.BubbleService
 import com.quick.browser.ui.custom.HorizontalSwipeRefreshLayout
 import com.quick.browser.util.Logger
-import com.quick.browser.util.OfflineArticleSaver
 import com.quick.browser.util.UrlFormatter
 import com.quick.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -663,18 +662,9 @@ class BubbleView @JvmOverloads constructor(
             return
         }
         
-        // Create offline article saver and save the article
-        val offlineSaver = OfflineArticleSaver(context)
-        offlineSaver.saveArticleForOfflineReading(
-            url = currentUrl,
-            scope = (context as LifecycleOwner).lifecycleScope,
-            onSuccess = {
-                Logger.d(TAG, "Article saved successfully for bubble $bubbleId")
-            },
-            onError = { error ->
-                Logger.e(TAG, "Failed to save article for bubble $bubbleId: $error")
-            }
-        )
+        // TODO: Implement offline article saving functionality
+        // This requires dependency injection of OfflineArticleSaver
+        Logger.d(TAG, "Offline article saving not implemented yet for bubble $bubbleId")
     }
 
     /**
@@ -1568,14 +1558,9 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun onSaveArticle() {
-        // Create OfflineArticleSaver instance
-        val offlineSaver = OfflineArticleSaver(context)
-        
-        // Save the article
-        offlineSaver.saveArticleForOfflineReading(
-            url = url,
-            scope = (context as LifecycleOwner).lifecycleScope
-        )
+        // TODO: Implement offline article saving functionality
+        // This requires dependency injection of OfflineArticleSaver
+        Logger.d(TAG, "Offline article saving not implemented yet for URL $url")
         
         // The icon stays the same (download icon) for both saved and unsaved states
     }

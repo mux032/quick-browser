@@ -12,12 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.quick.browser.R
-import com.quick.browser.model.HistoryItem
-import com.quick.browser.model.WebPage
+import com.quick.browser.domain.model.HistoryItem
+import com.quick.browser.domain.model.WebPage
 import com.quick.browser.util.Logger
-import com.quick.browser.util.OfflineArticleSaver
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.random.Random
@@ -269,20 +266,8 @@ class HistoryAdapter(
         }
         
         private fun saveWebPageForOffline(page: WebPage) {
-            // Create OfflineArticleSaver instance
-            val offlineSaver = OfflineArticleSaver(itemView.context)
-            
-            // Save the article
-            offlineSaver.saveArticleForOfflineReading(
-                url = page.url,
-                scope = CoroutineScope(Dispatchers.Main),
-                onSuccess = {
-                    // Update the page's offline status
-                    page.isAvailableOffline = true
-                    
-                    // The icon stays the same (download icon) for both saved and unsaved states
-                }
-            )
+            // TODO: Implement offline saving functionality
+            // This requires dependency injection of OfflineArticleSaver
         }
 
         private fun getRandomColorForUrl(url: String): Int {

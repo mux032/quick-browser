@@ -4,9 +4,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quick.browser.data.SettingsDao
-import com.quick.browser.model.Bubble
-import com.quick.browser.model.Settings
+import com.quick.browser.domain.model.Bubble
+import com.quick.browser.domain.model.Settings
+import com.quick.browser.domain.repository.SettingsRepository
 import com.quick.browser.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class BubbleViewModel @Inject constructor(private val settingsDao: SettingsDao) : ViewModel() {
+class BubbleViewModel @Inject constructor(private val settingsRepository: SettingsRepository) : ViewModel() {
 
     private val _bubbles = MutableStateFlow<List<Bubble>>(emptyList())
     val bubbles: StateFlow<List<Bubble>> = _bubbles
@@ -24,11 +24,16 @@ class BubbleViewModel @Inject constructor(private val settingsDao: SettingsDao) 
     val settings: LiveData<Settings?> = _settings
 
     fun loadSettings() {
-        viewModelScope.launch { _settings.postValue(settingsDao.getSettings()) }
+        viewModelScope.launch { 
+            val settings = settingsRepository.getSettings()
+            _settings.postValue(settings)
+        }
     }
 
     fun saveSettings(settings: Settings) {
-        viewModelScope.launch { settingsDao.insertSettings(settings) }
+        viewModelScope.launch { 
+            settingsRepository.saveSettings(settings)
+        }
     }
 
     fun addBubble(bubble: Bubble) {

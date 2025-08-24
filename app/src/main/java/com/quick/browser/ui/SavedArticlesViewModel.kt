@@ -1,41 +1,27 @@
 package com.quick.browser.ui
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.quick.browser.data.SavedArticleRepository
-import com.quick.browser.model.SavedArticle
+import com.quick.browser.domain.model.SavedArticle
+import com.quick.browser.domain.repository.ArticleRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * ViewModel for saved articles
  */
-class SavedArticlesViewModel(
-    private val repository: SavedArticleRepository
+@HiltViewModel
+class SavedArticlesViewModel @Inject constructor(
+    private val repository: ArticleRepository
 ) : ViewModel() {
     
     val savedArticles = repository.getAllSavedArticles().asLiveData()
     
     fun deleteArticle(article: SavedArticle) {
         viewModelScope.launch {
-            repository.deleteSavedArticle(article)
+            repository.deleteArticle(article)
         }
-    }
-}
-
-/**
- * Factory for SavedArticlesViewModel
- */
-class SavedArticlesViewModelFactory(
-    private val repository: SavedArticleRepository
-) : ViewModelProvider.Factory {
-    
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(SavedArticlesViewModel::class.java)) {
-            return SavedArticlesViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

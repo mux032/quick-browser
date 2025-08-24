@@ -1,7 +1,7 @@
-package com.quick.browser.model
+package com.quick.browser.domain.model
 
 /**
- * Represents different types of items in the history list
+ * Domain model for a history item
  */
 sealed class HistoryItem {
     data class Header(val title: String) : HistoryItem()

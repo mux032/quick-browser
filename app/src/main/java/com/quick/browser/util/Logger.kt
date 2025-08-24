@@ -1,7 +1,6 @@
 package com.quick.browser.util
 
 import android.util.Log
-import com.quick.browser.QBApplication
 
 /**
  * Centralized logging utility with configurable levels
@@ -23,8 +22,8 @@ object Logger {
             val debugField = buildConfigClass.getField("DEBUG")
             return debugField.getBoolean(null)
         } catch (e: Exception) {
-            // Fallback to checking if we're in debug mode through QBApplication
-            return QBApplication.isDebugBuild()
+            // Fallback to checking if we're in debug mode through com.quick.browser.QuickBrowserApplication
+            return com.quick.browser.QuickBrowserApplication.isDebugBuild()
         }
     }
     

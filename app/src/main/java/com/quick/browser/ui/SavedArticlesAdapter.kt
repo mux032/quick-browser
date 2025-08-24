@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
-import com.quick.browser.model.SavedArticle
+import com.quick.browser.domain.model.SavedArticle
 import java.text.SimpleDateFormat
 import java.util.*
 

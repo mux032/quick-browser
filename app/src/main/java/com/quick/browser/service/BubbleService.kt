@@ -4,7 +4,7 @@ import android.content.Intent
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.quick.browser.Constants
-import com.quick.browser.QBApplication
+import com.quick.browser.QuickBrowserApplication
 import com.quick.browser.manager.*
 import com.quick.browser.ui.bubble.BubbleIntentProcessor
 import com.quick.browser.util.Logger
@@ -37,7 +37,7 @@ class BubbleService : LifecycleService() {
     // private lateinit var webViewModel: WebViewModel
 
     @Inject
-    lateinit var webPageDao: com.quick.browser.data.WebPageDao
+    lateinit var historyRepository: com.quick.browser.domain.repository.HistoryRepository
 
     @Inject
     lateinit var settingsManager: SettingsManager
@@ -80,7 +80,7 @@ class BubbleService : LifecycleService() {
             isServiceRunning = true
 
             // Initialize managers
-            val app = application as QBApplication
+            val app = application as QuickBrowserApplication
             app.bubbleService = this
 
             bubbleManager =
@@ -104,7 +104,7 @@ class BubbleService : LifecycleService() {
                 BubbleIntentProcessor(
                     context = this,
                     bubbleManager = bubbleManager,
-                    webPageDao = webPageDao,
+                    historyRepository = historyRepository,
                     lifecycleScope = lifecycleScope
                 )
             // Start foreground service with notification
@@ -142,7 +142,7 @@ class BubbleService : LifecycleService() {
 
         // Remove reference from application
         try {
-            val app = application as QBApplication
+            val app = application as QuickBrowserApplication
             if (app.bubbleService === this) {
                 app.bubbleService = null
             }

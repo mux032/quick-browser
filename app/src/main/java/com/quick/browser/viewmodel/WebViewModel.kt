@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.webkit.WebView
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quick.browser.model.WebPage
+import com.quick.browser.domain.model.WebPage
 import com.quick.browser.util.ErrorHandler
 import com.quick.browser.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,9 +48,9 @@ class WebViewModel @Inject constructor() : ViewModel() {
                 )
 
                 // Set the parent bubble ID to associate this web page with the bubble
-                webPage.parentBubbleId = bubbleId
+                val updatedWebPage = webPage.copy(parentBubbleId = bubbleId)
 
-                updateWebPage(webPage)
+                updateWebPage(updatedWebPage)
 
                 Logger.d("WebViewModel", "Successfully loaded URL for bubble $bubbleId: $url")
             } catch (e: Exception) {
@@ -153,7 +153,6 @@ class WebViewModel @Inject constructor() : ViewModel() {
                         if (currentPage.title == url || currentPage.title.isEmpty()) {
                             Logger.d("WebViewModel", "Updating title for $url from '${currentPage.title}' to '$title'")
                             val updatedPage = currentPage.copy(title = title)
-                            currentPage.copyTransientFields(updatedPage)
                             currentPages[entry.key] = updatedPage
                         } else {
                             Logger.d(
@@ -201,9 +200,8 @@ class WebViewModel @Inject constructor() : ViewModel() {
 
                 matchingPages.forEach { entry ->
                     val currentPage = entry.value
-                    currentPage.content += "<div>Progress updated: $progress</div>" // Placeholder logic
-                    val updatedPage = currentPage.copy(content = currentPage.content)
-                    currentPage.copyTransientFields(updatedPage)
+                    val updatedContent = currentPage.content + "<div>Progress updated: $progress</div>" // Placeholder logic
+                    val updatedPage = currentPage.copy(content = updatedContent)
                     currentPages[entry.key] = updatedPage
                 }
 
@@ -236,7 +234,6 @@ class WebViewModel @Inject constructor() : ViewModel() {
                         val currentPage = entry.value
                         // Update the favicon in the WebPage object
                         val updatedPage = currentPage.copy(favicon = favicon)
-                        currentPage.copyTransientFields(updatedPage)
                         currentPages[entry.key] = updatedPage
                     }
                     Logger.d("WebViewModel", "Favicon updated successfully for ${matchingPages.size} pages with URL: $url")
@@ -288,13 +285,9 @@ class WebViewModel @Inject constructor() : ViewModel() {
                     timestamp = System.currentTimeMillis(),
                     content = content,
                     isAvailableOffline = true,
-                    visitCount = 1
+                    visitCount = 1,
+                    parentBubbleId = bubbleId
                 )
-
-                // Set the parent bubble ID if provided
-                if (bubbleId != null) {
-                    webPage.parentBubbleId = bubbleId
-                }
 
                 updateWebPage(webPage)
                 Logger.d("WebViewModel", "Saved page content from WebView for URL: $url, bubbleId: $bubbleId")
@@ -342,9 +335,7 @@ class WebViewModel @Inject constructor() : ViewModel() {
                     matchingPages.forEach { entry ->
                         val currentPage = entry.value
                         // Create a new instance with the summary
-                        val updatedPage = currentPage.copy()
-                        currentPage.copyTransientFields(updatedPage)
-                        updatedPage.summary = summary
+                        val updatedPage = currentPage.copy(summary = summary)
                         currentPages[entry.key] = updatedPage
                     }
                     _webPages.value = currentPages
@@ -357,13 +348,13 @@ class WebViewModel @Inject constructor() : ViewModel() {
                         timestamp = System.currentTimeMillis(),
                         content = "",
                         isAvailableOffline = false,
-                        visitCount = 1
+                        visitCount = 1,
+                        summary = summary,
+                        parentBubbleId = bubbleId
                     )
-                    webPage.summary = summary
 
                     // Set the parent bubble ID if provided
                     if (bubbleId != null) {
-                        webPage.parentBubbleId = bubbleId
                         currentPages["${bubbleId}_$url"] = webPage
                     } else {
                         currentPages[url] = webPage

@@ -5,9 +5,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.quick.browser.model.SavedArticle
-import com.quick.browser.model.Settings
-import com.quick.browser.model.WebPage
+import com.quick.browser.data.local.entity.SavedArticle
+import com.quick.browser.data.local.entity.Settings
+import com.quick.browser.data.local.entity.WebPage
 
 /**
  * Room database for the QB app
