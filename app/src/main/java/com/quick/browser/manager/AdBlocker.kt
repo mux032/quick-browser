@@ -58,6 +58,11 @@ class AdBlocker(private val context: Context) {
                 return@runCatching null
             }
 
+            // Skip data URLs and other non-standard protocols that can't be parsed
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                return@runCatching null
+            }
+
             val hostname = URL(url).host ?: return@runCatching null
 
             // Check domain whitelist/blacklist first
@@ -224,6 +229,11 @@ class AdBlocker(private val context: Context) {
      */
     private fun extractDomain(url: String): String {
         return runCatching {
+            // Skip data URLs and other non-standard protocols that can't be parsed
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                return@runCatching url
+            }
+            
             val uri = URL(url)
             val host = uri.host
             if (host.startsWith("www.")) host.substring(4) else host

@@ -3,7 +3,6 @@ package com.quick.browser.ui.history
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +14,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.quick.browser.R
 import com.quick.browser.model.HistoryItem
 import com.quick.browser.model.WebPage
+import com.quick.browser.util.Logger
 import com.quick.browser.util.OfflineArticleSaver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -305,10 +305,10 @@ class HistoryAdapter(
             previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
             previewImage.setBackgroundColor(android.graphics.Color.TRANSPARENT)
             
-            Log.d(TAG, "Attempting to load preview image for ${page.url}, previewImageUrl: ${page.previewImageUrl}")
+            Logger.d(TAG, "Attempting to load preview image for ${page.url}, previewImageUrl: ${page.previewImageUrl}")
             
             if (page.previewImageUrl != null && page.previewImageUrl!!.isNotBlank()) {
-                Log.d(TAG, "Loading preview image for ${page.url}: ${page.previewImageUrl}")
+                Logger.d(TAG, "Loading preview image for ${page.url}: ${page.previewImageUrl}")
                 Glide.with(itemView.context)
                     .load(page.previewImageUrl)
                     .placeholder(R.drawable.ic_web_page)
@@ -321,7 +321,7 @@ class HistoryAdapter(
                             target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>,
                             isFirstResource: Boolean
                         ): Boolean {
-                            Log.e(TAG, "Failed to load preview image for ${page.url}: ${page.previewImageUrl}", e)
+                            Logger.e(TAG, "Failed to load preview image for ${page.url}: ${page.previewImageUrl}", e as? Throwable ?: Exception("Unknown error"))
                             // Show a colored background with icon as fallback
                             showFallbackPreview(page)
                             return true // We handled the error
@@ -334,7 +334,7 @@ class HistoryAdapter(
                             dataSource: com.bumptech.glide.load.DataSource,
                             isFirstResource: Boolean
                         ): Boolean {
-                            Log.d(TAG, "Successfully loaded preview image for ${page.url}")
+                            Logger.d(TAG, "Successfully loaded preview image for ${page.url}")
                             // Reset background when image is successfully loaded
                             previewImage.setBackgroundColor(android.graphics.Color.TRANSPARENT)
                             previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
@@ -343,7 +343,7 @@ class HistoryAdapter(
                     })
                     .into(previewImage)
             } else {
-                Log.d(TAG, "No preview image URL for ${page.url}, using fallback")
+                Logger.d(TAG, "No preview image URL for ${page.url}, using fallback")
                 showFallbackPreview(page)
             }
         }
@@ -381,7 +381,7 @@ class HistoryAdapter(
                         faviconImage.setImageResource(R.drawable.ic_website)
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error constructing favicon URL", e)
+                    Logger.e(TAG, "Error constructing favicon URL", e)
                     faviconImage.setImageResource(R.drawable.ic_website)
                 }
             }

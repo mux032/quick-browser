@@ -1,16 +1,16 @@
 package com.quick.browser.ui.settings
 
 import android.os.Bundle
-import android.util.Log
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import com.quick.browser.ui.base.BaseActivity
-import com.quick.browser.R
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.quick.browser.R
+import com.quick.browser.ui.base.BaseActivity
+import com.quick.browser.util.Logger
 
 /**
  * Settings activity for the browser
@@ -54,7 +54,7 @@ class SettingsActivity : BaseActivity() {
             // Setup listeners
             setupListeners()
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing settings activity", e)
+            Logger.e(TAG, "Error initializing settings activity", e)
             Toast.makeText(this, "Error loading settings", Toast.LENGTH_SHORT).show()
             finish()
         }
@@ -66,7 +66,7 @@ class SettingsActivity : BaseActivity() {
             switchBlockAds = findViewById(R.id.switch_block_ads)
             switchSaveHistory = findViewById(R.id.switch_save_history)
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing views", e)
+            Logger.e(TAG, "Error initializing views", e)
             throw e
         }
     }
@@ -78,7 +78,7 @@ class SettingsActivity : BaseActivity() {
             switchBlockAds.isChecked = settingsManager.isAdBlockEnabled()
             switchSaveHistory.isChecked = settingsManager.isSaveHistoryEnabled()
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading settings", e)
+            Logger.e(TAG, "Error loading settings", e)
             throw e
         }
     }
@@ -101,7 +101,7 @@ class SettingsActivity : BaseActivity() {
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error setting up listeners", e)
+            Logger.e(TAG, "Error setting up listeners", e)
             throw e
         }
     }

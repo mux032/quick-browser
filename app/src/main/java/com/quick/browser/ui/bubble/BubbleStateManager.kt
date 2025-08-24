@@ -1,6 +1,6 @@
 package com.quick.browser.ui.bubble
 
-import android.util.Log
+import com.quick.browser.util.Logger
 
 /**
  * Manages the state of a BubbleView, including expansion state, dimensions, zoom, 
@@ -160,7 +160,7 @@ class BubbleStateManager(private val bubbleId: String) {
     fun setExpanded(expanded: Boolean) {
         if (_isBubbleExpanded != expanded) {
             _isBubbleExpanded = expanded
-            Log.d(TAG, "Bubble $bubbleId expansion state changed to: $expanded")
+            Logger.d(TAG, "Bubble $bubbleId expansion state changed to: $expanded")
             stateChangeListener?.onExpansionStateChanged(expanded)
             
             // Reset toolbar state when expanding
@@ -178,7 +178,7 @@ class BubbleStateManager(private val bubbleId: String) {
     fun setActive(active: Boolean) {
         if (_isActive != active) {
             _isActive = active
-            Log.d(TAG, "Bubble $bubbleId active state changed to: $active")
+            Logger.d(TAG, "Bubble $bubbleId active state changed to: $active")
             stateChangeListener?.onActiveStateChanged(active)
         }
     }
@@ -190,7 +190,7 @@ class BubbleStateManager(private val bubbleId: String) {
      */
     fun setShowingAllBubbles(showing: Boolean) {
         _isShowingAllBubbles = showing
-        Log.d(TAG, "Bubble $bubbleId showing all bubbles state changed to: $showing")
+        Logger.d(TAG, "Bubble $bubbleId showing all bubbles state changed to: $showing")
     }
     
     /**
@@ -206,7 +206,7 @@ class BubbleStateManager(private val bubbleId: String) {
      * Trigger the close listener
      */
     fun triggerClose() {
-        Log.d(TAG, "Triggering close for bubble $bubbleId")
+        Logger.d(TAG, "Triggering close for bubble $bubbleId")
         onCloseListener?.invoke()
     }
     
@@ -225,10 +225,10 @@ class BubbleStateManager(private val bubbleId: String) {
             _storedWidth = width
             _storedHeight = height
             _hasStoredDimensions = true
-            Log.d(TAG, "Updated dimensions for bubble $bubbleId: ${width}x${height}")
+            Logger.d(TAG, "Updated dimensions for bubble $bubbleId: ${width}x${height}")
             stateChangeListener?.onDimensionsChanged(width, height)
         } else {
-            Log.w(TAG, "Invalid dimensions provided for bubble $bubbleId: ${width}x${height}")
+            Logger.w(TAG, "Invalid dimensions provided for bubble $bubbleId: ${width}x${height}")
         }
     }
     
@@ -239,7 +239,7 @@ class BubbleStateManager(private val bubbleId: String) {
         _storedWidth = 0
         _storedHeight = 0
         _hasStoredDimensions = false
-        Log.d(TAG, "Cleared dimensions for bubble $bubbleId")
+        Logger.d(TAG, "Cleared dimensions for bubble $bubbleId")
     }
     
     /**
@@ -268,7 +268,7 @@ class BubbleStateManager(private val bubbleId: String) {
         val clampedZoom = zoomPercent.coerceIn(50f, 200f) // Reasonable zoom range
         if (_currentZoomPercent != clampedZoom) {
             _currentZoomPercent = clampedZoom
-            Log.d(TAG, "Zoom changed for bubble $bubbleId: $clampedZoom%")
+            Logger.d(TAG, "Zoom changed for bubble $bubbleId: $clampedZoom%")
             stateChangeListener?.onZoomChanged(clampedZoom)
         }
     }
@@ -292,7 +292,7 @@ class BubbleStateManager(private val bubbleId: String) {
     fun setToolbarVisible(visible: Boolean) {
         if (_isToolbarVisible != visible) {
             _isToolbarVisible = visible
-            Log.d(TAG, "Toolbar visibility changed for bubble $bubbleId: $visible")
+            Logger.d(TAG, "Toolbar visibility changed for bubble $bubbleId: $visible")
             stateChangeListener?.onToolbarVisibilityChanged(visible)
         }
     }
@@ -328,7 +328,7 @@ class BubbleStateManager(private val bubbleId: String) {
     fun setReadModeActive(active: Boolean) {
         if (_isReadModeActive != active) {
             _isReadModeActive = active
-            Log.d(TAG, "Read mode state changed for bubble $bubbleId: $active")
+            Logger.d(TAG, "Read mode state changed for bubble $bubbleId: $active")
             
             // Exit summary mode if read mode is activated
             if (active && _isSummaryModeActive) {
@@ -345,7 +345,7 @@ class BubbleStateManager(private val bubbleId: String) {
     fun setSummaryModeActive(active: Boolean) {
         if (_isSummaryModeActive != active) {
             _isSummaryModeActive = active
-            Log.d(TAG, "Summary mode state changed for bubble $bubbleId: $active")
+            Logger.d(TAG, "Summary mode state changed for bubble $bubbleId: $active")
             
             // Exit read mode if summary mode is activated
             if (active && _isReadModeActive) {
@@ -361,7 +361,7 @@ class BubbleStateManager(private val bubbleId: String) {
      */
     fun setSettingsPanelVisible(visible: Boolean) {
         _isSettingsPanelVisible = visible
-        Log.d(TAG, "Settings panel visibility changed for bubble $bubbleId: $visible")
+        Logger.d(TAG, "Settings panel visibility changed for bubble $bubbleId: $visible")
     }
     
     /**
@@ -371,7 +371,7 @@ class BubbleStateManager(private val bubbleId: String) {
         setReadModeActive(false)
         setSummaryModeActive(false)
         setSettingsPanelVisible(false)
-        Log.d(TAG, "Exited all modes for bubble $bubbleId")
+        Logger.d(TAG, "Exited all modes for bubble $bubbleId")
     }
     
     // ======================================
@@ -382,7 +382,7 @@ class BubbleStateManager(private val bubbleId: String) {
      * Reset the bubble to its default state
      */
     fun resetToDefault() {
-        Log.d(TAG, "Resetting bubble $bubbleId to default state")
+        Logger.d(TAG, "Resetting bubble $bubbleId to default state")
         
         _isBubbleExpanded = false
         _isActive = false
@@ -427,7 +427,7 @@ class BubbleStateManager(private val bubbleId: String) {
      * Cleanup resources
      */
     fun cleanup() {
-        Log.d(TAG, "Cleaning up state for bubble $bubbleId")
+        Logger.d(TAG, "Cleaning up state for bubble $bubbleId")
         stateChangeListener = null
         onCloseListener = null
     }

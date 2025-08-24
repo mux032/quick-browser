@@ -1,7 +1,7 @@
 package com.quick.browser.manager
 
 import android.content.Context
-import android.util.Log
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -36,11 +36,11 @@ class ModelDownloader(private val context: Context) {
     suspend fun ensureSentenceModelAvailable(): Boolean = withContext(Dispatchers.IO) {
         try {
             if (isSentenceModelDownloaded()) {
-                Log.d(TAG, "Sentence model already downloaded")
+                Logger.d(TAG, "Sentence model already downloaded")
                 return@withContext true
             }
             
-            Log.d(TAG, "Downloading sentence model...")
+            Logger.d(TAG, "Downloading sentence model...")
             
             // Create a temporary file
             val tempFile = File(context.cacheDir, "$SENTENCE_MODEL_FILENAME.tmp")
@@ -64,10 +64,10 @@ class ModelDownloader(private val context: Context) {
             val modelFile = File(context.getExternalFilesDir(null), SENTENCE_MODEL_FILENAME)
             tempFile.renameTo(modelFile)
             
-            Log.d(TAG, "Sentence model downloaded successfully")
+            Logger.d(TAG, "Sentence model downloaded successfully")
             return@withContext true
         } catch (e: Exception) {
-            Log.e(TAG, "Error downloading sentence model", e)
+            Logger.e(TAG, "Error downloading sentence model", e)
             
             // Check if the asset exists
             val assetList = context.assets.list("")
@@ -87,11 +87,11 @@ class ModelDownloader(private val context: Context) {
                                 input.copyTo(output)
                             }
                         }
-                        Log.d(TAG, "Used fallback sentence model from assets")
+                        Logger.d(TAG, "Used fallback sentence model from assets")
                         return@withContext true
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error checking asset content", e)
+                    Logger.e(TAG, "Error checking asset content", e)
                 }
             }
             

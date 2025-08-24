@@ -2,7 +2,6 @@ package com.quick.browser.ui.bubble
 
 import android.content.Context
 import android.graphics.Rect
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -10,6 +9,7 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import com.google.android.material.button.MaterialButton
+import com.quick.browser.util.Logger
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
@@ -416,7 +416,7 @@ class BubbleTouchHandler(
             try {
                 windowManager.updateViewLayout(bubbleView, windowParams)
             } catch (e: Exception) {
-                Log.e(TAG, "Error updating window layout", e)
+                Logger.e(TAG, "Error updating window layout", e)
             }
         }
 

@@ -1,7 +1,6 @@
 package com.quick.browser.ui.bubble
 
 import android.content.Context
-import android.util.Log
 import android.view.View
 import android.webkit.WebView
 import android.widget.ProgressBar
@@ -11,6 +10,7 @@ import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
 import com.quick.browser.manager.ReadabilityExtractor
 import com.quick.browser.manager.SettingsManager
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -185,8 +185,8 @@ class BubbleReadModeManager(
                     // Apply read mode settings to WebView
                     configureWebViewForReadMode()
                     
-                    // Load the styled content
-                    webView?.loadDataWithBaseURL(url, styledHtml, "text/html", "UTF-8", null)
+                    // Load the styled content with proper encoding
+                    webView?.loadDataWithBaseURL(url, styledHtml, "text/html; charset=UTF-8", "UTF-8", null)
                     
                     // Add JavaScript interface for scroll detection
                     setupScrollDetection()
@@ -203,12 +203,12 @@ class BubbleReadModeManager(
                     listener?.onReadModeLoadingCompleted(true)
                     
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error extracting content for read mode", e)
+                    Logger.e(TAG, "Error extracting content for read mode", e)
                     handleReadModeError("Error processing content: ${e.message}")
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to open read mode", e)
+            Logger.e(TAG, "Failed to open read mode", e)
             handleReadModeError("Failed to enter read mode: ${e.message}")
         }
     }
@@ -241,7 +241,7 @@ class BubbleReadModeManager(
         
         // Show error message
         Toast.makeText(context, R.string.failed_to_load_reader_mode, Toast.LENGTH_SHORT).show()
-        Log.e(TAG, "Read mode error: $message")
+        Logger.e(TAG, "Read mode error: $message")
         
         // Reset read mode state on error
         isReadMode = false

@@ -2,7 +2,6 @@ package com.quick.browser.ui.bubble
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -12,6 +11,8 @@ import com.quick.browser.manager.AdBlocker
 import com.quick.browser.manager.SecurityPolicyManager
 import com.quick.browser.manager.SettingsManager
 import com.quick.browser.util.JavaScriptSanitizer
+import com.quick.browser.util.Logger
+import com.quick.browser.util.UrlFormatter
 import com.quick.browser.viewmodel.WebViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -95,7 +96,7 @@ class BubbleWebViewManager(
         val webView = this.webView ?: return
 
         try {
-            Log.d(TAG, "Setting up WebView for bubble: $bubbleId")
+            Logger.d(TAG, "Setting up WebView for bubble: $bubbleId")
 
             // Set WebView background
             webView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
@@ -112,10 +113,10 @@ class BubbleWebViewManager(
             // Set up JavaScript interface for scroll detection
             setupScrollDetection(webView)
 
-            Log.d(TAG, "WebView setup complete for bubble: $bubbleId")
+            Logger.d(TAG, "WebView setup complete for bubble: $bubbleId")
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error setting up WebView for bubble $bubbleId", e)
+            Logger.e(TAG, "Error setting up WebView for bubble $bubbleId", e)
         }
     }
 
@@ -181,7 +182,7 @@ class BubbleWebViewManager(
             webView.settings.setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
             webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         } catch (e: Exception) {
-            Log.e(TAG, "Error setting hardware acceleration", e)
+            Logger.e(TAG, "Error setting hardware acceleration", e)
             webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         }
     }
@@ -270,14 +271,14 @@ class BubbleWebViewManager(
      * Handle received favicon from WebView
      */
     private fun handleReceivedFavicon(favicon: Bitmap) {
-        Log.d(TAG, "Received favicon for bubble: $bubbleId")
+        Logger.d(TAG, "Received favicon for bubble: $bubbleId")
 
         // Update in WebViewModel to persist the favicon
         webViewModel?.let { viewModel ->
             val currentUrl = webView?.url
             if (currentUrl != null) {
                 viewModel.updateFavicon(currentUrl, favicon)
-                Log.d(TAG, "Updated favicon in WebViewModel for URL: $currentUrl")
+                Logger.d(TAG, "Updated favicon in WebViewModel for URL: $currentUrl")
             }
         }
     }
@@ -286,14 +287,14 @@ class BubbleWebViewManager(
      * Handle received page title from WebView
      */
     private fun handleReceivedTitle(title: String) {
-        Log.d(TAG, "Received page title for bubble $bubbleId: $title")
+        Logger.d(TAG, "Received page title for bubble $bubbleId: $title")
 
         // Update title in WebViewModel
         webViewModel?.let { viewModel ->
             val currentUrl = webView?.url
             if (currentUrl != null) {
                 viewModel.updateTitle(currentUrl, title)
-                Log.d(TAG, "Updated title in WebViewModel for URL: $currentUrl")
+                Logger.d(TAG, "Updated title in WebViewModel for URL: $currentUrl")
             }
         }
 
@@ -310,7 +311,7 @@ class BubbleWebViewManager(
         val webView = this.webView ?: return
 
         if (url.isEmpty()) {
-            Log.d(TAG, "Empty URL provided for bubble $bubbleId")
+            Logger.d(TAG, "Empty URL provided for bubble $bubbleId")
             webView.loadUrl("about:blank")
             return
         }
@@ -318,13 +319,13 @@ class BubbleWebViewManager(
         // Use security policy manager to validate and format URL
         val validatedUrl = securityPolicyManager.validateAndFormatUrl(url)
         if (validatedUrl == null || !securityPolicyManager.isUrlSafeToLoad(validatedUrl)) {
-            Log.d(TAG, "Invalid or unsafe URL provided for bubble $bubbleId: $url")
+            Logger.d(TAG, "Invalid or unsafe URL provided for bubble $bubbleId: $url")
             webView.loadUrl("about:blank")
             return
         }
 
         try {
-            Log.d(TAG, "Loading URL in WebView for bubble $bubbleId: $validatedUrl")
+            Logger.d(TAG, "Loading URL in WebView for bubble $bubbleId: $validatedUrl")
 
             // Clear any existing page
             webView.clearHistory()
@@ -342,10 +343,10 @@ class BubbleWebViewManager(
 
             webView.loadUrl(validatedUrl, headers)
 
-            Log.d(TAG, "URL load initiated for bubble $bubbleId")
+            Logger.d(TAG, "URL load initiated for bubble $bubbleId")
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading URL for bubble $bubbleId", e)
+            Logger.e(TAG, "Error loading URL for bubble $bubbleId", e)
             webView.loadUrl("about:blank")
         }
     }
@@ -400,7 +401,7 @@ class BubbleWebViewManager(
         if (JavaScriptSanitizer.isJavaScriptSafe(sanitizedScript)) {
             webView?.evaluateJavascript(sanitizedScript, callback)
         } else {
-            Log.w(TAG, "Blocked potentially unsafe JavaScript execution")
+            Logger.w(TAG, "Blocked potentially unsafe JavaScript execution")
             callback?.invoke(null)
         }
     }
@@ -434,7 +435,7 @@ class BubbleWebViewManager(
         """.trimIndent()
 
         evaluateJavaScript(script)
-        Log.d(TAG, "Applied dynamic zoom: $zoomPercent%")
+        Logger.d(TAG, "Applied dynamic zoom: $zoomPercent%")
     }
 
     /**
@@ -477,15 +478,7 @@ class BubbleWebViewManager(
      * Format URL to ensure it has proper protocol
      */
     private fun formatUrl(url: String): String {
-        return when {
-            url.startsWith("http://") || url.startsWith("https://") -> url
-            url.startsWith("file://") -> url
-            url.startsWith("data:") -> url
-            url.startsWith("javascript:") -> url
-            url.contains("://") -> url // Already has a protocol
-            url.isEmpty() -> ""
-            else -> "https://$url" // Default to HTTPS
-        }
+        return UrlFormatter.formatUrl(url)
     }
 
     // Callback setters

@@ -3,11 +3,11 @@ package com.quick.browser.manager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.webkit.WebView
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
+import com.quick.browser.util.Logger
 
 /**
  * Handles authentication URLs by launching them in Chrome Custom Tabs
@@ -94,14 +94,14 @@ class AuthenticationHandler {
                     (host.contains("account") || path.contains("account") || 
                      path.contains("auth") || path.contains("login") || 
                      path.contains("signin") || query.contains("auth"))) {
-                    Log.d(TAG, "Google authentication URL detected: $url")
+                    Logger.d(TAG, "Google authentication URL detected: $url")
                     return true
                 }
                 
                 // Check if the domain is in our list of authentication domains
                 for (authDomain in AUTH_DOMAINS) {
                     if (host.contains(authDomain)) {
-                        Log.d(TAG, "Authentication domain detected: $host in URL: $url")
+                        Logger.d(TAG, "Authentication domain detected: $host in URL: $url")
                         return true
                     }
                 }
@@ -109,7 +109,7 @@ class AuthenticationHandler {
                 // Check if the URL path contains authentication patterns
                 for (pattern in AUTH_PATTERNS) {
                     if (path.contains(pattern)) {
-                        Log.d(TAG, "Authentication path pattern detected: $pattern in URL: $url")
+                        Logger.d(TAG, "Authentication path pattern detected: $pattern in URL: $url")
                         return true
                     }
                 }
@@ -118,7 +118,7 @@ class AuthenticationHandler {
                 if (query.isNotEmpty()) {
                     for (param in AUTH_QUERY_PARAMS) {
                         if (query.contains(param)) {
-                            Log.d(TAG, "Authentication query parameter detected: $param in URL: $url")
+                            Logger.d(TAG, "Authentication query parameter detected: $param in URL: $url")
                             return true
                         }
                     }
@@ -126,7 +126,7 @@ class AuthenticationHandler {
                 
                 return false
             } catch (e: Exception) {
-                Log.e(TAG, "Error checking if URL is authentication URL", e)
+                Logger.e(TAG, "Error checking if URL is authentication URL", e)
                 return false
             }
         }
@@ -144,7 +144,7 @@ class AuthenticationHandler {
          */
         fun openInCustomTab(context: Context, url: String, originalBubbleId: String? = null): Boolean {
             return try {
-                Log.d(TAG, "Opening URL in Custom Tab: $url")
+                Logger.d(TAG, "Opening URL in Custom Tab: $url")
                 
                 // Create a redirect URI for returning to our app
                 val redirectUri = Uri.Builder()
@@ -154,7 +154,7 @@ class AuthenticationHandler {
                     .appendQueryParameter("bubble_id", originalBubbleId ?: "")
                     .build()
                 
-                Log.d(TAG, "Redirect URI: $redirectUri")
+                Logger.d(TAG, "Redirect URI: $redirectUri")
                 
                 // First try with Custom Tabs
                 val customTabsBuilder = CustomTabsIntent.Builder()
@@ -174,20 +174,20 @@ class AuthenticationHandler {
                 
                 // Launch the URL in Custom Tabs
                 customTabsIntent.launchUrl(context, url.toUri())
-                Log.d(TAG, "Successfully launched URL in Custom Tab: $url")
+                Logger.d(TAG, "Successfully launched URL in Custom Tab: $url")
                 true
             } catch (e: Exception) {
-                Log.e(TAG, "Error opening Custom Tab, falling back to system browser", e)
+                Logger.e(TAG, "Error opening Custom Tab, falling back to system browser", e)
                 
                 // Fallback to system browser if Custom Tabs fails
                 try {
                     val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
-                    Log.d(TAG, "Successfully launched URL in system browser: $url")
+                    Logger.d(TAG, "Successfully launched URL in system browser: $url")
                     true
                 } catch (e2: Exception) {
-                    Log.e(TAG, "Error opening URL in system browser", e2)
+                    Logger.e(TAG, "Error opening URL in system browser", e2)
                     false
                 }
             }
@@ -200,11 +200,11 @@ class AuthenticationHandler {
          */
         fun handleAuthenticationReturn(uri: Uri): Boolean {
             return try {
-                Log.d(TAG, "Processing authentication return URI: $uri")
+                Logger.d(TAG, "Processing authentication return URI: $uri")
 
                 // Validate the URI (e.g., check scheme, host, and required parameters)
                 if (uri.scheme != REDIRECT_SCHEME || uri.host != REDIRECT_HOST) {
-                    Log.e(TAG, "Invalid authentication callback URI")
+                    Logger.e(TAG, "Invalid authentication callback URI")
                     return false
                 }
 
@@ -213,7 +213,7 @@ class AuthenticationHandler {
                 val state = uri.getQueryParameter("state")
 
                 if (token.isNullOrEmpty()) {
-                    Log.e(TAG, "Missing token in authentication callback")
+                    Logger.e(TAG, "Missing token in authentication callback")
                     return false
                 }
 
@@ -224,14 +224,14 @@ class AuthenticationHandler {
                     webView.post {
                         webView.loadUrl(redirectUrl)
                     }
-                    Log.d(TAG, "WebView updated with redirect URL: $redirectUrl")
+                    Logger.d(TAG, "WebView updated with redirect URL: $redirectUrl")
                 } else {
-                    Log.w(TAG, "No WebView found for state: $state")
+                    Logger.w(TAG, "No WebView found for state: $state")
                 }
 
                 true
             } catch (e: Exception) {
-                Log.e(TAG, "Error handling authentication return: ${e.message}", e)
+                Logger.e(TAG, "Error handling authentication return: ${e.message}", e)
                 false
             }
         }
@@ -246,7 +246,7 @@ class AuthenticationHandler {
          */
         fun associateWebViewWithState(state: String, webView: WebView) {
             webViewStateMap[state] = webView
-            Log.d(TAG, "Associated WebView with state: $state")
+            Logger.d(TAG, "Associated WebView with state: $state")
         }
 
         /**
@@ -256,15 +256,15 @@ class AuthenticationHandler {
          */
         private fun getWebViewForState(state: String?): WebView? {
             if (state == null) {
-                Log.w(TAG, "State is null, cannot retrieve WebView")
+                Logger.w(TAG, "State is null, cannot retrieve WebView")
                 return null
             }
 
             val webView = webViewStateMap[state]
             if (webView != null) {
-                Log.d(TAG, "Retrieved WebView for state: $state")
+                Logger.d(TAG, "Retrieved WebView for state: $state")
             } else {
-                Log.w(TAG, "No WebView found for state: $state")
+                Logger.w(TAG, "No WebView found for state: $state")
             }
             return webView
         }
@@ -276,7 +276,7 @@ class AuthenticationHandler {
          */
         fun removeWebViewForState(state: String) {
             webViewStateMap.remove(state)
-            Log.d(TAG, "Removed WebView association for state: $state")
+            Logger.d(TAG, "Removed WebView association for state: $state")
         }
     }
 }

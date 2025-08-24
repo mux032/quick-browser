@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.EditorInfo
@@ -23,6 +22,7 @@ import com.quick.browser.manager.AuthenticationHandler
 import com.quick.browser.service.BubbleService
 import com.quick.browser.ui.base.BaseActivity
 import com.quick.browser.ui.settings.SettingsActivity
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -59,7 +59,7 @@ class MainActivity : BaseActivity() {
             startForegroundService(intent)
             // Removed moveTaskToBack(true) to keep the app in foreground
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start bubble service", e)
+            Logger.e(TAG, "Failed to start bubble service", e)
             Toast.makeText(this, "Failed to start bubble service", Toast.LENGTH_SHORT).show()
         }
     }
@@ -70,7 +70,7 @@ class MainActivity : BaseActivity() {
             return
         }
 
-        Log.d(TAG, "startBubbleServiceWithUrl: Starting service with URL: $url")
+        Logger.d(TAG, "startBubbleServiceWithUrl: Starting service with URL: $url")
         val intent =
             Intent(this, BubbleService::class.java).apply {
                 action = Constants.ACTION_CREATE_BUBBLE
@@ -81,13 +81,13 @@ class MainActivity : BaseActivity() {
             startForegroundService(intent)
             // Removed moveTaskToBack(true) to keep the app in foreground
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start bubble service", e)
+            Logger.e(TAG, "Failed to start bubble service", e)
             Toast.makeText(this, "Failed to start bubble service", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.d(TAG, "onCreate called with intent: ${intent?.action}")
+        Logger.d(TAG, "onCreate called with intent: ${intent?.action}")
 
         // Always call super.onCreate() to avoid SuperNotCalledException
         // Theme will be applied automatically by BaseActivity
@@ -98,7 +98,7 @@ class MainActivity : BaseActivity() {
 
         // Check if this is a link sharing intent before setting up the rest of the UI
         if (isLinkSharingIntent(intent)) {
-            Log.d(TAG, "Link sharing intent detected in onCreate, handling without full UI initialization")
+            Logger.d(TAG, "Link sharing intent detected in onCreate, handling without full UI initialization")
             // Handle the intent without initializing the full UI
             handleLinkSharingIntent(intent)
             return
@@ -198,7 +198,7 @@ class MainActivity : BaseActivity() {
             goButton.alpha = 1.0f
         }, 1000)
 
-        Log.d(TAG, "Opening URL in bubble: $url")
+        Logger.d(TAG, "Opening URL in bubble: $url")
     }
 
 
@@ -216,7 +216,7 @@ class MainActivity : BaseActivity() {
                     val intent = Intent(this, SettingsActivity::class.java)
                     startActivity(intent)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error opening settings", e)
+                    Logger.e(TAG, "Error opening settings", e)
                     Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
                 }
                 true
@@ -230,7 +230,7 @@ class MainActivity : BaseActivity() {
                     val intent = Intent(this, com.quick.browser.ui.SavedArticlesActivity::class.java)
                     startActivity(intent)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error opening saved articles", e)
+                    Logger.e(TAG, "Error opening saved articles", e)
                     Toast.makeText(this, "Could not open saved articles", Toast.LENGTH_SHORT).show()
                 }
                 true
@@ -241,7 +241,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onNewIntent(intent: Intent?) {
-        Log.d(TAG, "onNewIntent called with intent: ${intent?.action}")
+        Logger.d(TAG, "onNewIntent called with intent: ${intent?.action}")
         super.onNewIntent(intent)
 
         if (intent == null) return
@@ -249,7 +249,7 @@ class MainActivity : BaseActivity() {
         // Check if this is a return from authentication
         val data = intent.data
         if (data != null && data.scheme == "quick_browser" && data.host == "auth-callback") {
-            Log.d(TAG, "Received authentication callback: $data")
+            Logger.d(TAG, "Received authentication callback: $data")
             handleAuthenticationCallback(data)
             return
         }
@@ -259,7 +259,7 @@ class MainActivity : BaseActivity() {
 
         // If it's a link sharing intent, handle it without showing the UI
         if (isLinkSharingIntent(intent)) {
-            Log.d(TAG, "Link sharing intent detected in onNewIntent, handling without UI")
+            Logger.d(TAG, "Link sharing intent detected in onNewIntent, handling without UI")
             handleLinkSharingIntent(intent)
             return
         }
@@ -269,17 +269,17 @@ class MainActivity : BaseActivity() {
      * Handles the callback from Chrome Custom Tabs after authentication
      */
     private fun handleAuthenticationCallback(uri: Uri) {
-        Log.d(TAG, "Handling authentication callback: $uri")
+        Logger.d(TAG, "Handling authentication callback: $uri")
 
         // Use the AuthenticationHandler to handle the return
         val handled = AuthenticationHandler.handleAuthenticationReturn(uri)
 
         if (handled) {
-            Log.d(TAG, "Authentication callback handled successfully")
+            Logger.d(TAG, "Authentication callback handled successfully")
             // Minimize the app after handling the callback
             moveTaskToBack(true)
         } else {
-            Log.e(TAG, "Failed to handle authentication callback")
+            Logger.e(TAG, "Failed to handle authentication callback")
             Toast.makeText(this, "Failed to complete authentication", Toast.LENGTH_SHORT).show()
         }
     }
@@ -298,13 +298,13 @@ class MainActivity : BaseActivity() {
     private fun handleLinkSharingIntent(intent: Intent?) {
         if (intent == null) return
 
-        Log.d(TAG, "handleLinkSharingIntent | Received intent: ${intent.action}, data: ${intent.extras}")
-        Log.d(TAG, "Activity will be moved to background instead of finishing to support multiple shares")
+        Logger.d(TAG, "handleLinkSharingIntent | Received intent: ${intent.action}, data: ${intent.extras}")
+        Logger.d(TAG, "Activity will be moved to background instead of finishing to support multiple shares")
 
         when (intent.action) {
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-                Log.d(TAG, "Received shared text: $sharedText")
+                Logger.d(TAG, "Received shared text: $sharedText")
                 if (sharedText != null) {
                     // Start bubble service with the URL
                     if (checkPermissionsAndStartBubbleWithUrl(sharedText)) {
@@ -317,7 +317,7 @@ class MainActivity : BaseActivity() {
 
             Intent.ACTION_VIEW -> {
                 val url = intent.data?.toString()
-                Log.d(TAG, "Received view URL: $url")
+                Logger.d(TAG, "Received view URL: $url")
                 if (url != null) {
                     // Start bubble service with the URL
                     if (checkPermissionsAndStartBubbleWithUrl(url)) {
@@ -394,7 +394,7 @@ class MainActivity : BaseActivity() {
             )
                 .show()
         } catch (e: Exception) {
-            Log.e(TAG, "Error requesting overlay permission", e)
+            Logger.e(TAG, "Error requesting overlay permission", e)
             Toast.makeText(this, "Could not open overlay permission settings", Toast.LENGTH_LONG)
                 .show()
         }

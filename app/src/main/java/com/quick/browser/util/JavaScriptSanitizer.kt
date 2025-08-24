@@ -1,7 +1,5 @@
 package com.quick.browser.util
 
-import android.util.Log
-
 /**
  * Utility class for sanitizing JavaScript code to prevent XSS and other injection attacks
  */
@@ -56,7 +54,7 @@ object JavaScriptSanitizer {
             sanitized = sanitized.replace(Regex("data:text/javascript[^'\"]*", setOf(RegexOption.IGNORE_CASE)), "")
             
         } catch (e: Exception) {
-            Log.e(TAG, "Error sanitizing JavaScript", e)
+            Logger.e(TAG, "Error sanitizing JavaScript", e)
             // In case of error, return empty string to prevent execution of potentially dangerous code
             sanitized = ""
         }

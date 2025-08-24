@@ -161,6 +161,7 @@
     <string name="summary_error">Could not summarize this article</string>
     <string name="summary_error_no_content">No content found to summarize</string>
     <string name="summary_not_article">This page does not appear to be an article</string>
+    <string name="summary_timeout">Summarization timed out. The article may be too long or complex.</string>
     <string name="open_in_browser">Open in Browser</string>
     <string name="share_via">Share via</string>
     <string name="share_failed">Failed to share link</string>

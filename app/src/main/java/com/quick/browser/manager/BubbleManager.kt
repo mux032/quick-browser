@@ -1,13 +1,13 @@
 package com.quick.browser.manager
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.quick.browser.model.Bubble
+import com.quick.browser.util.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.util.UUID
+import java.util.*
 
 /**
  * BubbleManager is responsible for managing the lifecycle and operations of browser bubbles. It
@@ -26,7 +26,7 @@ class BubbleManager(
 
     fun createOrUpdateBubbleWithNewUrl(url: String, existingBubbleId: String? = null) {
         lifecycleScope.launch {
-            Log.d(TAG, "Creating new bubble for URL: $url, existing bubble ID: $existingBubbleId")
+            Logger.d(TAG, "Creating new bubble for URL: $url, existing bubble ID: $existingBubbleId")
 
             try {
                 val currentBubbles = _bubbles.value.toMutableMap()
@@ -47,9 +47,9 @@ class BubbleManager(
                 // Update state
                 _bubbles.value = currentBubbles
 
-                Log.d(TAG, "Successfully created new bubble with ID: $bubbleId for URL: $url")
+                Logger.d(TAG, "Successfully created new bubble with ID: $bubbleId for URL: $url")
             } catch (e: Exception) {
-                Log.e(TAG, "Error creating bubble for URL: $url", e)
+                Logger.e(TAG, "Error creating bubble for URL: $url", e)
             }
         }
     }
@@ -61,7 +61,7 @@ class BubbleManager(
             currentBubbles.remove(bubbleId)
             _bubbles.value = currentBubbles
 
-            Log.d(TAG, "Removed bubble with ID: $bubbleId")
+            Logger.d(TAG, "Removed bubble with ID: $bubbleId")
         }
     }
 
@@ -82,7 +82,7 @@ class BubbleManager(
             // Clear the bubbles map
             _bubbles.value = emptyMap()
 
-            Log.d(TAG, "Cleaned up all bubbles")
+            Logger.d(TAG, "Cleaned up all bubbles")
         }
     }
 }

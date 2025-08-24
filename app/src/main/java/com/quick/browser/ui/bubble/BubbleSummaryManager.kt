@@ -1,22 +1,15 @@
 package com.quick.browser.ui.bubble
 
 import android.content.Context
-import android.util.Log
 import android.view.View
 import android.webkit.WebView
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
 import com.quick.browser.manager.SummarizationManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.quick.browser.util.Logger
+import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 
 /**
@@ -231,7 +224,7 @@ class BubbleSummaryManager(
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error in summarizeContent", e)
+            Logger.e(TAG, "Error in summarizeContent", e)
             showSummaryError(context.getString(R.string.summary_error))
         }
     }
@@ -252,7 +245,7 @@ class BubbleSummaryManager(
                     callback(null)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error processing HTML for summary", e)
+                Logger.e(TAG, "Error processing HTML for summary", e)
                 callback(null)
             }
         }
@@ -265,36 +258,43 @@ class BubbleSummaryManager(
         isSummarizationInProgress = true
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val cleanedHtml = withContext(Dispatchers.IO) {
-                    try {
-                        cleanHtmlContent(htmlContent)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error cleaning HTML", e)
-                        null
+                // Add a timeout for the entire summarization process
+                withTimeout(30000) { // 30 second timeout
+                    val cleanedHtml = withContext(Dispatchers.IO) {
+                        try {
+                            cleanHtmlContent(htmlContent)
+                        } catch (e: Exception) {
+                            Logger.e(TAG, "Error cleaning HTML", e)
+                            null
+                        }
+                    }
+
+                    if (cleanedHtml == null || cleanedHtml.length < MIN_CONTENT_LENGTH) {
+                        showSummaryError(context.getString(R.string.summary_not_article))
+                        listener?.onSummarizationCompleted(false)
+                        return@withTimeout
+                    }
+
+                    val summaryPoints = withContext(Dispatchers.Default) {
+                        summarizationManager.summarizeContent(cleanedHtml)
+                    }
+
+                    if (summaryPoints.isNotEmpty()) {
+                        displaySummaryPoints(summaryPoints)
+                        listener?.onSummarizationCompleted(true)
+                    } else {
+                        showSummaryError(context.getString(R.string.summary_not_article))
+                        listener?.onSummarizationCompleted(false)
                     }
                 }
-
-                if (cleanedHtml == null || cleanedHtml.length < MIN_CONTENT_LENGTH) {
-                    showSummaryError(context.getString(R.string.summary_not_article))
-                    listener?.onSummarizationCompleted(false)
-                    return@launch
-                }
-
-                val summaryPoints = withContext(Dispatchers.Default) {
-                    summarizationManager.summarizeContent(cleanedHtml)
-                }
-
-                if (summaryPoints.isNotEmpty()) {
-                    displaySummaryPoints(summaryPoints)
-                    listener?.onSummarizationCompleted(true)
-                } else {
-                    showSummaryError(context.getString(R.string.summary_not_article))
-                    listener?.onSummarizationCompleted(false)
-                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error processing summarization", e)
+                Logger.e(TAG, "Error processing summarization", e)
                 showSummaryError(context.getString(R.string.summary_error))
                 listener?.onSummarizationError(e.message ?: "Unknown error")
+            } catch (e: TimeoutCancellationException) {
+                Logger.e(TAG, "Summarization timed out", e)
+                showSummaryError(context.getString(R.string.summary_timeout))
+                listener?.onSummarizationError("Summarization timed out")
             } finally {
                 isSummarizationInProgress = false
             }
@@ -361,12 +361,17 @@ class BubbleSummaryManager(
         isSummarizationInProgress = true
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val cleanedText = cleanHtmlContent(htmlContent)
-                if (cleanedText != null && cleanedText.length > MIN_CONTENT_LENGTH) {
-                    summarizationManager.summarizeContent(cleanedText)
+                // Add a timeout for background summarization
+                withTimeout(30000) { // 30 second timeout
+                    val cleanedText = cleanHtmlContent(htmlContent)
+                    if (cleanedText != null && cleanedText.length > MIN_CONTENT_LENGTH) {
+                        summarizationManager.summarizeContent(cleanedText)
+                    }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Background summarization failed", e)
+                Logger.e(TAG, "Background summarization failed", e)
+            } catch (e: TimeoutCancellationException) {
+                Logger.e(TAG, "Background summarization timed out", e)
             } finally {
                 isSummarizationInProgress = false
             }
