@@ -3,9 +3,7 @@ package com.quick.browser.service
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.quick.browser.manager.AdBlocker
-import com.quick.browser.manager.SettingsManager
-import com.quick.browser.util.Logger
+import com.quick.browser.utils.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import javax.inject.Inject
@@ -20,10 +18,10 @@ class AdBlockUpdateService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
 
     @Inject
-    lateinit var adBlocker: AdBlocker
+    lateinit var adBlockingService: AdBlockingService
 
     @Inject
-    lateinit var settingsManager: SettingsManager
+    lateinit var settingsService: SettingsService
 
     companion object {
         private const val TAG = "AdBlockUpdateService"
@@ -36,7 +34,7 @@ class AdBlockUpdateService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        // AdBlocker and SettingsManager are already injected
+        // AdBlockingService and SettingsService are already injected
         // Start periodic update check
         scheduleUpdates()
     }
@@ -62,7 +60,7 @@ class AdBlockUpdateService : Service() {
     private fun scheduleUpdates() {
         serviceScope.launch {
             while (true) {
-                if (settingsManager.isAdBlockEnabled()) {
+                if (settingsService.isAdBlockEnabled()) {
                     updateFilters()
                 }
                 delay(UPDATE_INTERVAL)
@@ -78,7 +76,7 @@ class AdBlockUpdateService : Service() {
             Logger.d(TAG, "Updating ad blocking filters...")
 
             // Try to update from EasyList
-            val success = adBlocker.updateRulesFromUrl(EASYLIST_URL)
+            val success = adBlockingService.updateRulesFromUrl(EASYLIST_URL)
 
             if (success) {
                 Logger.d(TAG, "Successfully updated ad blocking filters")

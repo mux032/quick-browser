@@ -18,7 +18,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:name=".QBApplication"
+        android:name=".QuickBrowserApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -28,7 +28,7 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".presentation.ui.main.MainActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
@@ -61,27 +61,27 @@
         </activity>
 
         <activity
-            android:name=".ui.settings.SettingsActivity"
+            android:name=".presentation.ui.settings.SettingsActivity"
             android:label="@string/settings"
             android:theme="@style/Theme.QBrowser" />
 
         <activity
-            android:name=".ui.history.HistoryActivity"
+            android:name=".presentation.ui.history.HistoryActivity"
             android:label="@string/history_title"
             android:theme="@style/Theme.QBrowser"
-            android:parentActivityName=".ui.main.MainActivity" />
+            android:parentActivityName=".presentation.ui.main.MainActivity" />
         
         <activity
-            android:name=".ui.SavedArticlesActivity"
+            android:name=".presentation.ui.saved.SavedArticlesActivity"
             android:label="@string/saved_articles"
             android:theme="@style/Theme.QBrowser"
-            android:parentActivityName=".ui.main.MainActivity" />
+            android:parentActivityName=".presentation.ui.main.MainActivity" />
         
         <activity
-            android:name=".ui.OfflineReaderActivity"
+            android:name=".presentation.ui.reader.OfflineReaderActivity"
             android:label="@string/offline_reader"
             android:theme="@style/Theme.QBrowser"
-            android:parentActivityName=".ui.SavedArticlesActivity" />
+            android:parentActivityName=".presentation.ui.saved.SavedArticlesActivity" />
         
 
         <service

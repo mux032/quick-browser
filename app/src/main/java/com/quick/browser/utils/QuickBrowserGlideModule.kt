@@ -9,10 +9,13 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.cache.InternalCacheDiskCacheFactory
 import com.bumptech.glide.load.engine.cache.LruResourceCache
 import com.bumptech.glide.module.AppGlideModule
-import com.quick.browser.util.Logger
 
 /**
  * Custom Glide module for the Quick Browser app
+ *
+ * This module configures Glide with custom cache sizes and default options
+ * optimized for the browser application. It sets up disk and memory caching
+ * strategies to balance performance with resource usage.
  */
 @GlideModule
 class QuickBrowserGlideModule : AppGlideModule() {
@@ -22,6 +25,15 @@ class QuickBrowserGlideModule : AppGlideModule() {
         private const val MEMORY_CACHE_SIZE_BYTES = 20 * 1024 * 1024L // 20 MB
     }
 
+    /**
+     * Apply custom options to Glide configuration
+     *
+     * This method configures Glide with custom disk and memory cache sizes,
+     * and sets default request options for optimal image loading performance.
+     *
+     * @param context The application context
+     * @param builder The GlideBuilder instance to configure
+     */
     override fun applyOptions(context: Context, builder: GlideBuilder) {
         // Set disk cache size
         builder.setDiskCache(InternalCacheDiskCacheFactory(context, DISK_CACHE_SIZE_BYTES))
@@ -38,11 +50,25 @@ class QuickBrowserGlideModule : AppGlideModule() {
         Logger.d(TAG, "Glide module configured with disk cache: ${DISK_CACHE_SIZE_BYTES} bytes, memory cache: ${MEMORY_CACHE_SIZE_BYTES} bytes")
     }
 
+    /**
+     * Register custom components with Glide
+     *
+     * This method allows registering custom components such as ModelLoaders,
+     * ResourceDecoders, etc. with Glide's registry.
+     *
+     * @param context The application context
+     * @param glide The Glide instance
+     * @param registry The registry to register components with
+     */
     override fun registerComponents(context: Context, glide: Glide, registry: Registry) {
         // Register custom components if needed
         super.registerComponents(context, glide, registry)
     }
 
-    // Disable manifest parsing to avoid startup time overhead
+    /**
+     * Disable manifest parsing to avoid startup time overhead
+     *
+     * @return False to disable manifest parsing
+     */
     override fun isManifestParsingEnabled(): Boolean = false
 }

@@ -1,13 +1,13 @@
 package com.quick.browser.di
 
 import android.content.Context
-import com.quick.browser.manager.AdBlocker
-import com.quick.browser.manager.SecurityPolicyManager
-import com.quick.browser.manager.SettingsManager
-import com.quick.browser.manager.SummarizationManager
-import com.quick.browser.ui.bubble.BubbleView
-import com.quick.browser.ui.bubble.BubbleWebViewManager
-import com.quick.browser.ui.bubble.WebViewClientEx
+import com.quick.browser.presentation.ui.browser.BubbleView
+import com.quick.browser.presentation.ui.browser.BubbleWebViewManager
+import com.quick.browser.presentation.ui.browser.WebViewClientEx
+import com.quick.browser.service.AdBlockingService
+import com.quick.browser.service.SettingsService
+import com.quick.browser.service.SummarizationService
+import com.quick.browser.utils.security.SecurityPolicyManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,9 +18,9 @@ import javax.inject.Singleton
 @Singleton
 class BubbleComponentFactory @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val settingsManager: SettingsManager,
-    private val adBlocker: AdBlocker,
-    private val summarizationManager: SummarizationManager
+    private val settingsService: SettingsService,
+    private val adBlockingService: AdBlockingService,
+    private val summarizationService: SummarizationService
 ) {
 
     fun createBubbleWebViewManager(
@@ -31,8 +31,8 @@ class BubbleComponentFactory @Inject constructor(
             context = context,
             bubbleId = bubbleId,
             bubbleView = bubbleView,
-            settingsManager = settingsManager,
-            adBlocker = adBlocker,
+            settingsService = settingsService,
+            adBlockingService = adBlockingService,
             securityPolicyManager = SecurityPolicyManager(context)
         )
     }
@@ -43,8 +43,8 @@ class BubbleComponentFactory @Inject constructor(
         return WebViewClientEx(
             context = context,
             onPageUrlChanged = onPageUrlChanged,
-            settingsManager = settingsManager,
-            adBlocker = adBlocker
+            settingsService = settingsService,
+            adBlockingService = adBlockingService
         )
     }
 }

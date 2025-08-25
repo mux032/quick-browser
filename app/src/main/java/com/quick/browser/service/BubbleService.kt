@@ -3,19 +3,20 @@ package com.quick.browser.service
 import android.content.Intent
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.quick.browser.Constants
-import com.quick.browser.QBApplication
-import com.quick.browser.manager.*
-import com.quick.browser.ui.bubble.BubbleIntentProcessor
-import com.quick.browser.util.Logger
+import com.quick.browser.QuickBrowserApplication
+import com.quick.browser.presentation.ui.browser.BubbleIntentProcessor
+import com.quick.browser.presentation.ui.browser.OfflineArticleSaver
+import com.quick.browser.utils.Constants
+import com.quick.browser.utils.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Inject
 
 /**
- * BubbleService is the core service responsible for managing floating bubbles in the Quick Browser. It
- * coordinates between different managers to handle bubble lifecycle, positioning, and user
- * interactions.
+ * BubbleService is the core service responsible for managing floating bubbles in the Quick Browser.
+ *
+ * This service coordinates between different managers to handle bubble lifecycle, positioning,
+ * and user interactions. It runs in the foreground to ensure bubbles remain visible and responsive.
  *
  * Key responsibilities:
  * - Service lifecycle management
@@ -37,16 +38,52 @@ class BubbleService : LifecycleService() {
     // private lateinit var webViewModel: WebViewModel
 
     @Inject
-    lateinit var webPageDao: com.quick.browser.data.WebPageDao
+    lateinit var historyRepository: com.quick.browser.domain.repository.HistoryRepository
 
     @Inject
-    lateinit var settingsManager: SettingsManager
+    lateinit var settingsService: SettingsService
 
     @Inject
-    lateinit var adBlocker: AdBlocker
+    lateinit var adBlockingService: AdBlockingService
 
     @Inject
-    lateinit var summarizationManager: SummarizationManager
+    lateinit var summarizationService: SummarizationService
+
+    @Inject
+    lateinit var offlineArticleSaver: OfflineArticleSaver
+
+    /**
+     * Create or update a bubble with a new URL
+     *
+     * @param url The URL to load in the bubble
+     * @param existingBubbleId The ID of an existing bubble to update, or null to create a new bubble
+     */
+    fun createOrUpdateBubbleWithNewUrl(url: String, existingBubbleId: String? = null) {
+        bubbleManager.createOrUpdateBubbleWithNewUrl(url, existingBubbleId)
+    }
+
+    /**
+     * Remove a bubble
+     *
+     * @param bubbleId The ID of the bubble to remove
+     */
+    fun removeBubble(bubbleId: String) {
+        bubbleManager.removeBubble(bubbleId)
+    }
+
+    /**
+     * Get all bubbles
+     *
+     * @return A list of all bubbles
+     */
+    fun getAllBubbles() = bubbleManager.getAllBubbles()
+    
+    /**
+     * Get a flow of all bubbles
+     *
+     * @return A flow of lists of bubbles
+     */
+    fun getBubblesFlow() = bubbleManager.bubbles
 
     companion object {
         private const val TAG = "BubbleService"
@@ -69,9 +106,17 @@ class BubbleService : LifecycleService() {
         const val EXTRA_X = "extra_x"
         const val EXTRA_Y = "extra_y"
 
+        /**
+         * Check if the service is running
+         *
+         * @return True if the service is running, false otherwise
+         */
         fun isRunning(): Boolean = isServiceRunning
     }
 
+    /**
+     * Called when the service is created
+     */
     override fun onCreate() {
         super.onCreate()
         Logger.d(TAG, "BubbleService onCreate()")
@@ -80,7 +125,7 @@ class BubbleService : LifecycleService() {
             isServiceRunning = true
 
             // Initialize managers
-            val app = application as QBApplication
+            val app = application as QuickBrowserApplication
             app.bubbleService = this
 
             bubbleManager =
@@ -93,18 +138,19 @@ class BubbleService : LifecycleService() {
 
             bubbleDisplayManager = BubbleDisplayManager(
                 context = this,
-                bubbleManager = bubbleManager,
+                bubbleService = this,
                 lifecycleScope = lifecycleScope,
-                settingsManager = settingsManager,
-                adBlocker = adBlocker,
-                summarizationManager = summarizationManager
+                settingsService = settingsService,
+                adBlockingService = adBlockingService,
+                summarizationService = summarizationService,
+                offlineArticleSaver = offlineArticleSaver
             )
 
             intentProcessor =
                 BubbleIntentProcessor(
                     context = this,
-                    bubbleManager = bubbleManager,
-                    webPageDao = webPageDao,
+                    bubbleService = this,
+                    historyRepository = historyRepository,
                     lifecycleScope = lifecycleScope
                 )
             // Start foreground service with notification
@@ -126,6 +172,14 @@ class BubbleService : LifecycleService() {
         }
     }
 
+    /**
+     * Called when the service receives a start command
+     *
+     * @param intent The intent that started the service
+     * @param flags Additional data about the start request
+     * @param startId A unique integer ID for this start request
+     * @return The restart behavior of the service
+     */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         Logger.d(TAG, "onStartCommand | Received intent: ${intent?.action}, data: ${intent?.extras}")
@@ -133,6 +187,9 @@ class BubbleService : LifecycleService() {
         return START_STICKY
     }
 
+    /**
+     * Called when the service is destroyed
+     */
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
@@ -142,7 +199,7 @@ class BubbleService : LifecycleService() {
 
         // Remove reference from application
         try {
-            val app = application as QBApplication
+            val app = application as QuickBrowserApplication
             if (app.bubbleService === this) {
                 app.bubbleService = null
             }
