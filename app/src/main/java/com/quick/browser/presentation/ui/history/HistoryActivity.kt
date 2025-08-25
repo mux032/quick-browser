@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.quick.browser.R
+import com.quick.browser.domain.usecase.GetHistoryUseCase
+import com.quick.browser.domain.usecase.SearchHistoryUseCase
 import com.quick.browser.presentation.ui.browser.OfflineArticleSaver
 import com.quick.browser.presentation.ui.components.BaseActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,6 +29,12 @@ class HistoryActivity : BaseActivity() {
 
     @Inject
     lateinit var offlineArticleSaver: OfflineArticleSaver
+    
+    @Inject
+    lateinit var getHistoryUseCase: GetHistoryUseCase
+    
+    @Inject
+    lateinit var searchHistoryUseCase: SearchHistoryUseCase
 
     companion object {
         private const val TAG = "HistoryActivity"
@@ -137,10 +145,9 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun searchHistory(query: String) {
-        // Note: This is a temporary fix. In a real application, we should properly observe the UI state.
-        // For now, we'll comment out this functionality.
-        /*
-        historyViewModel.searchHistory(query).observe(this) { pages ->
+        historyViewModel.searchHistory(query)
+        // Observe the search results directly from the use case
+        searchHistoryUseCase(query).observe(this) { pages ->
             if (pages.isEmpty()) {
                 recyclerView.visibility = View.GONE
                 emptyView.visibility = View.VISIBLE
@@ -150,14 +157,11 @@ class HistoryActivity : BaseActivity() {
                 historyAdapter.submitList(pages)
             }
         }
-        */
     }
 
     private fun observeHistoryData() {
-        // Note: This is a temporary fix. In a real application, we should properly observe the UI state.
-        // For now, we'll comment out this functionality.
-        /*
-        historyViewModel.getRecentPages(50).observe(this) { pages ->
+        // Observe all pages from the use case
+        getHistoryUseCase().observe(this) { pages ->
             if (pages.isEmpty()) {
                 recyclerView.visibility = View.GONE
                 emptyView.visibility = View.VISIBLE
@@ -167,7 +171,6 @@ class HistoryActivity : BaseActivity() {
                 historyAdapter.submitList(pages)
             }
         }
-        */
     }
 
     private fun returnSelectedUrl(url: String) {
