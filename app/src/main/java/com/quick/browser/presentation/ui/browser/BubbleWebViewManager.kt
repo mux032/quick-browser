@@ -7,12 +7,12 @@ import android.view.View
 import android.webkit.*
 import android.widget.ProgressBar
 import androidx.core.content.ContextCompat
+import com.quick.browser.service.AdBlockingService
+import com.quick.browser.service.SettingsService
 import com.quick.browser.utils.JavaScriptSanitizer
 import com.quick.browser.utils.Logger
 import com.quick.browser.utils.UrlFormatter
-import com.quick.browser.utils.managers.AdBlocker
-import com.quick.browser.utils.managers.SecurityPolicyManager
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.utils.security.SecurityPolicyManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,16 +31,16 @@ import kotlinx.coroutines.launch
  * @param context The context used for WebView operations
  * @param bubbleId Unique identifier for the bubble
  * @param bubbleView Reference to the parent BubbleView for callbacks
- * @param settingsManager Manager for app settings
- * @param adBlocker Ad blocking functionality
+ * @param settingsService Manager for app settings
+ * @param adBlockingService Ad blocking functionality
  * @param securityPolicyManager Security policy manager for WebView security
  */
 class BubbleWebViewManager(
     private val context: Context,
     private val bubbleId: String,
     private val bubbleView: BubbleView,
-    private val settingsManager: SettingsManager,
-    private val adBlocker: AdBlocker,
+    private val settingsService: SettingsService,
+    private val adBlockingService: AdBlockingService,
     private val securityPolicyManager: SecurityPolicyManager
 ) {
 
@@ -137,7 +137,7 @@ class BubbleWebViewManager(
             defaultTextEncodingName = "UTF-8"
 
             // JavaScript settings based on user preferences and security policies
-            val isJavaScriptAllowed = settingsManager.isJavaScriptEnabled()
+            val isJavaScriptAllowed = settingsService.isJavaScriptEnabled()
             javaScriptEnabled = isJavaScriptAllowed
             javaScriptCanOpenWindowsAutomatically = isJavaScriptAllowed
 
@@ -240,8 +240,8 @@ class BubbleWebViewManager(
             onScrollUp = {
                 onScrollUpCallback?.invoke()
             },
-            settingsManager = settingsManager,
-            adBlocker = adBlocker
+            settingsService = settingsService,
+            adBlockingService = adBlockingService
         )
     }
 

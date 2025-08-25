@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.quick.browser.R
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.service.SettingsService
 
 /**
  * Handles the settings panel functionality for BubbleView.
@@ -26,12 +26,12 @@ import com.quick.browser.utils.managers.SettingsManager
  * - Touch event handling for click-outside-to-close behavior
  *
  * @param context Android context for accessing resources and services
- * @param settingsManager Manager for persisting and retrieving user settings
+ * @param settingsService Manager for persisting and retrieving user settings
  * @param bubbleAnimator Enhanced animator for professional animations
  */
 class BubbleSettingsPanel(
     private val context: Context,
-    private val settingsManager: SettingsManager,
+    private val settingsService: SettingsService,
     private val bubbleAnimator: BubbleAnimator
 ) {
 
@@ -105,9 +105,9 @@ class BubbleSettingsPanel(
         // Set up ad blocking switch
         adBlockSwitch = settingsPanel.findViewById(R.id.ad_block_switch)
         adBlockSwitch?.let { switch ->
-            switch.isChecked = settingsManager.isAdBlockEnabled()
+            switch.isChecked = settingsService.isAdBlockEnabled()
             switch.setOnCheckedChangeListener { _, isChecked ->
-                settingsManager.setAdBlockEnabled(isChecked)
+                settingsService.setAdBlockEnabled(isChecked)
                 listener?.onAdBlockingChanged(isChecked)
 
                 // Reload page to apply ad blocking changes
@@ -120,9 +120,9 @@ class BubbleSettingsPanel(
         // Set up JavaScript switch
         javascriptSwitch = settingsPanel.findViewById(R.id.javascript_switch)
         javascriptSwitch?.let { switch ->
-            switch.isChecked = settingsManager.isJavaScriptEnabled()
+            switch.isChecked = settingsService.isJavaScriptEnabled()
             switch.setOnCheckedChangeListener { _, isChecked ->
-                settingsManager.setJavaScriptEnabled(isChecked)
+                settingsService.setJavaScriptEnabled(isChecked)
                 webView.settings.javaScriptEnabled = isChecked
                 listener?.onJavaScriptChanged(isChecked)
 
@@ -154,18 +154,18 @@ class BubbleSettingsPanel(
 
         // Font size controls
         btnFontDecrease?.setOnClickListener {
-            val currentSize = settingsManager.getReaderFontSize()
+            val currentSize = settingsService.getReaderFontSize()
             val newSize = (currentSize - 2).coerceAtLeast(12)
-            settingsManager.setReaderFontSize(newSize)
+            settingsService.setReaderFontSize(newSize)
             updateFontSizeDisplay()
             updateFontSizeButtons()
             listener?.onReaderFontSizeChanged(newSize)
         }
 
         btnFontIncrease?.setOnClickListener {
-            val currentSize = settingsManager.getReaderFontSize()
+            val currentSize = settingsService.getReaderFontSize()
             val newSize = (currentSize + 2).coerceAtMost(32)
-            settingsManager.setReaderFontSize(newSize)
+            settingsService.setReaderFontSize(newSize)
             updateFontSizeDisplay()
             updateFontSizeButtons()
             listener?.onReaderFontSizeChanged(newSize)
@@ -173,46 +173,46 @@ class BubbleSettingsPanel(
 
         // Background color controls
         btnBgWhite?.setOnClickListener {
-            settingsManager.setReaderBackground(SettingsManager.READER_BG_WHITE)
+            settingsService.setReaderBackground(SettingsService.READER_BG_WHITE)
             updateBackgroundButtons()
-            listener?.onReaderBackgroundChanged(SettingsManager.READER_BG_WHITE)
+            listener?.onReaderBackgroundChanged(SettingsService.READER_BG_WHITE)
         }
 
         btnBgSepia?.setOnClickListener {
-            settingsManager.setReaderBackground(SettingsManager.READER_BG_SEPIA)
+            settingsService.setReaderBackground(SettingsService.READER_BG_SEPIA)
             updateBackgroundButtons()
-            listener?.onReaderBackgroundChanged(SettingsManager.READER_BG_SEPIA)
+            listener?.onReaderBackgroundChanged(SettingsService.READER_BG_SEPIA)
         }
 
         btnBgDark?.setOnClickListener {
-            settingsManager.setReaderBackground(SettingsManager.READER_BG_DARK)
+            settingsService.setReaderBackground(SettingsService.READER_BG_DARK)
             updateBackgroundButtons()
-            listener?.onReaderBackgroundChanged(SettingsManager.READER_BG_DARK)
+            listener?.onReaderBackgroundChanged(SettingsService.READER_BG_DARK)
         }
 
         // Text alignment controls
         btnAlignLeft?.setOnClickListener {
-            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_LEFT)
+            settingsService.setReaderTextAlign(SettingsService.READER_ALIGN_LEFT)
             updateAlignmentButtons()
-            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_LEFT)
+            listener?.onReaderTextAlignChanged(SettingsService.READER_ALIGN_LEFT)
         }
 
         btnAlignCenter?.setOnClickListener {
-            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_CENTER)
+            settingsService.setReaderTextAlign(SettingsService.READER_ALIGN_CENTER)
             updateAlignmentButtons()
-            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_CENTER)
+            listener?.onReaderTextAlignChanged(SettingsService.READER_ALIGN_CENTER)
         }
 
         btnAlignRight?.setOnClickListener {
-            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_RIGHT)
+            settingsService.setReaderTextAlign(SettingsService.READER_ALIGN_RIGHT)
             updateAlignmentButtons()
-            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_RIGHT)
+            listener?.onReaderTextAlignChanged(SettingsService.READER_ALIGN_RIGHT)
         }
 
         btnAlignJustify?.setOnClickListener {
-            settingsManager.setReaderTextAlign(SettingsManager.READER_ALIGN_JUSTIFY)
+            settingsService.setReaderTextAlign(SettingsService.READER_ALIGN_JUSTIFY)
             updateAlignmentButtons()
-            listener?.onReaderTextAlignChanged(SettingsManager.READER_ALIGN_JUSTIFY)
+            listener?.onReaderTextAlignChanged(SettingsService.READER_ALIGN_JUSTIFY)
         }
     }
 
@@ -295,8 +295,8 @@ class BubbleSettingsPanel(
      */
     private fun updateSettingsValues() {
         // Update switches to reflect current settings state
-        adBlockSwitch?.isChecked = settingsManager.isAdBlockEnabled()
-        javascriptSwitch?.isChecked = settingsManager.isJavaScriptEnabled()
+        adBlockSwitch?.isChecked = settingsService.isAdBlockEnabled()
+        javascriptSwitch?.isChecked = settingsService.isJavaScriptEnabled()
     }
 
     /**
@@ -342,7 +342,7 @@ class BubbleSettingsPanel(
      * @return true if ad blocking is enabled, false otherwise
      */
     fun isAdBlockEnabled(): Boolean {
-        return settingsManager.isAdBlockEnabled()
+        return settingsService.isAdBlockEnabled()
     }
 
     /**
@@ -351,7 +351,7 @@ class BubbleSettingsPanel(
      * @return true if JavaScript is enabled, false otherwise
      */
     fun isJavaScriptEnabled(): Boolean {
-        return settingsManager.isJavaScriptEnabled()
+        return settingsService.isJavaScriptEnabled()
     }
 
     /**
@@ -400,7 +400,7 @@ class BubbleSettingsPanel(
      * Update font size display
      */
     private fun updateFontSizeDisplay() {
-        val fontSize = settingsManager.getReaderFontSize()
+        val fontSize = settingsService.getReaderFontSize()
         fontSizeDisplay?.text = "${fontSize}sp"
     }
 
@@ -408,7 +408,7 @@ class BubbleSettingsPanel(
      * Update font size button states
      */
     private fun updateFontSizeButtons() {
-        val fontSize = settingsManager.getReaderFontSize()
+        val fontSize = settingsService.getReaderFontSize()
         val textColor = ContextCompat.getColor(context, android.R.color.black)
         val backgroundColor = ContextCompat.getColor(context, android.R.color.white)
 
@@ -431,7 +431,7 @@ class BubbleSettingsPanel(
      * Update background button states
      */
     private fun updateBackgroundButtons() {
-        val currentBg = settingsManager.getReaderBackground()
+        val currentBg = settingsService.getReaderBackground()
         val strokeWidth = 4
 
         // White button
@@ -440,10 +440,10 @@ class BubbleSettingsPanel(
             val textColor = ContextCompat.getColor(context, android.R.color.black)
             button.setBackgroundColor(whiteColor)
             button.setTextColor(textColor)
-            button.strokeWidth = if (currentBg == SettingsManager.READER_BG_WHITE) strokeWidth else 1
+            button.strokeWidth = if (currentBg == SettingsService.READER_BG_WHITE) strokeWidth else 1
             button.strokeColor = ContextCompat.getColorStateList(
                 context,
-                if (currentBg == SettingsManager.READER_BG_WHITE) R.color.primary else android.R.color.darker_gray
+                if (currentBg == SettingsService.READER_BG_WHITE) R.color.primary else android.R.color.darker_gray
             )
         }
 
@@ -453,10 +453,10 @@ class BubbleSettingsPanel(
             val textColor = ContextCompat.getColor(context, R.color.read_mode_text_sepia)
             button.setBackgroundColor(sepiaColor)
             button.setTextColor(textColor)
-            button.strokeWidth = if (currentBg == SettingsManager.READER_BG_SEPIA) strokeWidth else 1
+            button.strokeWidth = if (currentBg == SettingsService.READER_BG_SEPIA) strokeWidth else 1
             button.strokeColor = ContextCompat.getColorStateList(
                 context,
-                if (currentBg == SettingsManager.READER_BG_SEPIA) R.color.primary else android.R.color.darker_gray
+                if (currentBg == SettingsService.READER_BG_SEPIA) R.color.primary else android.R.color.darker_gray
             )
         }
 
@@ -466,10 +466,10 @@ class BubbleSettingsPanel(
             val textColor = ContextCompat.getColor(context, R.color.read_mode_text_dark)
             button.setBackgroundColor(darkColor)
             button.setTextColor(textColor)
-            button.strokeWidth = if (currentBg == SettingsManager.READER_BG_DARK) strokeWidth else 1
+            button.strokeWidth = if (currentBg == SettingsService.READER_BG_DARK) strokeWidth else 1
             button.strokeColor = ContextCompat.getColorStateList(
                 context,
-                if (currentBg == SettingsManager.READER_BG_DARK) R.color.primary else android.R.color.darker_gray
+                if (currentBg == SettingsService.READER_BG_DARK) R.color.primary else android.R.color.darker_gray
             )
         }
     }
@@ -478,7 +478,7 @@ class BubbleSettingsPanel(
      * Update alignment button states
      */
     private fun updateAlignmentButtons() {
-        val currentAlign = settingsManager.getReaderTextAlign()
+        val currentAlign = settingsService.getReaderTextAlign()
         val backgroundColor = ContextCompat.getColor(context, android.R.color.white)
         val textColor = ContextCompat.getColor(context, android.R.color.black)
         val strokeWidth = 4
@@ -496,9 +496,9 @@ class BubbleSettingsPanel(
             }
         }
 
-        updateAlignButton(btnAlignLeft, currentAlign == SettingsManager.READER_ALIGN_LEFT)
-        updateAlignButton(btnAlignCenter, currentAlign == SettingsManager.READER_ALIGN_CENTER)
-        updateAlignButton(btnAlignRight, currentAlign == SettingsManager.READER_ALIGN_RIGHT)
-        updateAlignButton(btnAlignJustify, currentAlign == SettingsManager.READER_ALIGN_JUSTIFY)
+        updateAlignButton(btnAlignLeft, currentAlign == SettingsService.READER_ALIGN_LEFT)
+        updateAlignButton(btnAlignCenter, currentAlign == SettingsService.READER_ALIGN_CENTER)
+        updateAlignButton(btnAlignRight, currentAlign == SettingsService.READER_ALIGN_RIGHT)
+        updateAlignButton(btnAlignJustify, currentAlign == SettingsService.READER_ALIGN_JUSTIFY)
     }
 }

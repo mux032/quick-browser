@@ -22,8 +22,8 @@ import com.bumptech.glide.request.target.Target
 import com.quick.browser.R
 import com.quick.browser.domain.model.HistoryItem
 import com.quick.browser.domain.model.WebPage
+import com.quick.browser.presentation.ui.browser.OfflineArticleSaver
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.OfflineArticleSaver
 import kotlinx.coroutines.CoroutineScope
 import java.text.SimpleDateFormat
 import java.util.*

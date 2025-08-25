@@ -119,3 +119,13 @@ object JavaScriptSanitizer {
                 "form-action *;"
     }
 }
+
+/**
+ * Extension function to sanitize JavaScript code
+ */
+fun String.sanitizeJavaScript(): String = JavaScriptSanitizer.sanitizeJavaScript(this)
+
+/**
+ * Extension function to check if JavaScript code is safe
+ */
+fun String.isJavaScriptSafe(): Boolean = JavaScriptSanitizer.isJavaScriptSafe(this)

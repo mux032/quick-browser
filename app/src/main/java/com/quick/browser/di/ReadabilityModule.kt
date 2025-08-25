@@ -1,7 +1,7 @@
 package com.quick.browser.di
 
 import android.content.Context
-import com.quick.browser.utils.managers.ReadabilityExtractor
+import com.quick.browser.service.ReadabilityService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,7 +15,7 @@ object ReadabilityModule {
 
     @Provides
     @Singleton
-    fun provideReadabilityExtractor(@ApplicationContext context: Context): ReadabilityExtractor {
-        return ReadabilityExtractor(context)
+    fun provideReadabilityExtractor(@ApplicationContext context: Context): ReadabilityService {
+        return ReadabilityService(context)
     }
 }

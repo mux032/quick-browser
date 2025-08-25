@@ -2,6 +2,7 @@ package com.quick.browser.utils
 
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.core.view.children
 
 /**
@@ -64,4 +65,57 @@ fun View.isVisible(): Boolean {
  */
 fun View.isGone(): Boolean {
     return this.visibility == View.GONE
+}
+
+/**
+ * Toggle visibility of a view between VISIBLE and GONE
+ */
+fun View.toggleVisibility() {
+    if (this.isVisible()) {
+        this.hide()
+    } else {
+        this.show()
+    }
+}
+
+/**
+ * Set multiple views visible
+ */
+fun Iterable<View>.show() {
+    forEach { it.show() }
+}
+
+/**
+ * Set multiple views gone
+ */
+fun Iterable<View>.hide() {
+    forEach { it.hide() }
+}
+
+/**
+ * Execute a block of code when the view is laid out
+ */
+inline fun View.doOnLayout(crossinline action: (view: View) -> Unit) {
+    if (isLaidOut && !isLayoutRequested) {
+        action(this)
+    } else {
+        viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                viewTreeObserver.removeOnGlobalLayoutListener(this)
+                action(this@doOnLayout)
+            }
+        })
+    }
+}
+
+/**
+ * Execute a block of code when the next layout pass is completed
+ */
+inline fun View.doOnNextLayout(crossinline action: (view: View) -> Unit) {
+    viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+        override fun onGlobalLayout() {
+            viewTreeObserver.removeOnGlobalLayoutListener(this)
+            action(this@doOnNextLayout)
+        }
+    })
 }

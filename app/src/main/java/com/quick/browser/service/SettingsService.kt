@@ -1,19 +1,19 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import androidx.preference.PreferenceManager
+import com.quick.browser.domain.service.EncryptedPreferencesService
 import com.quick.browser.presentation.ui.theme.ThemeColor
 
 /**
  * Manages application settings and user preferences
  */
-class SettingsManager(context: Context) {
+class SettingsService(context: Context, private val encryptedPrefs: EncryptedPreferencesService) {
 
     private val preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val encryptedPrefs = EncryptedPreferences.getInstance(context, "encrypted_settings")
     private val appContext = context.applicationContext
 
     companion object {

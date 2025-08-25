@@ -1,4 +1,4 @@
-package com.quick.browser
+package com.quick.browser.utils
 
 /**
  * Centralized constants for the entire application.

@@ -3,12 +3,11 @@ package com.quick.browser.service
 import android.content.Intent
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.quick.browser.Constants
 import com.quick.browser.QuickBrowserApplication
 import com.quick.browser.presentation.ui.browser.BubbleIntentProcessor
+import com.quick.browser.presentation.ui.browser.OfflineArticleSaver
+import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.OfflineArticleSaver
-import com.quick.browser.utils.managers.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Inject
@@ -41,16 +40,29 @@ class BubbleService : LifecycleService() {
     lateinit var historyRepository: com.quick.browser.domain.repository.HistoryRepository
 
     @Inject
-    lateinit var settingsManager: SettingsManager
+    lateinit var settingsService: SettingsService
 
     @Inject
-    lateinit var adBlocker: AdBlocker
+    lateinit var adBlockingService: AdBlockingService
 
     @Inject
-    lateinit var summarizationManager: SummarizationManager
+    lateinit var summarizationService: SummarizationService
 
     @Inject
     lateinit var offlineArticleSaver: OfflineArticleSaver
+
+    // Public methods to expose BubbleManager functionality
+    fun createOrUpdateBubbleWithNewUrl(url: String, existingBubbleId: String? = null) {
+        bubbleManager.createOrUpdateBubbleWithNewUrl(url, existingBubbleId)
+    }
+
+    fun removeBubble(bubbleId: String) {
+        bubbleManager.removeBubble(bubbleId)
+    }
+
+    fun getAllBubbles() = bubbleManager.getAllBubbles()
+    
+    fun getBubblesFlow() = bubbleManager.bubbles
 
     companion object {
         private const val TAG = "BubbleService"
@@ -97,18 +109,18 @@ class BubbleService : LifecycleService() {
 
             bubbleDisplayManager = BubbleDisplayManager(
                 context = this,
-                bubbleManager = bubbleManager,
+                bubbleService = this,
                 lifecycleScope = lifecycleScope,
-                settingsManager = settingsManager,
-                adBlocker = adBlocker,
-                summarizationManager = summarizationManager,
+                settingsService = settingsService,
+                adBlockingService = adBlockingService,
+                summarizationService = summarizationService,
                 offlineArticleSaver = offlineArticleSaver
             )
 
             intentProcessor =
                 BubbleIntentProcessor(
                     context = this,
-                    bubbleManager = bubbleManager,
+                    bubbleService = this,
                     historyRepository = historyRepository,
                     lifecycleScope = lifecycleScope
                 )

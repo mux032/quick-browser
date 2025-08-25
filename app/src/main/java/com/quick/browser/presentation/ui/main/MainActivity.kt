@@ -19,15 +19,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
-import com.quick.browser.Constants
 import com.quick.browser.R
 import com.quick.browser.presentation.ui.components.BaseActivity
 import com.quick.browser.presentation.ui.history.HistoryActivity
 import com.quick.browser.presentation.ui.saved.SavedArticlesActivity
 import com.quick.browser.presentation.ui.settings.SettingsActivity
+import com.quick.browser.service.AuthenticationService
 import com.quick.browser.service.BubbleService
+import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.managers.AuthenticationHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -125,7 +125,7 @@ class MainActivity : BaseActivity() {
             insets
         }
 
-        // settingsManager is already initialized in BaseActivity
+        // settingsService is already initialized in BaseActivity
 
         // Initialize views
         addressBar = findViewById(R.id.address_bar)
@@ -281,7 +281,7 @@ class MainActivity : BaseActivity() {
         Logger.d(TAG, "Handling authentication callback: $uri")
 
         // Use the AuthenticationHandler to handle the return
-        val handled = AuthenticationHandler.Companion.handleAuthenticationReturn(uri)
+        val handled = AuthenticationService.Companion.handleAuthenticationReturn(uri)
 
         if (handled) {
             Logger.d(TAG, "Authentication callback handled successfully")

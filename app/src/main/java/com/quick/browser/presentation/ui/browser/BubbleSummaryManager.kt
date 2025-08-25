@@ -9,8 +9,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
+import com.quick.browser.service.SummarizationService
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.managers.SummarizationManager
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 
@@ -33,7 +33,7 @@ import org.jsoup.Jsoup
  */
 class BubbleSummaryManager(
     private val context: Context,
-    private val summarizationManager: SummarizationManager,
+    private val summarizationService: SummarizationService,
     private val bubbleAnimator: BubbleAnimator? = null
 ) {
 
@@ -278,7 +278,7 @@ class BubbleSummaryManager(
                     }
 
                     val summaryPoints = withContext(Dispatchers.Default) {
-                        summarizationManager.summarizeContent(cleanedHtml)
+                        summarizationService.summarizeContent(cleanedHtml)
                     }
 
                     if (summaryPoints.isNotEmpty()) {
@@ -367,7 +367,7 @@ class BubbleSummaryManager(
                 withTimeout(30000) { // 30 second timeout
                     val cleanedText = cleanHtmlContent(htmlContent)
                     if (cleanedText != null && cleanedText.length > MIN_CONTENT_LENGTH) {
-                        summarizationManager.summarizeContent(cleanedText)
+                        summarizationService.summarizeContent(cleanedText)
                     }
                 }
             } catch (e: Exception) {

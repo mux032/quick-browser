@@ -9,9 +9,9 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
+import com.quick.browser.service.ReadabilityService
+import com.quick.browser.service.SettingsService
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.managers.ReadabilityExtractor
-import com.quick.browser.utils.managers.SettingsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,11 +32,11 @@ import kotlinx.coroutines.withContext
  * - Error handling and fallback mechanisms
  * 
  * @param context Android context for accessing resources and services
- * @param settingsManager Manager for accessing user preferences like dark theme
+ * @param settingsService Manager for accessing user preferences like dark theme
  */
 class BubbleReadModeManager(
     private val context: Context,
-    private val settingsManager: SettingsManager
+    private val settingsService: SettingsService
 ) {
     
     companion object {
@@ -54,7 +54,7 @@ class BubbleReadModeManager(
     private var currentUrl: String? = null
     
     // Content extraction
-    private val contentExtractor by lazy { ReadabilityExtractor(context) }
+    private val contentExtractor by lazy { ReadabilityService(context) }
     
     // Callback interface for BubbleView to respond to read mode events
     interface ReadModeManagerListener {
@@ -303,25 +303,25 @@ class BubbleReadModeManager(
      * @param content The extracted readable content
      * @return The styled HTML string
      */
-    private fun createStyledHtml(content: ReadabilityExtractor.ReadableContent): String {
+    private fun createStyledHtml(content: ReadabilityService.ReadableContent): String {
         // Get current reader mode settings
-        val readerBackground = settingsManager.getReaderBackground()
-        val fontSize = settingsManager.getReaderFontSize()
-        val textAlign = settingsManager.getReaderTextAlign()
+        val readerBackground = settingsService.getReaderBackground()
+        val fontSize = settingsService.getReaderFontSize()
+        val textAlign = settingsService.getReaderTextAlign()
         
         // Define color schemes for different backgrounds
         val colors = when (readerBackground) {
-            SettingsManager.READER_BG_DARK -> arrayOf("#121212", "#E0E0E0", "#90CAF9", "#B0B0B0", "#1E1E1E", "#616161")
-            SettingsManager.READER_BG_SEPIA -> arrayOf("#F4F1E8", "#5D4E37", "#8B4513", "#8B7355", "#EAE7DC", "#D2B48C")
+            SettingsService.READER_BG_DARK -> arrayOf("#121212", "#E0E0E0", "#90CAF9", "#B0B0B0", "#1E1E1E", "#616161")
+            SettingsService.READER_BG_SEPIA -> arrayOf("#F4F1E8", "#5D4E37", "#8B4513", "#8B7355", "#EAE7DC", "#D2B48C")
             else -> arrayOf("#FFFFFF", "#212121", "#1976D2", "#757575", "#F5F5F5", "#9E9E9E")
         }
         
         // Map text alignment values
         val textAlignStyle = when (textAlign) {
-            SettingsManager.READER_ALIGN_LEFT -> "left"
-            SettingsManager.READER_ALIGN_CENTER -> "center"
-            SettingsManager.READER_ALIGN_RIGHT -> "right"
-            SettingsManager.READER_ALIGN_JUSTIFY -> "justify"
+            SettingsService.READER_ALIGN_LEFT -> "left"
+            SettingsService.READER_ALIGN_CENTER -> "center"
+            SettingsService.READER_ALIGN_RIGHT -> "right"
+            SettingsService.READER_ALIGN_JUSTIFY -> "justify"
             else -> "left"
         }
         

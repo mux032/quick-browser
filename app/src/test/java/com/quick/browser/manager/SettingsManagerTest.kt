@@ -1,7 +1,7 @@
 package com.quick.browser.manager
 
 import android.content.Context
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.service.SettingsService
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -11,13 +11,13 @@ import org.robolectric.RuntimeEnvironment
 @RunWith(RobolectricTestRunner::class)
 class SettingsManagerTest {
 
-    private lateinit var settingsManager: SettingsManager
+    private lateinit var settingsService: SettingsService
     private lateinit var context: Context
 
     @Before
     fun setup() {
         context = RuntimeEnvironment.application
-        settingsManager = SettingsManager(context)
+        settingsService = SettingsService(context)
     }
 
     @Test
@@ -31,7 +31,7 @@ class SettingsManagerTest {
         // Test that JavaScript is enabled by default
         // Note: This might fail in unit tests due to Android Keystore limitations
         try {
-            assert(settingsManager.isJavaScriptEnabled())
+            assert(settingsService.isJavaScriptEnabled())
         } catch (e: Exception) {
             // Ignore exceptions in unit tests
             assert(true)

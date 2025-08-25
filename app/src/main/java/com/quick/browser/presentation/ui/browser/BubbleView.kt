@@ -36,14 +36,13 @@ import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
-import com.quick.browser.Constants
 import com.quick.browser.R
 import com.quick.browser.presentation.ui.components.HorizontalSwipeRefreshLayout
-import com.quick.browser.service.BubbleService
+import com.quick.browser.service.*
+import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.OfflineArticleSaver
 import com.quick.browser.utils.UrlFormatter
-import com.quick.browser.utils.managers.*
+import com.quick.browser.utils.security.SecurityPolicyManager
 import kotlin.math.exp
 
 /**
@@ -55,17 +54,17 @@ import kotlin.math.exp
  *
  * @property bubbleId Unique identifier for this bubble
  * @property url The URL to load in this bubble's WebView
- * @property settingsManager Settings manager for configuration
- * @property adBlocker Ad blocker for content filtering
- * @property summarizationManager Manager for text summarization
+ * @property settingsService Settings manager for configuration
+ * @property adBlockingService Ad blocker for content filtering
+ * @property summarizationService Manager for text summarization
  */
 class BubbleView @JvmOverloads constructor(
     context: Context,
     val bubbleId: String,
     var url: String,  // Changed from val to var to allow URL updates when navigating
-    private val settingsManager: SettingsManager,
-    private val adBlocker: AdBlocker,
-    private val summarizationManager: SummarizationManager,
+    private val settingsService: SettingsService,
+    private val adBlockingService: AdBlockingService,
+    private val summarizationService: SummarizationService,
     private val offlineArticleSaver: OfflineArticleSaver,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
@@ -200,16 +199,16 @@ class BubbleView @JvmOverloads constructor(
                 findViewById(R.id.settings_panel) ?: throw IllegalStateException("Settings panel not found in layout")
 
             // Initialize settings panel manager
-            settingsPanelManager = BubbleSettingsPanel(context, settingsManager, bubbleAnimator)
+            settingsPanelManager = BubbleSettingsPanel(context, settingsService, bubbleAnimator)
 
             // Initialize summary manager
-            summaryManager = BubbleSummaryManager(context, summarizationManager, bubbleAnimator)
+            summaryManager = BubbleSummaryManager(context, summarizationService, bubbleAnimator)
 
             // Initialize read mode manager
-            readModeManager = BubbleReadModeManager(context, settingsManager)
+            readModeManager = BubbleReadModeManager(context, settingsService)
 
             // Initialize WebView manager
-            webViewManager = BubbleWebViewManager(context, bubbleId, this, settingsManager, adBlocker,
+            webViewManager = BubbleWebViewManager(context, bubbleId, this, settingsService, adBlockingService,
                 SecurityPolicyManager(context)
             )
 
@@ -1354,9 +1353,9 @@ class BubbleView @JvmOverloads constructor(
             Logger.d(TAG, "Loading URL in showWebView: $formattedUrl")
 
             // Check if this is an authentication URL that should be handled with Custom Tabs
-            if (AuthenticationHandler.isAuthenticationUrl(formattedUrl)) {
+            if (AuthenticationService.isAuthenticationUrl(formattedUrl)) {
                 Logger.d(TAG, "Authentication URL detected in loadUrlInWebView, opening in Custom Tab: $formattedUrl")
-                AuthenticationHandler.openInCustomTab(context, formattedUrl, bubbleId)
+                AuthenticationService.openInCustomTab(context, formattedUrl, bubbleId)
                 // Load a blank page in the WebView to avoid showing the authentication page
                 webViewContainer.loadUrl("about:blank")
             } else {

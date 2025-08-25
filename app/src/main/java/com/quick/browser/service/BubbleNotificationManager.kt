@@ -1,4 +1,4 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.app.Notification
 import android.app.NotificationChannel

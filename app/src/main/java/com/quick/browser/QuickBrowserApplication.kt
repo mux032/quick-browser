@@ -6,7 +6,7 @@ import android.os.StrictMode
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.color.DynamicColors
 import com.quick.browser.service.BubbleService
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.service.SettingsService
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -14,7 +14,7 @@ import javax.inject.Inject
 class QuickBrowserApplication : Application() {
 
     @Inject
-    lateinit var settingsManager: SettingsManager
+    lateinit var settingsService: SettingsService
 
     // Reference to the BubbleService
     var bubbleService: BubbleService? = null
@@ -84,12 +84,12 @@ class QuickBrowserApplication : Application() {
      */
     fun applyThemeSettings() {
         // Apply dynamic colors if enabled and available
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && settingsManager.isDynamicColorEnabled()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && settingsService.isDynamicColorEnabled()) {
             DynamicColors.applyToActivitiesIfAvailable(this)
         }
 
         // Apply night mode setting
-        val nightMode = if (settingsManager.isNightModeEnabled()) {
+        val nightMode = if (settingsService.isNightModeEnabled()) {
             AppCompatDelegate.MODE_NIGHT_YES
         } else {
             AppCompatDelegate.MODE_NIGHT_NO

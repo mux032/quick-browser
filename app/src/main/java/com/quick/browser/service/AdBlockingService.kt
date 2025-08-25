@@ -1,7 +1,8 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.content.Context
 import android.webkit.WebResourceResponse
+import com.quick.browser.domain.service.EncryptedPreferencesService
 import com.quick.browser.utils.ErrorHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,13 +13,12 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * AdBlocker utility to block ads and trackers
  */
-class AdBlocker(private val context: Context) {
+class AdBlockingService(private val context: Context, private val encryptedPrefs: EncryptedPreferencesService) {
 
     private val adServerHosts = HashSet<String>()
     private val cachedResults = ConcurrentHashMap<String, Boolean>()
     private val whitelistedDomains = HashSet<String>()
     private val blacklistedDomains = HashSet<String>()
-    private val encryptedPrefs = EncryptedPreferences.getInstance(context, "adblocker_encrypted_settings")
 
     // Class tag for logging
     private val TAG = "AdBlocker"

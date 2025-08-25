@@ -1,4 +1,4 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.utils.security
 
 import android.content.Context
 import android.webkit.CookieManager

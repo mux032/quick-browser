@@ -6,15 +6,20 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.quick.browser.R
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.service.SettingsService
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Activity to display saved articles in reader mode
  */
+@AndroidEntryPoint
 class OfflineReaderActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var settingsService: SettingsService
+
     private lateinit var webView: WebView
-    private lateinit var settingsManager: SettingsManager
 
     companion object {
         const val EXTRA_ARTICLE_TITLE = "article_title"
@@ -27,8 +32,6 @@ class OfflineReaderActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_offline_reader)
-
-        settingsManager = SettingsManager(this)
 
         setupToolbar()
         setupWebView()
@@ -77,23 +80,23 @@ class OfflineReaderActivity : AppCompatActivity() {
         publishDate: String?
     ): String {
         // Get current reader mode settings
-        val readerBackground = settingsManager.getReaderBackground()
-        val fontSize = settingsManager.getReaderFontSize()
-        val textAlign = settingsManager.getReaderTextAlign()
+        val readerBackground = settingsService.getReaderBackground()
+        val fontSize = settingsService.getReaderFontSize()
+        val textAlign = settingsService.getReaderTextAlign()
 
         // Define color schemes for different backgrounds
         val colors = when (readerBackground) {
-            SettingsManager.Companion.READER_BG_DARK -> arrayOf("#121212", "#E0E0E0", "#90CAF9", "#B0B0B0", "#1E1E1E", "#616161")
-            SettingsManager.Companion.READER_BG_SEPIA -> arrayOf("#F4F1E8", "#5D4E37", "#8B4513", "#8B7355", "#EAE7DC", "#D2B48C")
+            SettingsService.Companion.READER_BG_DARK -> arrayOf("#121212", "#E0E0E0", "#90CAF9", "#B0B0B0", "#1E1E1E", "#616161")
+            SettingsService.Companion.READER_BG_SEPIA -> arrayOf("#F4F1E8", "#5D4E37", "#8B4513", "#8B7355", "#EAE7DC", "#D2B48C")
             else -> arrayOf("#FFFFFF", "#212121", "#1976D2", "#757575", "#F5F5F5", "#9E9E9E")
         }
 
         // Map text alignment values
         val textAlignStyle = when (textAlign) {
-            SettingsManager.Companion.READER_ALIGN_LEFT -> "left"
-            SettingsManager.Companion.READER_ALIGN_CENTER -> "center"
-            SettingsManager.Companion.READER_ALIGN_RIGHT -> "right"
-            SettingsManager.Companion.READER_ALIGN_JUSTIFY -> "justify"
+            SettingsService.Companion.READER_ALIGN_LEFT -> "left"
+            SettingsService.Companion.READER_ALIGN_CENTER -> "center"
+            SettingsService.Companion.READER_ALIGN_RIGHT -> "right"
+            SettingsService.Companion.READER_ALIGN_JUSTIFY -> "justify"
             else -> "left"
         }
 

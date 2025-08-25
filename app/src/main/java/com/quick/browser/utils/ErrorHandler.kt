@@ -304,3 +304,39 @@ suspend inline fun <T> withErrorHandlingAndFallback(
         fallback
     }
 }
+
+/**
+ * Extension function to safely execute a block of code with error handling
+ */
+inline fun <T> T.safeExecute(
+    tag: String,
+    errorMessage: String,
+    showError: Boolean = false,
+    context: Context? = null,
+    view: View? = null,
+    block: T.() -> Unit
+): T {
+    return apply {
+        ErrorHandler.handleExceptions(tag, errorMessage, showError, context, view) {
+            block()
+        }
+    }
+}
+
+/**
+ * Extension function to safely execute a suspending block of code with error handling
+ */
+suspend inline fun <T> T.safeExecuteAsync(
+    tag: String,
+    errorMessage: String,
+    showError: Boolean = false,
+    context: Context? = null,
+    view: View? = null,
+    crossinline block: suspend T.() -> Unit
+): T {
+    return apply {
+        withErrorHandling(tag, errorMessage, context, view, showError) {
+            block()
+        }
+    }
+}

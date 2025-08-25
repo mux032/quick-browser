@@ -1,7 +1,7 @@
 package com.quick.browser.manager
 
 import android.content.Context
-import com.quick.browser.utils.managers.EncryptedPreferences
+import com.quick.browser.utils.EncryptedPreferences
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

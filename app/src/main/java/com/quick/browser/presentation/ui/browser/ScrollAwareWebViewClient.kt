@@ -2,11 +2,11 @@ package com.quick.browser.presentation.ui.browser
 
 import android.content.Context
 import android.webkit.WebView
+import com.quick.browser.service.AdBlockingService
+import com.quick.browser.service.SettingsService
 import com.quick.browser.utils.JavaScriptSanitizer
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.managers.AdBlocker
-import com.quick.browser.utils.managers.SecurityPolicyManager
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.utils.security.SecurityPolicyManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -21,9 +21,9 @@ class ScrollAwareWebViewClient(
     private val onHtmlContentLoaded: (String) -> Unit,
     private val onScrollDown: () -> Unit,
     private val onScrollUp: () -> Unit,
-    settingsManager: SettingsManager,
-    adBlocker: AdBlocker
-) : WebViewClientEx(context, onPageUrlChanged, settingsManager, adBlocker) {
+    settingsService: SettingsService,
+    adBlockingService: AdBlockingService
+) : WebViewClientEx(context, onPageUrlChanged, settingsService, adBlockingService) {
 
     private val securityPolicyManager = SecurityPolicyManager(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)

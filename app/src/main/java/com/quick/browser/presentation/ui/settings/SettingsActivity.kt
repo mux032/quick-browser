@@ -73,10 +73,10 @@ class SettingsActivity : BaseActivity() {
 
     private fun loadSettings() {
         try {
-            // Load settings from SettingsManager
-            switchJavaScript.isChecked = settingsManager.isJavaScriptEnabled()
-            switchBlockAds.isChecked = settingsManager.isAdBlockEnabled()
-            switchSaveHistory.isChecked = settingsManager.isSaveHistoryEnabled()
+            // Load settings from SettingsService
+            switchJavaScript.isChecked = settingsService.isJavaScriptEnabled()
+            switchBlockAds.isChecked = settingsService.isAdBlockEnabled()
+            switchSaveHistory.isChecked = settingsService.isSaveHistoryEnabled()
         } catch (e: Exception) {
             Logger.e(TAG, "Error loading settings", e)
             throw e
@@ -87,17 +87,17 @@ class SettingsActivity : BaseActivity() {
         try {
             // JavaScript setting
             switchJavaScript.setOnCheckedChangeListener { _, isChecked ->
-                settingsManager.setJavaScriptEnabled(isChecked)
+                settingsService.setJavaScriptEnabled(isChecked)
             }
 
             // Ad blocking setting
             switchBlockAds.setOnCheckedChangeListener { _, isChecked ->
-                settingsManager.setAdBlockEnabled(isChecked)
+                settingsService.setAdBlockEnabled(isChecked)
             }
 
             // Save history setting
             switchSaveHistory.setOnCheckedChangeListener { _, isChecked ->
-                settingsManager.setSaveHistoryEnabled(isChecked)
+                settingsService.setSaveHistoryEnabled(isChecked)
             }
 
         } catch (e: Exception) {

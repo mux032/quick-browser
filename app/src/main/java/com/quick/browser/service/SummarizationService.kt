@@ -1,4 +1,4 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.content.Context
 import com.quick.browser.utils.Logger
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Manager class for handling article summarization using NLP techniques
  */
-class SummarizationManager constructor(private val context: Context) {
+class SummarizationService constructor(private val context: Context) {
 
     companion object {
         private const val TAG = "SummarizationManager"

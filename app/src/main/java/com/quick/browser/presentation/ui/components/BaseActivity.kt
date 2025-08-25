@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.quick.browser.R
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.service.SettingsService
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -17,7 +17,7 @@ import javax.inject.Inject
 open class BaseActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var settingsManager: SettingsManager
+    lateinit var settingsService: SettingsService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_QBrowser)

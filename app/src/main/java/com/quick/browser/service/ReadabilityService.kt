@@ -1,4 +1,4 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.content.Context
 import com.quick.browser.utils.ErrorHandler
@@ -10,7 +10,7 @@ import java.net.URI
 /**
  * Utility for extracting readable content from web pages
  */
-class ReadabilityExtractor(private val context: Context) {
+class ReadabilityService(private val context: Context) {
     
     data class ReadableContent(
         val title: String,

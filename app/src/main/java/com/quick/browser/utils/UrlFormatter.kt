@@ -4,7 +4,7 @@ import android.util.Patterns
 import java.net.URI
 
 /**
- * Utility class for URL formatting operations
+ * Utility class for URL formatting and validation operations
  */
 object UrlFormatter {
     
@@ -64,4 +64,62 @@ object UrlFormatter {
             ""
         }
     }
+    
+    /**
+     * Check if URL is HTTPS
+     *
+     * @param url The URL to check
+     * @return True if URL is HTTPS
+     */
+    fun isHttpsUrl(url: String): Boolean {
+        return url.startsWith("https://", ignoreCase = true)
+    }
+    
+    /**
+     * Get URL without query parameters
+     *
+     * @param url The URL to process
+     * @return URL without query parameters
+     */
+    fun getUrlWithoutQuery(url: String): String {
+        return try {
+            val uri = URI(url)
+            val scheme = uri.scheme
+            val host = uri.host
+            val port = uri.port
+            val path = uri.path
+            
+            val portPart = if (port != -1) ":$port" else ""
+            val pathPart = path ?: ""
+            
+            "$scheme://$host$portPart$pathPart"
+        } catch (e: Exception) {
+            url
+        }
+    }
 }
+
+/**
+ * Extension function to format URL
+ */
+fun String.formatUrl(): String = UrlFormatter.formatUrl(this)
+
+/**
+ * Extension function to validate URL
+ */
+fun String.isValidUrl(): Boolean = UrlFormatter.isValidUrl(this)
+
+/**
+ * Extension function to extract domain from URL
+ */
+fun String.extractDomain(): String = UrlFormatter.extractDomain(this)
+
+/**
+ * Extension function to check if URL is HTTPS
+ */
+fun String.isHttpsUrl(): Boolean = UrlFormatter.isHttpsUrl(this)
+
+/**
+ * Extension function to get URL without query parameters
+ */
+fun String.getUrlWithoutQuery(): String = UrlFormatter.getUrlWithoutQuery(this)

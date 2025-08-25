@@ -8,11 +8,11 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.quick.browser.service.AdBlockingService
+import com.quick.browser.service.AuthenticationService
+import com.quick.browser.service.SettingsService
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.managers.AdBlocker
-import com.quick.browser.utils.managers.AuthenticationHandler
-import com.quick.browser.utils.managers.SecurityPolicyManager
-import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.utils.security.SecurityPolicyManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.io.ByteArrayInputStream
@@ -24,8 +24,8 @@ import java.io.ByteArrayInputStream
 open class WebViewClientEx(
     protected val context: Context,
     protected val onPageUrlChanged: (String) -> Unit,
-    private val settingsManager: SettingsManager,
-    private val adBlocker: AdBlocker
+    private val settingsService: SettingsService,
+    private val adBlockingService: AdBlockingService
 ) : WebViewClient() {
     private val securityPolicyManager = SecurityPolicyManager(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
@@ -41,9 +41,9 @@ open class WebViewClientEx(
         }
 
         // Only block ads if enabled in settings
-        if (settingsManager.isAdBlockEnabled()) {
+        if (settingsService.isAdBlockEnabled()) {
             // Check if this resource should be blocked
-            val blockResponse = adBlocker.shouldBlockRequest(url)
+            val blockResponse = adBlockingService.shouldBlockRequest(url)
             return blockResponse ?: super.shouldInterceptRequest(view, request)
         }
 
@@ -63,7 +63,8 @@ open class WebViewClientEx(
     //     url?.let {
     //         view?.let { webView ->
     //             // Only inject ad-blocking script if the setting is enabled AND JavaScript is enabled
-    //             if (settingsManager.isAdBlockEnabled() && settingsManager.isJavaScriptEnabled()) {
+    // Check if ad blocking and JavaScript are enabled
+    // This is now handled by the AdBlockingService
     //                 // Execute JS to strip out unnecessary elements, can be used later for read mode
     //                 val cleanupScript = """
     //                     javascript:(function() {
@@ -86,10 +87,10 @@ open class WebViewClientEx(
         val url = request?.url?.toString() ?: return false
 
         // Check for authentication URLs first - before any other processing
-        if (AuthenticationHandler.isAuthenticationUrl(url)) {
+        if (AuthenticationService.isAuthenticationUrl(url)) {
             Logger.d("WebViewClientEx", "Authentication URL detected in shouldOverrideUrlLoading: $url")
             view?.context?.let { context ->
-                AuthenticationHandler.openInCustomTab(context, url)
+                AuthenticationService.openInCustomTab(context, url)
                 return true
             }
         }
@@ -106,13 +107,13 @@ open class WebViewClientEx(
         if (url == null) return false
 
         // Check for authentication URLs first - before any other processing
-        if (AuthenticationHandler.isAuthenticationUrl(url)) {
+        if (AuthenticationService.isAuthenticationUrl(url)) {
             Logger.d(
                 "WebViewClientEx",
                 "Authentication URL detected in shouldOverrideUrlLoading (legacy): $url"
             )
             view?.context?.let { context ->
-                AuthenticationHandler.openInCustomTab(context, url)
+                AuthenticationService.openInCustomTab(context, url)
                 return true
             }
         }
@@ -126,12 +127,12 @@ open class WebViewClientEx(
     // Also intercept page loads before they start
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
         // Check if this is an authentication URL before the page starts loading
-        if (url != null && AuthenticationHandler.isAuthenticationUrl(url)) {
+        if (url != null && AuthenticationService.isAuthenticationUrl(url)) {
             Logger.d("WebViewClientEx", "Authentication URL detected in onPageStarted: $url")
             view?.stopLoading() // Stop the WebView from loading this URL
 
             view?.context?.let { context ->
-                AuthenticationHandler.openInCustomTab(context, url)
+                AuthenticationService.openInCustomTab(context, url)
                 // Don't call super to prevent the WebView from loading this URL
                 return
             }
@@ -144,9 +145,9 @@ open class WebViewClientEx(
     // Common URL handling logic for both API versions
     private fun handleUrlOverride(view: WebView?, url: String): Boolean {
         // Check if this is an authentication URL that should be handled with Custom Tabs
-        if (AuthenticationHandler.isAuthenticationUrl(url)) {
+        if (AuthenticationService.isAuthenticationUrl(url)) {
             view?.context?.let { context ->
-                return AuthenticationHandler.openInCustomTab(context, url)
+                return AuthenticationService.openInCustomTab(context, url)
             }
         }
 

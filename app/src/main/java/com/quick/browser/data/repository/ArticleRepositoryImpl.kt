@@ -3,7 +3,7 @@ package com.quick.browser.data.repository
 import com.quick.browser.data.SavedArticleDao
 import com.quick.browser.data.local.entity.SavedArticle
 import com.quick.browser.domain.repository.ArticleRepository
-import com.quick.browser.utils.managers.ReadabilityExtractor
+import com.quick.browser.service.ReadabilityService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -13,7 +13,7 @@ import javax.inject.Inject
  */
 class ArticleRepositoryImpl @Inject constructor(
     private val savedArticleDao: SavedArticleDao,
-    private val readabilityExtractor: ReadabilityExtractor
+    private val readabilityService: ReadabilityService
 ) : ArticleRepository {
     
     override fun getAllSavedArticles(): Flow<List<com.quick.browser.domain.model.SavedArticle>> {
@@ -34,7 +34,7 @@ class ArticleRepositoryImpl @Inject constructor(
     override suspend fun saveArticleByUrl(url: String): Boolean {
         return try {
             // Extract content from URL using ReadabilityExtractor
-            val readableContent = readabilityExtractor.extractFromUrl(url)
+            val readableContent = readabilityService.extractFromUrl(url)
             
             if (readableContent != null) {
                 // Create saved article with extracted content

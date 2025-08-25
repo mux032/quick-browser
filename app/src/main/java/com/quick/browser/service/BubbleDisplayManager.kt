@@ -1,4 +1,4 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.content.Context
 import android.content.Intent
@@ -6,13 +6,12 @@ import android.graphics.PixelFormat
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.lifecycle.LifecycleCoroutineScope
-import com.quick.browser.Constants
 import com.quick.browser.domain.model.Bubble
 import com.quick.browser.presentation.ui.browser.BubbleView
-import com.quick.browser.service.BubbleService
+import com.quick.browser.presentation.ui.browser.OfflineArticleSaver
+import com.quick.browser.utils.Constants
 import com.quick.browser.utils.ErrorHandler
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.OfflineArticleSaver
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -22,11 +21,11 @@ import kotlinx.coroutines.launch
  */
 class BubbleDisplayManager(
     private val context: Context,
-    private val bubbleManager: BubbleManager,
+    private val bubbleService: BubbleService,
     private val lifecycleScope: LifecycleCoroutineScope,
-    private val settingsManager: SettingsManager,
-    private val adBlocker: AdBlocker,
-    private val summarizationManager: SummarizationManager,
+    private val settingsService: SettingsService,
+    private val adBlockingService: AdBlockingService,
+    private val summarizationService: SummarizationService,
     private val offlineArticleSaver: OfflineArticleSaver
 ) {
     private val TAG = "BubbleDisplayManager"
@@ -43,7 +42,7 @@ class BubbleDisplayManager(
      */
     private fun observeBubbles() {
         lifecycleScope.launch {
-            bubbleManager.bubbles.collectLatest { bubbleMap ->
+            bubbleService.getBubblesFlow().collectLatest { bubbleMap ->
                 val bubbles = bubbleMap.values.toList()
                 Logger.d(TAG, "Bubbles updated: ${bubbles.size}")
                 updateBubbleViews(bubbles)
@@ -97,9 +96,9 @@ class BubbleDisplayManager(
                     context = context,
                     bubbleId = bubble.id,
                     url = bubble.url,
-                    settingsManager = settingsManager,
-                    adBlocker = adBlocker,
-                    summarizationManager = summarizationManager,
+                    settingsService = settingsService,
+                    adBlockingService = adBlockingService,
+                    summarizationService = summarizationService,
                     offlineArticleSaver = offlineArticleSaver
                 )
 

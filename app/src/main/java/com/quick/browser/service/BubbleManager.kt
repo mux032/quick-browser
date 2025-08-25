@@ -1,4 +1,4 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.content.Context
 import androidx.lifecycle.LifecycleCoroutineScope

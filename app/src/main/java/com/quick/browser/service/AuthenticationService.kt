@@ -1,4 +1,4 @@
-package com.quick.browser.utils.managers
+package com.quick.browser.service
 
 import android.content.Context
 import android.content.Intent
@@ -13,7 +13,7 @@ import com.quick.browser.utils.Logger
  * Handles authentication URLs by launching them in Chrome Custom Tabs
  * instead of WebView to comply with Google's security policies.
  */
-class AuthenticationHandler {
+class AuthenticationService {
     companion object {
         private const val TAG = "AuthenticationHandler"
         

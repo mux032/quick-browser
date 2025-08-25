@@ -4,12 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.util.Patterns
 import androidx.lifecycle.LifecycleCoroutineScope
-import com.quick.browser.Constants
 import com.quick.browser.domain.model.WebPage
 import com.quick.browser.domain.repository.HistoryRepository
+import com.quick.browser.service.AuthenticationService
+import com.quick.browser.service.BubbleService
+import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.managers.AuthenticationHandler
-import com.quick.browser.utils.managers.BubbleManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,7 +26,7 @@ import java.util.regex.Pattern
  */
 class BubbleIntentProcessor(
         private val context: Context,
-        private val bubbleManager: BubbleManager,
+        private val bubbleService: BubbleService,
         private val historyRepository: HistoryRepository,
         private val lifecycleScope: LifecycleCoroutineScope
 ) {
@@ -61,11 +61,11 @@ class BubbleIntentProcessor(
             Logger.e(TAG, "Creating bubble with URL: $url")
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
-            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+            if (AuthenticationService.isAuthenticationUrl(url)) {
                 Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Generate a bubble ID for this URL to track it when returning from authentication
                 val authBubbleId = UUID.randomUUID().toString()
-                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
+                AuthenticationService.openInCustomTab(context, url, authBubbleId)
                 return
             }
             
@@ -73,7 +73,7 @@ class BubbleIntentProcessor(
             saveToHistory(url)
             
             // Create a new bubble with the shared URL
-            bubbleManager.createOrUpdateBubbleWithNewUrl(url, null)
+            bubbleService.createOrUpdateBubbleWithNewUrl(url, null)
         } else {
             Logger.e(TAG, "No valid URL provided.")
         }
@@ -141,11 +141,11 @@ class BubbleIntentProcessor(
     private fun processValidUrl(url: String?, handler: (String) -> Unit) {
         if (url != null && isValidUrl(url)) {
             // Check if this is an authentication URL that should be handled with Custom Tabs
-            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+            if (AuthenticationService.isAuthenticationUrl(url)) {
                 Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Generate a bubble ID for this URL to track it when returning from authentication
                 val authBubbleId = UUID.randomUUID().toString()
-                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
+                AuthenticationService.openInCustomTab(context, url, authBubbleId)
                 return
             }
             
@@ -162,18 +162,18 @@ class BubbleIntentProcessor(
         
         if (url != null && isValidUrl(url)) {
             // Check if this is an authentication URL that should be handled with Custom Tabs
-            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+            if (AuthenticationService.isAuthenticationUrl(url)) {
                 Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Use the provided bubble ID or generate a new one
                 val authBubbleId = bubbleId ?: UUID.randomUUID().toString()
-                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
+                AuthenticationService.openInCustomTab(context, url, authBubbleId)
                 return
             }
             
             // Save to history
             saveToHistory(url)
             
-            bubbleManager.createOrUpdateBubbleWithNewUrl(url, bubbleId)
+            bubbleService.createOrUpdateBubbleWithNewUrl(url, bubbleId)
         } else {
             Logger.w(TAG, "Invalid or missing URL for handleOpenUrl. URL: $url")
         }
@@ -182,7 +182,7 @@ class BubbleIntentProcessor(
     private fun handleCloseBubble(intent: Intent) {
         val bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
         if (bubbleId != null) {
-            bubbleManager.removeBubble(bubbleId)
+            bubbleService.removeBubble(bubbleId)
         }
         Logger.d(TAG, "Bubble closed via intent")
     }
@@ -190,16 +190,9 @@ class BubbleIntentProcessor(
     private fun handleActivateBubble(intent: Intent) {
         val bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
         if (bubbleId != null) {
-            val currentBubbles = bubbleManager.bubbles.value
-            val bubble = currentBubbles[bubbleId]
-            
-            if (bubble != null) {
-                // The BubbleView now handles expansion directly
-                // Just log that the bubble was activated
-                Logger.d(TAG, "Bubble activated with ID: $bubbleId, URL: ${bubble.url}")
-            } else {
-                Logger.w(TAG, "No bubble found to activate with ID: $bubbleId")
-            }
+            // We need to access the bubbles through the service
+            // For now, we'll just log that the bubble was activated
+            Logger.d(TAG, "Bubble activated with ID: $bubbleId")
         } else {
             Logger.w(TAG, "No bubble ID provided in handleActivateBubble")
         }
@@ -207,14 +200,7 @@ class BubbleIntentProcessor(
 
     private fun handleToggleBubbles() {
         // Optional: implement show/hide behavior if needed. Here's a basic toggle logic idea.
-        val bubbles = bubbleManager.bubbles.value
-        if (bubbles.isNotEmpty()) {
-            // We now have multiple bubbles, so we'll just log this action
-            // The main bubble will show all bubbles in its expanded state
-            Logger.d(TAG, "Toggle bubbles requested with ${bubbles.size} bubbles")
-        } else {
-            Logger.d(TAG, "Toggle bubbles requested, but no bubbles exist.")
-        }
+        Logger.d(TAG, "Toggle bubbles requested")
     }
 
     /**
@@ -231,7 +217,7 @@ class BubbleIntentProcessor(
         }
         Logger.d(TAG, "handleSharedContent | Received url: $url")
         processValidUrl(url) { validUrl ->
-            bubbleManager.createOrUpdateBubbleWithNewUrl(validUrl, null)
+            bubbleService.createOrUpdateBubbleWithNewUrl(validUrl, null)
         }
     }
     
@@ -269,18 +255,18 @@ class BubbleIntentProcessor(
             val url = data.toString()
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
-            if (AuthenticationHandler.isAuthenticationUrl(url)) {
+            if (AuthenticationService.isAuthenticationUrl(url)) {
                 Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
                 // Generate a bubble ID for this URL to track it when returning from authentication
                 val authBubbleId = UUID.randomUUID().toString()
-                AuthenticationHandler.openInCustomTab(context, url, authBubbleId)
+                AuthenticationService.openInCustomTab(context, url, authBubbleId)
                 return
             }
             
             // Save to history
             saveToHistory(url)
             
-            bubbleManager.createOrUpdateBubbleWithNewUrl(url, null)
+            bubbleService.createOrUpdateBubbleWithNewUrl(url, null)
         }
     }
 

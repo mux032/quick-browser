@@ -17,8 +17,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.quick.browser.R
+import com.quick.browser.presentation.ui.browser.OfflineArticleSaver
 import com.quick.browser.presentation.ui.components.BaseActivity
-import com.quick.browser.utils.OfflineArticleSaver
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

@@ -91,3 +91,33 @@ object Logger {
         }
     }
 }
+
+/**
+ * Extension function for logging verbose messages
+ */
+fun Any.logV(tag: String, message: String) = Logger.v(tag, message)
+
+/**
+ * Extension function for logging debug messages
+ */
+fun Any.logD(tag: String, message: String) = Logger.d(tag, message)
+
+/**
+ * Extension function for logging info messages
+ */
+fun Any.logI(tag: String, message: String) = Logger.i(tag, message)
+
+/**
+ * Extension function for logging warning messages
+ */
+fun Any.logW(tag: String, message: String) = Logger.w(tag, message)
+
+/**
+ * Extension function for logging error messages
+ */
+fun Any.logE(tag: String, message: String) = Logger.e(tag, message)
+
+/**
+ * Extension function for logging error messages with throwable
+ */
+fun Any.logE(tag: String, message: String, throwable: Throwable) = Logger.e(tag, message, throwable)
