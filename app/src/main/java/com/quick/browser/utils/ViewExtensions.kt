@@ -8,6 +8,11 @@ import androidx.core.view.children
 /**
  * Recursively finds a view by its tag
  *
+ * This extension function searches through the view hierarchy to find
+ * a view with the specified tag. It performs a depth-first search,
+ * checking the current view first, then recursively searching through
+ * all child views if the current view is a ViewGroup.
+ *
  * @param tag The tag to search for
  * @return The view with the specified tag, or null if not found
  */
@@ -30,6 +35,8 @@ fun View.findViewByTag(tag: String): View? {
 
 /**
  * Shows a view by setting its visibility to VISIBLE
+ *
+ * This makes the view visible and takes up space in the layout.
  */
 fun View.show() {
     this.visibility = View.VISIBLE
@@ -37,6 +44,8 @@ fun View.show() {
 
 /**
  * Hides a view by setting its visibility to GONE
+ *
+ * This makes the view invisible and does not take up space in the layout.
  */
 fun View.hide() {
     this.visibility = View.GONE
@@ -44,6 +53,8 @@ fun View.hide() {
 
 /**
  * Makes a view invisible by setting its visibility to INVISIBLE
+ *
+ * This makes the view invisible but still takes up space in the layout.
  */
 fun View.invisible() {
     this.visibility = View.INVISIBLE
@@ -52,7 +63,7 @@ fun View.invisible() {
 /**
  * Checks if a view is visible
  *
- * @return True if the view is visible, false otherwise
+ * @return True if the view is visible (visibility == VISIBLE), false otherwise
  */
 fun View.isVisible(): Boolean {
     return this.visibility == View.VISIBLE
@@ -61,7 +72,7 @@ fun View.isVisible(): Boolean {
 /**
  * Checks if a view is hidden (gone)
  *
- * @return True if the view is hidden, false otherwise
+ * @return True if the view is hidden (visibility == GONE), false otherwise
  */
 fun View.isGone(): Boolean {
     return this.visibility == View.GONE
@@ -69,6 +80,9 @@ fun View.isGone(): Boolean {
 
 /**
  * Toggle visibility of a view between VISIBLE and GONE
+ *
+ * If the view is currently visible, it will be hidden.
+ * If the view is currently hidden or invisible, it will be made visible.
  */
 fun View.toggleVisibility() {
     if (this.isVisible()) {
@@ -80,6 +94,9 @@ fun View.toggleVisibility() {
 
 /**
  * Set multiple views visible
+ *
+ * This extension function applies the show() method to all views
+ * in the iterable collection.
  */
 fun Iterable<View>.show() {
     forEach { it.show() }
@@ -87,6 +104,9 @@ fun Iterable<View>.show() {
 
 /**
  * Set multiple views gone
+ *
+ * This extension function applies the hide() method to all views
+ * in the iterable collection.
  */
 fun Iterable<View>.hide() {
     forEach { it.hide() }
@@ -94,6 +114,12 @@ fun Iterable<View>.hide() {
 
 /**
  * Execute a block of code when the view is laid out
+ *
+ * This extension function executes the provided action immediately if
+ * the view is already laid out, or waits for the next layout pass
+ * to execute the action.
+ *
+ * @param action The block of code to execute when the view is laid out
  */
 inline fun View.doOnLayout(crossinline action: (view: View) -> Unit) {
     if (isLaidOut && !isLayoutRequested) {
@@ -110,6 +136,11 @@ inline fun View.doOnLayout(crossinline action: (view: View) -> Unit) {
 
 /**
  * Execute a block of code when the next layout pass is completed
+ *
+ * This extension function waits for the next layout pass to execute
+ * the provided action, regardless of whether the view is already laid out.
+ *
+ * @param action The block of code to execute when the next layout pass is completed
  */
 inline fun View.doOnNextLayout(crossinline action: (view: View) -> Unit) {
     viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {

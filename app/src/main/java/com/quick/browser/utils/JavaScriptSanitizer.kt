@@ -2,6 +2,10 @@ package com.quick.browser.utils
 
 /**
  * Utility class for sanitizing JavaScript code to prevent XSS and other injection attacks
+ *
+ * This object provides methods to sanitize JavaScript code by removing potentially
+ * dangerous constructs, validate JavaScript code for safety, and generate Content
+ * Security Policy headers.
  */
 object JavaScriptSanitizer {
     
@@ -51,7 +55,7 @@ object JavaScriptSanitizer {
             sanitized = sanitized.replace(Regex("\\.createElement\\s*\\([^)]*script[^)]*\\)", setOf(RegexOption.IGNORE_CASE)), "")
             
             // Remove data URLs that could contain scripts
-            sanitized = sanitized.replace(Regex("data:text/javascript[^'\"]*", setOf(RegexOption.IGNORE_CASE)), "")
+            sanitized = sanitized.replace(Regex("data:text/javascript[^'\"']*", setOf(RegexOption.IGNORE_CASE)), "")
             
         } catch (e: Exception) {
             Logger.e(TAG, "Error sanitizing JavaScript", e)
@@ -91,7 +95,7 @@ object JavaScriptSanitizer {
         }
         
         // Check for data URLs
-        val dataUrlPattern = "data:text/javascript[^'\"]*"
+        val dataUrlPattern = "data:text/javascript[^'\"']*"
         if (Regex(dataUrlPattern, setOf(RegexOption.IGNORE_CASE)).containsMatchIn(script)) {
             return false
         }
@@ -122,10 +126,14 @@ object JavaScriptSanitizer {
 
 /**
  * Extension function to sanitize JavaScript code
+ *
+ * @return The sanitized JavaScript code
  */
 fun String.sanitizeJavaScript(): String = JavaScriptSanitizer.sanitizeJavaScript(this)
 
 /**
  * Extension function to check if JavaScript code is safe
+ *
+ * @return True if the script is considered safe
  */
 fun String.isJavaScriptSafe(): Boolean = JavaScriptSanitizer.isJavaScriptSafe(this)

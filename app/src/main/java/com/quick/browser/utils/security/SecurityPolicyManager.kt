@@ -16,6 +16,8 @@ import java.security.cert.Certificate
  * - Certificate pinning
  * - Input sanitization
  * - Content security policies
+ *
+ * @param context The application context
  */
 class SecurityPolicyManager(private val context: Context) {
     
@@ -26,6 +28,10 @@ class SecurityPolicyManager(private val context: Context) {
     
     /**
      * Apply strict security settings to a WebView
+     *
+     * This method configures a WebView with security-focused settings to minimize
+     * potential attack vectors. It disables file access, mixed content, and other
+     * potentially unsafe features.
      *
      * @param webView The WebView to configure
      */
@@ -68,6 +74,9 @@ class SecurityPolicyManager(private val context: Context) {
     /**
      * Apply advanced security settings
      *
+     * This method applies additional security configurations that may not be
+     * available on all WebView implementations or Android versions.
+     *
      * @param webView The WebView to configure
      * @param settings The WebView settings
      */
@@ -86,6 +95,9 @@ class SecurityPolicyManager(private val context: Context) {
     /**
      * Set a secure user agent string
      *
+     * This method modifies the user agent string to remove identifying information
+     * that could be used for browser fingerprinting.
+     *
      * @param settings The WebView settings to modify
      */
     private fun setUserAgent(settings: WebSettings) {
@@ -102,6 +114,9 @@ class SecurityPolicyManager(private val context: Context) {
     
     /**
      * Sanitize user input to prevent injection attacks
+     *
+     * This method removes potentially dangerous characters and constructs from
+     * user input to prevent XSS and other injection attacks.
      *
      * @param input The input string to sanitize
      * @return The sanitized string
@@ -127,6 +142,9 @@ class SecurityPolicyManager(private val context: Context) {
     /**
      * Validate and format URL for security
      *
+     * This method validates a URL and formats it according to security policies.
+     * It ensures URLs use allowed protocols and sanitizes potentially dangerous inputs.
+     *
      * @param url The URL to validate
      * @return The validated and formatted URL, or null if invalid
      */
@@ -150,6 +168,10 @@ class SecurityPolicyManager(private val context: Context) {
     
     /**
      * Check if a URL is safe to load based on security policies
+     *
+     * This method evaluates whether a URL should be allowed to load based on
+     * security policies such as blocking localhost and private IP addresses
+     * in strict mode.
      *
      * @param url The URL to check
      * @return True if the URL is safe to load
@@ -175,6 +197,9 @@ class SecurityPolicyManager(private val context: Context) {
     
     /**
      * Generate a certificate fingerprint for pinning
+     *
+     * This method generates a SHA-256 fingerprint of a certificate's public key
+     * for use in certificate pinning implementations.
      *
      * @param certificate The certificate to fingerprint
      * @return The SHA-256 fingerprint of the certificate

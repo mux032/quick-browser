@@ -13,9 +13,10 @@ import kotlinx.coroutines.SupervisorJob
 import javax.inject.Inject
 
 /**
- * BubbleService is the core service responsible for managing floating bubbles in the Quick Browser. It
- * coordinates between different managers to handle bubble lifecycle, positioning, and user
- * interactions.
+ * BubbleService is the core service responsible for managing floating bubbles in the Quick Browser.
+ *
+ * This service coordinates between different managers to handle bubble lifecycle, positioning,
+ * and user interactions. It runs in the foreground to ensure bubbles remain visible and responsive.
  *
  * Key responsibilities:
  * - Service lifecycle management
@@ -51,17 +52,37 @@ class BubbleService : LifecycleService() {
     @Inject
     lateinit var offlineArticleSaver: OfflineArticleSaver
 
-    // Public methods to expose BubbleManager functionality
+    /**
+     * Create or update a bubble with a new URL
+     *
+     * @param url The URL to load in the bubble
+     * @param existingBubbleId The ID of an existing bubble to update, or null to create a new bubble
+     */
     fun createOrUpdateBubbleWithNewUrl(url: String, existingBubbleId: String? = null) {
         bubbleManager.createOrUpdateBubbleWithNewUrl(url, existingBubbleId)
     }
 
+    /**
+     * Remove a bubble
+     *
+     * @param bubbleId The ID of the bubble to remove
+     */
     fun removeBubble(bubbleId: String) {
         bubbleManager.removeBubble(bubbleId)
     }
 
+    /**
+     * Get all bubbles
+     *
+     * @return A list of all bubbles
+     */
     fun getAllBubbles() = bubbleManager.getAllBubbles()
     
+    /**
+     * Get a flow of all bubbles
+     *
+     * @return A flow of lists of bubbles
+     */
     fun getBubblesFlow() = bubbleManager.bubbles
 
     companion object {
@@ -85,9 +106,17 @@ class BubbleService : LifecycleService() {
         const val EXTRA_X = "extra_x"
         const val EXTRA_Y = "extra_y"
 
+        /**
+         * Check if the service is running
+         *
+         * @return True if the service is running, false otherwise
+         */
         fun isRunning(): Boolean = isServiceRunning
     }
 
+    /**
+     * Called when the service is created
+     */
     override fun onCreate() {
         super.onCreate()
         Logger.d(TAG, "BubbleService onCreate()")
@@ -143,6 +172,14 @@ class BubbleService : LifecycleService() {
         }
     }
 
+    /**
+     * Called when the service receives a start command
+     *
+     * @param intent The intent that started the service
+     * @param flags Additional data about the start request
+     * @param startId A unique integer ID for this start request
+     * @return The restart behavior of the service
+     */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         Logger.d(TAG, "onStartCommand | Received intent: ${intent?.action}, data: ${intent?.extras}")
@@ -150,6 +187,9 @@ class BubbleService : LifecycleService() {
         return START_STICKY
     }
 
+    /**
+     * Called when the service is destroyed
+     */
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false

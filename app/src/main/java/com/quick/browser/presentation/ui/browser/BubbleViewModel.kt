@@ -13,6 +13,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel for the browser bubble UI
+ *
+ * This ViewModel manages the state for browser bubbles and handles
+ * interactions with use cases for settings management.
+ *
+ * @param getSettingsUseCase The use case for retrieving app settings
+ * @param updateSettingsUseCase The use case for updating app settings
+ */
 @HiltViewModel
 class BubbleViewModel @Inject constructor(
     private val getSettingsUseCase: GetSettingsUseCase,
@@ -22,6 +31,12 @@ class BubbleViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BrowserUiState())
     val uiState: StateFlow<BrowserUiState> = _uiState
 
+    /**
+     * Load application settings
+     *
+     * This method retrieves the current application settings using the
+     * GetSettingsUseCase and updates the UI state accordingly.
+     */
     fun loadSettings() {
         viewModelScope.launch {
             try {
@@ -51,6 +66,14 @@ class BubbleViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Save application settings
+     *
+     * This method saves the provided settings using the UpdateSettingsUseCase
+     * and updates the UI state accordingly.
+     *
+     * @param settings The settings to save
+     */
     fun saveSettings(settings: Settings) {
         viewModelScope.launch {
             try {
@@ -70,6 +93,11 @@ class BubbleViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Add a bubble to the UI state
+     *
+     * @param bubble The bubble to add
+     */
     fun addBubble(bubble: Bubble) {
         Logger.e("BubbleViewModel", "Adding bubble: $bubble")
         val currentList = _uiState.value.bubbles.toMutableList()
@@ -77,12 +105,22 @@ class BubbleViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(bubbles = currentList)
     }
 
+    /**
+     * Remove a bubble from the UI state
+     *
+     * @param bubbleId The ID of the bubble to remove
+     */
     fun removeBubble(bubbleId: String) {
         val currentList = _uiState.value.bubbles.toMutableList()
         currentList.removeAll { it.id == bubbleId }
         _uiState.value = _uiState.value.copy(bubbles = currentList)
     }
 
+    /**
+     * Update a bubble in the UI state
+     *
+     * @param bubble The updated bubble
+     */
     fun updateBubble(bubble: Bubble) {
         val currentList = _uiState.value.bubbles.toMutableList()
         val index = currentList.indexOfFirst { it.id == bubble.id }

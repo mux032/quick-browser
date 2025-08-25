@@ -8,13 +8,29 @@ import android.widget.ImageView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlin.math.abs
 
+/**
+ * Custom SwipeRefreshLayout that supports horizontal swipes for navigation
+ *
+ * This layout extends the standard SwipeRefreshLayout to add support for
+ * horizontal swipe gestures for navigating back and forward in a WebView.
+ * It displays arrow indicators during the swipe gesture to provide visual
+ * feedback to the user.
+ *
+ * @param context The context
+ * @param attrs The attribute set
+ */
 class HorizontalSwipeRefreshLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
 ) : SwipeRefreshLayout(context, attrs) {
 
+    /** The WebView to control with horizontal swipes */
     var webView: WebView? = null
+    
+    /** The back arrow indicator image view */
     private var backArrow: ImageView? = null
+    
+    /** The forward arrow indicator image view */
     private var forwardArrow: ImageView? = null
 
     private var startX = 0f
@@ -22,11 +38,23 @@ class HorizontalSwipeRefreshLayout @JvmOverloads constructor(
     private var isHorizontalSwipe = false
     private val swipeSlop = 100
 
+    /**
+     * Set the arrow indicator image views
+     *
+     * @param back The back arrow indicator
+     * @param forward The forward arrow indicator
+     */
     fun setArrowImageViews(back: ImageView, forward: ImageView) {
         this.backArrow = back
         this.forwardArrow = forward
     }
 
+    /**
+     * Intercept touch events to detect horizontal swipes
+     *
+     * @param ev The motion event
+     * @return True if the event should be intercepted, false otherwise
+     */
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         when (ev.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -56,6 +84,12 @@ class HorizontalSwipeRefreshLayout @JvmOverloads constructor(
         return super.onInterceptTouchEvent(ev)
     }
 
+    /**
+     * Handle touch events for horizontal swipe navigation
+     *
+     * @param ev The motion event
+     * @return True if the event was handled, false otherwise
+     */
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         if (!isHorizontalSwipe) {
             return super.onTouchEvent(ev)
@@ -111,6 +145,9 @@ class HorizontalSwipeRefreshLayout @JvmOverloads constructor(
         return true // Consume the touch event if it was a horizontal swipe
     }
 
+    /**
+     * Hide the arrow indicators with animation
+     */
     private fun hideArrows() {
         backArrow?.animate()?.alpha(0f)?.setDuration(150)?.start()
         forwardArrow?.animate()?.alpha(0f)?.setDuration(150)?.withEndAction {

@@ -10,13 +10,28 @@ import com.quick.browser.service.SettingsService
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
+/**
+ * Main application class for the Quick Browser
+ *
+ * This class serves as the entry point for the application and handles
+ * global initialization tasks such as dependency injection setup,
+ * theme configuration, and debug mode configuration.
+ *
+ * It also maintains a reference to the BubbleService for easy access
+ * from other parts of the application.
+ */
 @HiltAndroidApp
 class QuickBrowserApplication : Application() {
 
     @Inject
     lateinit var settingsService: SettingsService
 
-    // Reference to the BubbleService
+    /**
+     * Reference to the BubbleService
+     *
+     * This property holds a reference to the active BubbleService instance,
+     * allowing other components to interact with the bubble functionality.
+     */
     var bubbleService: BubbleService? = null
 
     companion object {
@@ -24,6 +39,7 @@ class QuickBrowserApplication : Application() {
 
         /**
          * Checks if the application is running in debug mode
+         *
          * @return true if running in debug mode, false otherwise
          */
         fun isDebugBuild(): Boolean {
@@ -42,6 +58,13 @@ class QuickBrowserApplication : Application() {
         }
     }
 
+    /**
+     * Called when the application is starting
+     *
+     * This method performs global initialization tasks including:
+     * - Configuring StrictMode for debug builds
+     * - Applying theme settings
+     */
     override fun onCreate() {
         super.onCreate()
 
@@ -54,6 +77,9 @@ class QuickBrowserApplication : Application() {
 
     /**
      * Configure StrictMode to detect potential performance issues during development
+     *
+     * This method sets up StrictMode policies to help identify accidental disk or
+     * network operations on the main thread, which can cause UI jank or ANRs.
      */
     private fun configureStrictMode() {
         if (isDebugBuild()) {
@@ -81,6 +107,9 @@ class QuickBrowserApplication : Application() {
 
     /**
      * Apply theme settings including dynamic colors and night mode
+     *
+     * This method configures the application's theme based on user preferences,
+     * including dynamic color support (Android 12+) and night mode settings.
      */
     fun applyThemeSettings() {
         // Apply dynamic colors if enabled and available

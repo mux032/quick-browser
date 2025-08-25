@@ -13,6 +13,13 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * AdBlocker utility to block ads and trackers
+ *
+ * This service provides functionality to block advertisements and tracking
+ * requests based on predefined rules and user-configurable lists. It maintains
+ * in-memory caches for performance and supports domain whitelisting/blacklisting.
+ *
+ * @param context The application context
+ * @param encryptedPrefs The encrypted preferences service for storing user configurations
  */
 class AdBlockingService(private val context: Context, private val encryptedPrefs: EncryptedPreferencesService) : LoggingTag {
 
@@ -43,6 +50,9 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Check if a request should be blocked
+     *
+     * @param url The URL of the request to check
+     * @return A WebResourceResponse if the request should be blocked, null otherwise
      */
     fun shouldBlockRequest(url: String): WebResourceResponse? {
         return runCatching {
@@ -92,6 +102,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Add a host to the blocked list
+     *
+     * @param host The host to add to the blocked list
      */
     fun addBlockedHost(host: String) {
         adServerHosts.add(host)
@@ -100,6 +112,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Remove a host from the blocked list
+     *
+     * @param host The host to remove from the blocked list
      */
     fun removeBlockedHost(host: String) {
         adServerHosts.remove(host)
@@ -109,6 +123,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Add a domain to the whitelist (never blocked)
+     *
+     * @param domain The domain to add to the whitelist
      */
     fun addToWhitelist(domain: String) {
         whitelistedDomains.add(domain)
@@ -117,6 +133,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Remove a domain from the whitelist
+     *
+     * @param domain The domain to remove from the whitelist
      */
     fun removeFromWhitelist(domain: String) {
         whitelistedDomains.remove(domain)
@@ -125,6 +143,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Add a domain to the blacklist (always blocked)
+     *
+     * @param domain The domain to add to the blacklist
      */
     fun addToBlacklist(domain: String) {
         blacklistedDomains.add(domain)
@@ -133,6 +153,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Remove a domain from the blacklist
+     *
+     * @param domain The domain to remove from the blacklist
      */
     fun removeFromBlacklist(domain: String) {
         blacklistedDomains.remove(domain)
@@ -141,6 +163,9 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Check if a domain is whitelisted
+     *
+     * @param domain The domain to check
+     * @return True if the domain is whitelisted, false otherwise
      */
     fun isWhitelisted(domain: String): Boolean {
         return whitelistedDomains.contains(domain)
@@ -148,6 +173,9 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Check if a domain is blacklisted
+     *
+     * @param domain The domain to check
+     * @return True if the domain is blacklisted, false otherwise
      */
     fun isBlacklisted(domain: String): Boolean {
         return blacklistedDomains.contains(domain)
@@ -155,6 +183,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Get list of blocked hosts
+     *
+     * @return A set of blocked hosts
      */
     fun getBlockedHosts(): Set<String> {
         return adServerHosts.toSet()
@@ -162,6 +192,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Get whitelisted domains
+     *
+     * @return A set of whitelisted domains
      */
     fun getWhitelist(): Set<String> {
         return whitelistedDomains.toSet()
@@ -169,6 +201,8 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Get blacklisted domains
+     *
+     * @return A set of blacklisted domains
      */
     fun getBlacklist(): Set<String> {
         return blacklistedDomains.toSet()
@@ -176,6 +210,9 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Update ad blocking rules from a URL
+     *
+     * @param url The URL to fetch ad blocking rules from
+     * @return True if the rules were updated successfully, false otherwise
      */
     suspend fun updateRulesFromUrl(url: String): Boolean =
         try {
@@ -204,7 +241,58 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
         }
 
     /**
+     * Load ad blocking rules from preferences
+     */
+    private fun loadRules() {
+        val serializedRules = encryptedPrefs.getStringSet(PREFS_AD_SERVERS, null) ?: getDefaultRules()
+        adServerHosts.clear()
+        adServerHosts.addAll(serializedRules)
+    }
+
+    /**
+     * Save ad blocking rules to preferences
+     */
+    private fun saveRules() {
+        encryptedPrefs.putStringSet(PREFS_AD_SERVERS, adServerHosts)
+    }
+
+    /**
+     * Load whitelist from preferences
+     */
+    private fun loadWhitelist() {
+        val whitelist = encryptedPrefs.getStringSet(PREFS_WHITELIST, null) ?: emptySet()
+        whitelistedDomains.clear()
+        whitelistedDomains.addAll(whitelist)
+    }
+
+    /**
+     * Save whitelist to preferences
+     */
+    private fun saveWhitelist() {
+        encryptedPrefs.putStringSet(PREFS_WHITELIST, whitelistedDomains)
+    }
+
+    /**
+     * Load blacklist from preferences
+     */
+    private fun loadBlacklist() {
+        val blacklist = encryptedPrefs.getStringSet(PREFS_BLACKLIST, null) ?: emptySet()
+        blacklistedDomains.clear()
+        blacklistedDomains.addAll(blacklist)
+    }
+
+    /**
+     * Save blacklist to preferences
+     */
+    private fun saveBlacklist() {
+        encryptedPrefs.putStringSet(PREFS_BLACKLIST, blacklistedDomains)
+    }
+
+    /**
      * Parse hosts from a text file
+     *
+     * @param rulesText The text content to parse
+     * @return A set of host names
      */
     private fun parseHosts(rulesText: String): Set<String> {
         val hosts = HashSet<String>()
@@ -224,6 +312,9 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
     /**
      * Extract domain from URL
+     *
+     * @param url The URL to extract domain from
+     * @return The domain name
      */
     private fun extractDomain(url: String): String {
         return runCatching {
@@ -239,55 +330,9 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
     }
 
     /**
-     * Load ad blocking rules from preferences
-     */
-    private fun loadRules() {
-        val serializedRules = encryptedPrefs.getStringSet("rules", null) ?: getDefaultRules()
-        adServerHosts.clear()
-        adServerHosts.addAll(serializedRules)
-    }
-
-    /**
-     * Save ad blocking rules to preferences
-     */
-    private fun saveRules() {
-        encryptedPrefs.putStringSet("rules", adServerHosts)
-    }
-
-    /**
-     * Load whitelist from preferences
-     */
-    private fun loadWhitelist() {
-        val whitelist = encryptedPrefs.getStringSet("whitelist_domains", null) ?: emptySet()
-        whitelistedDomains.clear()
-        whitelistedDomains.addAll(whitelist)
-    }
-
-    /**
-     * Save whitelist to preferences
-     */
-    private fun saveWhitelist() {
-        encryptedPrefs.putStringSet("whitelist_domains", whitelistedDomains)
-    }
-
-    /**
-     * Load blacklist from preferences
-     */
-    private fun loadBlacklist() {
-        val blacklist = encryptedPrefs.getStringSet("blacklist_domains", null) ?: emptySet()
-        blacklistedDomains.clear()
-        blacklistedDomains.addAll(blacklist)
-    }
-
-    /**
-     * Save blacklist to preferences
-     */
-    private fun saveBlacklist() {
-        encryptedPrefs.putStringSet("blacklist_domains", blacklistedDomains)
-    }
-
-    /**
      * Get default ad blocking rules
+     *
+     * @return A set of default ad blocking rules
      */
     private fun getDefaultRules(): Set<String> {
         return setOf(

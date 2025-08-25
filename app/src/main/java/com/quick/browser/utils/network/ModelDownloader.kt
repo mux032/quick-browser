@@ -9,6 +9,12 @@ import java.net.URL
 
 /**
  * Utility class for downloading NLP models
+ *
+ * This class handles downloading and managing NLP models required by the application.
+ * It provides methods to check if models are available, download them if needed, and
+ * manage their storage location.
+ *
+ * @param context The application context
  */
 class ModelDownloader(private val context: Context) {
 
@@ -23,6 +29,8 @@ class ModelDownloader(private val context: Context) {
 
     /**
      * Checks if the sentence model is already downloaded
+     *
+     * @return True if the sentence model is downloaded and available, false otherwise
      */
     fun isSentenceModelDownloaded(): Boolean {
         val modelFile = File(context.getExternalFilesDir(null), SENTENCE_MODEL_FILENAME)
@@ -31,6 +39,10 @@ class ModelDownloader(private val context: Context) {
 
     /**
      * Downloads the sentence model if it's not already downloaded
+     *
+     * This method attempts to download the sentence model from the configured URL.
+     * If downloading fails, it tries to use a fallback model from the app's assets.
+     *
      * @return true if the model is available (either downloaded now or previously)
      */
     suspend fun ensureSentenceModelAvailable(): Boolean = withContext(Dispatchers.IO) {

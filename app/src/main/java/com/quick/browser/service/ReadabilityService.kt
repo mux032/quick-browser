@@ -9,9 +9,25 @@ import java.net.URI
 
 /**
  * Utility for extracting readable content from web pages
+ *
+ * This service provides functionality to extract clean, readable content from web pages
+ * by removing advertisements, navigation elements, and other non-content elements.
+ * It uses the Jsoup library to parse HTML and apply content extraction algorithms.
+ *
+ * @param context The application context
  */
 class ReadabilityService(private val context: Context) {
     
+    /**
+     * Data class representing readable content extracted from a web page
+     *
+     * @property title The title of the page
+     * @property content The main content of the page
+     * @property byline The author or byline information
+     * @property excerpt A brief excerpt of the content
+     * @property siteName The name of the website
+     * @property publishDate The publication date of the content
+     */
     data class ReadableContent(
         val title: String,
         val content: String,
@@ -29,6 +45,9 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Extract readable content from a URL
+     *
+     * @param url The URL to extract content from
+     * @return The readable content or null if extraction failed
      */
     suspend fun extractFromUrl(url: String): ReadableContent? =
         ErrorHandler.handleExceptions(
@@ -53,6 +72,10 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Extract readable content from HTML string
+     *
+     * @param html The HTML content to extract from
+     * @param baseUrl The base URL for resolving relative links
+     * @return The readable content or null if extraction failed
      */
     suspend fun extractFromHtml(html: String, baseUrl: String): ReadableContent? =
         ErrorHandler.handleExceptions(
@@ -65,6 +88,10 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Extract content from a Jsoup Document
+     *
+     * @param doc The Jsoup Document to extract content from
+     * @param url The URL of the document (used for metadata extraction)
+     * @return The readable content
      */
     private fun extractFromDocument(doc: Document, url: String): ReadableContent {
         // Get the title of the page
@@ -97,6 +124,9 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Find the main content of the page
+     *
+     * @param doc The Jsoup Document to search
+     * @return The main content as a formatted string
      */
     private fun findMainContent(doc: Document): String {
         // Remove unnecessary elements
@@ -152,6 +182,9 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Clean and format content for readability
+     *
+     * @param element The element containing the content to clean
+     * @return The cleaned and formatted content
      */
     private fun cleanAndFormatContent(element: Element): String {
         // Make a copy to avoid modifying the original
@@ -185,6 +218,9 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Find the author/byline in the article
+     *
+     * @param doc The Jsoup Document to search
+     * @return The author/byline or null if not found
      */
     private fun findByline(doc: Document): String? {
         val possibleBylineElements = listOf(
@@ -200,6 +236,9 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Create a brief excerpt from the content
+     *
+     * @param content The content to create an excerpt from
+     * @return A brief excerpt or null if content is empty
      */
     private fun createExcerpt(content: String): String? {
         // Parse the HTML content
@@ -216,6 +255,10 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Find the site name
+     *
+     * @param doc The Jsoup Document to search
+     * @param url The URL of the document
+     * @return The site name or null if not found
      */
     private fun findSiteName(doc: Document, url: String): String? {
         // Try to find site name from meta tags
@@ -237,6 +280,9 @@ class ReadabilityService(private val context: Context) {
     
     /**
      * Find the publish date
+     *
+     * @param doc The Jsoup Document to search
+     * @return The publish date or null if not found
      */
     private fun findPublishDate(doc: Document): String? {
         val possibleDateElements = listOf(

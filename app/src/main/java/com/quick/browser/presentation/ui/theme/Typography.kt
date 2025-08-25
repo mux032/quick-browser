@@ -6,8 +6,19 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Set of Material typography styles to start with
+/**
+ * Typography definitions for the Quick Browser application
+ *
+ * This file defines the typography styles used throughout the application,
+ * following Material Design guidelines. It includes styles for various
+ * text elements such as headings, body text, and labels.
+ */
 val Typography = Typography(
+    /**
+     * Large body text style
+     *
+     * Used for primary body content
+     */
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -15,6 +26,12 @@ val Typography = Typography(
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
+    
+    /**
+     * Large title text style
+     *
+     * Used for section titles and prominent headings
+     */
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -22,6 +39,12 @@ val Typography = Typography(
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
+    
+    /**
+     * Small label text style
+     *
+     * Used for small labels and captions
+     */
     labelSmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
@@ -29,6 +52,12 @@ val Typography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     ),
+    
+    /**
+     * Medium body text style
+     *
+     * Used for secondary body content
+     */
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -36,6 +65,12 @@ val Typography = Typography(
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp
     ),
+    
+    /**
+     * Medium headline text style
+     *
+     * Used for important headlines and page titles
+     */
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,

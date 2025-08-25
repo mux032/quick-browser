@@ -16,10 +16,22 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * Dagger Hilt module for providing service dependencies
+ *
+ * This module provides various service instances required by the application,
+ * including settings, ad-blocking, summarization, and other utility services.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object ServiceModule {
 
+    /**
+     * Provide the ArticleSavingService instance
+     *
+     * @param articleRepository The article repository dependency
+     * @return The ArticleSavingService instance
+     */
     @Provides
     @Singleton
     fun provideArticleSavingService(
@@ -28,6 +40,13 @@ object ServiceModule {
         return ArticleSavingService(articleRepository)
     }
     
+    /**
+     * Provide the SettingsService instance
+     *
+     * @param context The application context
+     * @param encryptedPreferencesService The encrypted preferences service dependency
+     * @return The SettingsService instance
+     */
     @Provides
     @Singleton
     fun provideSettingsService(
@@ -37,6 +56,13 @@ object ServiceModule {
         return SettingsService(context, encryptedPreferencesService)
     }
 
+    /**
+     * Provide the AdBlockingService instance
+     *
+     * @param context The application context
+     * @param encryptedPreferencesService The encrypted preferences service dependency
+     * @return The AdBlockingService instance
+     */
     @Provides
     @Singleton
     fun provideAdBlockingService(
@@ -46,24 +72,48 @@ object ServiceModule {
         return AdBlockingService(context, encryptedPreferencesService)
     }
 
+    /**
+     * Provide the SummarizationService instance
+     *
+     * @param context The application context
+     * @return The SummarizationService instance
+     */
     @Provides
     @Singleton
     fun provideSummarizationService(@ApplicationContext context: Context): SummarizationService {
         return SummarizationService(context)
     }
     
+    /**
+     * Provide the EncryptedPreferencesService instance
+     *
+     * @param context The application context
+     * @return The EncryptedPreferencesService instance
+     */
     @Provides
     @Singleton
     fun provideEncryptedPreferencesService(@ApplicationContext context: Context): EncryptedPreferencesService {
         return EncryptedPreferencesService(context, "quick_browser_prefs")
     }
     
+    /**
+     * Provide the ModelDownloadService instance
+     *
+     * @param context The application context
+     * @return The ModelDownloadService instance
+     */
     @Provides
     @Singleton
     fun provideModelDownloadService(@ApplicationContext context: Context): ModelDownloadService {
         return ModelDownloadService(context)
     }
     
+    /**
+     * Provide the SecurityPolicyService instance
+     *
+     * @param context The application context
+     * @return The SecurityPolicyService instance
+     */
     @Provides
     @Singleton
     fun provideSecurityPolicyService(@ApplicationContext context: Context): SecurityPolicyService {

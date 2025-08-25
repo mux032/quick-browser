@@ -5,11 +5,17 @@ import java.net.URI
 
 /**
  * Utility class for URL formatting and validation operations
+ *
+ * This object provides methods to format URLs, validate their structure,
+ * and extract components such as domains and paths.
  */
 object UrlFormatter {
     
     /**
      * Format URL to ensure it has proper protocol
+     *
+     * This method adds a protocol prefix (https://) to URLs that don't have one,
+     * unless they already have a recognized protocol or are empty.
      *
      * @param url The URL to format
      * @return The formatted URL with appropriate protocol
@@ -31,6 +37,10 @@ object UrlFormatter {
     /**
      * Validate if a URL is valid
      *
+     * This method uses Android's built-in URL pattern matcher for strict validation,
+     * and falls back to a more lenient approach for URLs that might not strictly
+     * match the pattern but are still valid.
+     *
      * @param url The URL to validate
      * @return True if the URL is valid, false otherwise
      */
@@ -51,6 +61,9 @@ object UrlFormatter {
     
     /**
      * Extract domain from URL
+     *
+     * This method parses a URL and extracts the domain name, removing the
+     * "www." prefix if present.
      *
      * @param url The URL to extract domain from
      * @return The domain or empty string if invalid
@@ -78,6 +91,9 @@ object UrlFormatter {
     /**
      * Get URL without query parameters
      *
+     * This method removes query parameters and fragments from a URL,
+     * keeping only the scheme, host, port, and path components.
+     *
      * @param url The URL to process
      * @return URL without query parameters
      */
@@ -101,25 +117,35 @@ object UrlFormatter {
 
 /**
  * Extension function to format URL
+ *
+ * @return The formatted URL with appropriate protocol
  */
 fun String.formatUrl(): String = UrlFormatter.formatUrl(this)
 
 /**
  * Extension function to validate URL
+ *
+ * @return True if the URL is valid, false otherwise
  */
 fun String.isValidUrl(): Boolean = UrlFormatter.isValidUrl(this)
 
 /**
  * Extension function to extract domain from URL
+ *
+ * @return The domain or empty string if invalid
  */
 fun String.extractDomain(): String = UrlFormatter.extractDomain(this)
 
 /**
  * Extension function to check if URL is HTTPS
+ *
+ * @return True if URL is HTTPS
  */
 fun String.isHttpsUrl(): Boolean = UrlFormatter.isHttpsUrl(this)
 
 /**
  * Extension function to get URL without query parameters
+ *
+ * @return URL without query parameters
  */
 fun String.getUrlWithoutQuery(): String = UrlFormatter.getUrlWithoutQuery(this)

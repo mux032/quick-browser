@@ -10,11 +10,23 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
+/**
+ * Dagger Hilt module for providing use case instances
+ *
+ * This module provides all use case instances required by the application,
+ * organizing them by domain area (Article, Settings, History, Bubble).
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object UseCaseModule {
 
     // Article Use Cases
+    /**
+     * Provide GetSavedArticlesUseCase instance
+     *
+     * @param articleRepository The article repository dependency
+     * @return The GetSavedArticlesUseCase instance
+     */
     @Provides
     fun provideGetSavedArticlesUseCase(
         articleRepository: ArticleRepository
@@ -22,6 +34,12 @@ object UseCaseModule {
         return GetSavedArticlesUseCase(articleRepository)
     }
 
+    /**
+     * Provide SaveArticleUseCase instance
+     *
+     * @param articleRepository The article repository dependency
+     * @return The SaveArticleUseCase instance
+     */
     @Provides
     fun provideSaveArticleUseCase(
         articleRepository: ArticleRepository
@@ -29,6 +47,12 @@ object UseCaseModule {
         return SaveArticleUseCase(articleRepository)
     }
 
+    /**
+     * Provide DeleteArticleUseCase instance
+     *
+     * @param articleRepository The article repository dependency
+     * @return The DeleteArticleUseCase instance
+     */
     @Provides
     fun provideDeleteArticleUseCase(
         articleRepository: ArticleRepository
@@ -37,6 +61,12 @@ object UseCaseModule {
     }
 
     // Settings Use Cases
+    /**
+     * Provide GetSettingsUseCase instance
+     *
+     * @param settingsRepository The settings repository dependency
+     * @return The GetSettingsUseCase instance
+     */
     @Provides
     fun provideGetSettingsUseCase(
         settingsRepository: SettingsRepository
@@ -44,6 +74,12 @@ object UseCaseModule {
         return GetSettingsUseCase(settingsRepository)
     }
 
+    /**
+     * Provide UpdateSettingsUseCase instance
+     *
+     * @param settingsRepository The settings repository dependency
+     * @return The UpdateSettingsUseCase instance
+     */
     @Provides
     fun provideUpdateSettingsUseCase(
         settingsRepository: SettingsRepository
@@ -52,6 +88,12 @@ object UseCaseModule {
     }
 
     // History Use Cases
+    /**
+     * Provide GetHistoryUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The GetHistoryUseCase instance
+     */
     @Provides
     fun provideGetHistoryUseCase(
         historyRepository: HistoryRepository
@@ -59,6 +101,12 @@ object UseCaseModule {
         return GetHistoryUseCase(historyRepository)
     }
 
+    /**
+     * Provide SaveWebPageUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The SaveWebPageUseCase instance
+     */
     @Provides
     fun provideSaveWebPageUseCase(
         historyRepository: HistoryRepository
@@ -66,6 +114,12 @@ object UseCaseModule {
         return SaveWebPageUseCase(historyRepository)
     }
 
+    /**
+     * Provide DeleteWebPageUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The DeleteWebPageUseCase instance
+     */
     @Provides
     fun provideDeleteWebPageUseCase(
         historyRepository: HistoryRepository
@@ -73,6 +127,12 @@ object UseCaseModule {
         return DeleteWebPageUseCase(historyRepository)
     }
 
+    /**
+     * Provide UpdateOfflineStatusUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The UpdateOfflineStatusUseCase instance
+     */
     @Provides
     fun provideUpdateOfflineStatusUseCase(
         historyRepository: HistoryRepository
@@ -80,6 +140,12 @@ object UseCaseModule {
         return UpdateOfflineStatusUseCase(historyRepository)
     }
 
+    /**
+     * Provide IncrementVisitCountUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The IncrementVisitCountUseCase instance
+     */
     @Provides
     fun provideIncrementVisitCountUseCase(
         historyRepository: HistoryRepository
@@ -87,6 +153,12 @@ object UseCaseModule {
         return IncrementVisitCountUseCase(historyRepository)
     }
 
+    /**
+     * Provide DeleteAllPagesUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The DeleteAllPagesUseCase instance
+     */
     @Provides
     fun provideDeleteAllPagesUseCase(
         historyRepository: HistoryRepository
@@ -94,6 +166,12 @@ object UseCaseModule {
         return DeleteAllPagesUseCase(historyRepository)
     }
 
+    /**
+     * Provide SearchHistoryUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The SearchHistoryUseCase instance
+     */
     @Provides
     fun provideSearchHistoryUseCase(
         historyRepository: HistoryRepository
@@ -101,6 +179,12 @@ object UseCaseModule {
         return SearchHistoryUseCase(historyRepository)
     }
 
+    /**
+     * Provide GetRecentPagesUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The GetRecentPagesUseCase instance
+     */
     @Provides
     fun provideGetRecentPagesUseCase(
         historyRepository: HistoryRepository
@@ -108,6 +192,12 @@ object UseCaseModule {
         return GetRecentPagesUseCase(historyRepository)
     }
 
+    /**
+     * Provide GetMostVisitedPagesUseCase instance
+     *
+     * @param historyRepository The history repository dependency
+     * @return The GetMostVisitedPagesUseCase instance
+     */
     @Provides
     fun provideGetMostVisitedPagesUseCase(
         historyRepository: HistoryRepository
@@ -116,6 +206,12 @@ object UseCaseModule {
     }
 
     // Bubble Use Cases
+    /**
+     * Provide CreateBubbleUseCase instance
+     *
+     * @param bubbleRepository The bubble repository dependency
+     * @return The CreateBubbleUseCase instance
+     */
     @Provides
     fun provideCreateBubbleUseCase(
         bubbleRepository: BubbleRepository
@@ -123,6 +219,12 @@ object UseCaseModule {
         return CreateBubbleUseCase(bubbleRepository)
     }
 
+    /**
+     * Provide CloseBubbleUseCase instance
+     *
+     * @param bubbleRepository The bubble repository dependency
+     * @return The CloseBubbleUseCase instance
+     */
     @Provides
     fun provideCloseBubbleUseCase(
         bubbleRepository: BubbleRepository
