@@ -26,11 +26,21 @@ class BubbleViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                val settings = getSettingsUseCase()
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    settings = settings
-                )
+                when (val result = getSettingsUseCase()) {
+                    is com.quick.browser.domain.result.Result.Success -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            settings = result.data
+                        )
+                    }
+                    is com.quick.browser.domain.result.Result.Failure -> {
+                        Logger.e("BubbleViewModel", "Error loading settings: ${result.error}")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = "Failed to load settings"
+                        )
+                    }
+                }
             } catch (e: Exception) {
                 Logger.e("BubbleViewModel", "Error loading settings", e)
                 _uiState.value = _uiState.value.copy(

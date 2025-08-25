@@ -3,7 +3,8 @@ package com.quick.browser.service
 import android.content.Context
 import android.webkit.WebResourceResponse
 import com.quick.browser.domain.service.EncryptedPreferencesService
-import com.quick.browser.utils.ErrorHandler
+import com.quick.browser.utils.Logger
+import com.quick.browser.utils.LoggingTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
@@ -13,15 +14,12 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * AdBlocker utility to block ads and trackers
  */
-class AdBlockingService(private val context: Context, private val encryptedPrefs: EncryptedPreferencesService) {
+class AdBlockingService(private val context: Context, private val encryptedPrefs: EncryptedPreferencesService) : LoggingTag {
 
     private val adServerHosts = HashSet<String>()
     private val cachedResults = ConcurrentHashMap<String, Boolean>()
     private val whitelistedDomains = HashSet<String>()
     private val blacklistedDomains = HashSet<String>()
-
-    // Class tag for logging
-    private val TAG = "AdBlocker"
 
     init {
         // Load ad blocking rules from preferences or default list
@@ -88,7 +86,7 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
 
             if (shouldBlock) EMPTY_RESPONSE else null
         }.onFailure { e ->
-            ErrorHandler.logError(TAG, "Error checking if URL should be blocked: $url", e)
+            Logger.e(tag, "Error checking if URL should be blocked: $url", e)
         }.getOrNull()
     }
 
@@ -201,7 +199,7 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
                 }
             }
         } catch (e: Exception) {
-            ErrorHandler.logError(TAG, "Failed to update ad blocking rules from $url", e)
+            Logger.e(tag, "Failed to update ad blocking rules from $url", e)
             false
         }
 

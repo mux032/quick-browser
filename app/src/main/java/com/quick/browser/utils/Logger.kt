@@ -1,123 +1,42 @@
 package com.quick.browser.utils
 
 import android.util.Log
-import com.quick.browser.QuickBrowserApplication
 
 /**
- * Centralized logging utility with configurable levels
+ * Logger utility for consistent logging throughout the application
  */
 object Logger {
-    private const val TAG_PREFIX = "QuickBrowser_"
-    
-    enum class LogLevel {
-        VERBOSE, DEBUG, INFO, WARN, ERROR, NONE
+    private const val DEFAULT_TAG = "QuickBrowser"
+
+    fun d(tag: String = DEFAULT_TAG, message: String) {
+        Log.d(tag, message)
     }
-    
-    // Set the minimum log level (can be changed based on build type)
-    private val MIN_LOG_LEVEL = if (isDebugBuild()) LogLevel.VERBOSE else LogLevel.WARN
-    
-    private fun isDebugBuild(): Boolean {
-        try {
-            // Try to get the BuildConfig.DEBUG value through reflection
-            val buildConfigClass = Class.forName("com.quick.browser.BuildConfig")
-            val debugField = buildConfigClass.getField("DEBUG")
-            return debugField.getBoolean(null)
-        } catch (e: Exception) {
-            // Fallback to checking if we're in debug mode through com.quick.browser.QuickBrowserApplication
-            return QuickBrowserApplication.isDebugBuild()
-        }
+
+    fun d(tag: String, message: String, throwable: Throwable) {
+        Log.d(tag, message, throwable)
     }
-    
-    private fun shouldLog(level: LogLevel): Boolean {
-        return when (MIN_LOG_LEVEL) {
-            LogLevel.VERBOSE -> true
-            LogLevel.DEBUG -> level != LogLevel.VERBOSE
-            LogLevel.INFO -> level != LogLevel.VERBOSE && level != LogLevel.DEBUG
-            LogLevel.WARN -> level == LogLevel.WARN || level == LogLevel.ERROR
-            LogLevel.ERROR -> level == LogLevel.ERROR
-            LogLevel.NONE -> false
-        }
+
+    fun i(tag: String = DEFAULT_TAG, message: String) {
+        Log.i(tag, message)
     }
-    
-    fun v(tag: String, message: String) {
-        if (shouldLog(LogLevel.VERBOSE)) {
-            Log.v(TAG_PREFIX + tag, message)
-        }
+
+    fun i(tag: String, message: String, throwable: Throwable) {
+        Log.i(tag, message, throwable)
     }
-    
-    fun d(tag: String, message: String) {
-        if (shouldLog(LogLevel.DEBUG)) {
-            Log.d(TAG_PREFIX + tag, message)
-        }
+
+    fun w(tag: String = DEFAULT_TAG, message: String) {
+        Log.w(tag, message)
     }
-    
-    fun i(tag: String, message: String) {
-        if (shouldLog(LogLevel.INFO)) {
-            Log.i(TAG_PREFIX + tag, message)
-        }
-    }
-    
-    fun w(tag: String, message: String) {
-        if (shouldLog(LogLevel.WARN)) {
-            Log.w(TAG_PREFIX + tag, message)
-        }
-    }
-    
+
     fun w(tag: String, message: String, throwable: Throwable) {
-        if (shouldLog(LogLevel.WARN)) {
-            Log.w(TAG_PREFIX + tag, message, throwable)
-        }
+        Log.w(tag, message, throwable)
     }
-    
-    fun e(tag: String, message: String) {
-        if (shouldLog(LogLevel.ERROR)) {
-            Log.e(TAG_PREFIX + tag, message)
-        }
+
+    fun e(tag: String = DEFAULT_TAG, message: String) {
+        Log.e(tag, message)
     }
-    
+
     fun e(tag: String, message: String, throwable: Throwable) {
-        if (shouldLog(LogLevel.ERROR)) {
-            Log.e(TAG_PREFIX + tag, message, throwable)
-        }
-    }
-    
-    /**
-     * Structured logging for better debugging
-     */
-    fun logStructured(tag: String, message: String, vararg params: Pair<String, Any?>) {
-        if (shouldLog(LogLevel.DEBUG)) {
-            val paramString = params.joinToString(", ") { "${it.first}=${it.second}" }
-            Log.d(TAG_PREFIX + tag, "$message | Params: $paramString")
-        }
+        Log.e(tag, message, throwable)
     }
 }
-
-/**
- * Extension function for logging verbose messages
- */
-fun Any.logV(tag: String, message: String) = Logger.v(tag, message)
-
-/**
- * Extension function for logging debug messages
- */
-fun Any.logD(tag: String, message: String) = Logger.d(tag, message)
-
-/**
- * Extension function for logging info messages
- */
-fun Any.logI(tag: String, message: String) = Logger.i(tag, message)
-
-/**
- * Extension function for logging warning messages
- */
-fun Any.logW(tag: String, message: String) = Logger.w(tag, message)
-
-/**
- * Extension function for logging error messages
- */
-fun Any.logE(tag: String, message: String) = Logger.e(tag, message)
-
-/**
- * Extension function for logging error messages with throwable
- */
-fun Any.logE(tag: String, message: String, throwable: Throwable) = Logger.e(tag, message, throwable)

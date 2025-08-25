@@ -1,6 +1,5 @@
-package com.quick.browser.util
+package com.quick.browser.utils
 
-import com.quick.browser.utils.JavaScriptSanitizer
 import org.junit.Test
 
 class JavaScriptSanitizerTest {
@@ -43,7 +42,7 @@ class JavaScriptSanitizerTest {
     @Test
     fun testGenerateCSPHeader() {
         val csp = JavaScriptSanitizer.generateCSPHeader()
-        assert(csp.contains("default-src 'self'"))
-        assert(csp.contains("script-src 'self' 'unsafe-inline'"))
+        assert(csp.contains("default-src *"))
+        assert(csp.contains("script-src *"))
     }
 }

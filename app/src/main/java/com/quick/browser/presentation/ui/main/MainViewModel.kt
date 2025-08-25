@@ -35,12 +35,18 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.value = UiState.Loading
-                val settings = getSettingsUseCase()
-                _uiState.value = UiState.Success(
-                    MainUiState(
-                        settings = settings
-                    )
-                )
+                when (val result = getSettingsUseCase()) {
+                    is com.quick.browser.domain.result.Result.Success -> {
+                        _uiState.value = UiState.Success(
+                            MainUiState(
+                                settings = result.data
+                            )
+                        )
+                    }
+                    is com.quick.browser.domain.result.Result.Failure -> {
+                        _uiState.value = UiState.Error("Failed to load settings: ${result.error}")
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error("Failed to load settings: ${e.message}")
             }

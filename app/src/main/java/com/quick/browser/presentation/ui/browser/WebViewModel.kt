@@ -296,7 +296,11 @@ class WebViewModel @Inject constructor(
                     parentBubbleId = bubbleId
                 )
 
-                saveWebPageUseCase(webPage)
+                saveWebPageUseCase(webPage).also { result ->
+                    if (result is com.quick.browser.domain.result.Result.Failure<*>) {
+                        Logger.e("WebViewModel", "Failed to save web page: ${result.error}")
+                    }
+                }
                 updateWebPage(webPage)
                 Logger.d("WebViewModel", "Saved page content from WebView for URL: $url, bubbleId: $bubbleId")
             } catch (e: Exception) {

@@ -50,16 +50,18 @@ class SavedArticlesViewModel @Inject constructor(
 
     fun deleteArticle(article: SavedArticle) {
         viewModelScope.launch {
-            try {
-                deleteArticleUseCase(article)
-                // Update UI state after deletion
-                val currentArticles = _uiState.value.articles.toMutableList()
-                currentArticles.removeAll { it.url == article.url }
-                _uiState.value = _uiState.value.copy(articles = currentArticles)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Failed to delete article: ${e.message}"
-                )
+            when (val result = deleteArticleUseCase(article)) {
+                is com.quick.browser.domain.result.Result.Success<*> -> {
+                    // Update UI state after deletion
+                    val currentArticles = _uiState.value.articles.toMutableList()
+                    currentArticles.removeAll { it.url == article.url }
+                    _uiState.value = _uiState.value.copy(articles = currentArticles)
+                }
+                is com.quick.browser.domain.result.Result.Failure<*> -> {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Failed to delete article: ${result.error}"
+                    )
+                }
             }
         }
     }
