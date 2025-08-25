@@ -184,6 +184,7 @@
     <string name="bubble_service_notification_text">Browser is running in bubble mode</string>
     
     <!-- Menu items -->
+    <string name="menu">Menu</string>
     <string name="menu_delete_today">Delete Today</string>
     <string name="menu_delete_last_month">Delete Last Month</string>
     <string name="menu_delete_all">Delete All</string>

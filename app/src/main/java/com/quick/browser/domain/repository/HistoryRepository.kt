@@ -83,4 +83,18 @@ interface HistoryRepository {
      * @param isAvailable Whether the page is available offline
      */
     suspend fun updateOfflineStatus(url: String, isAvailable: Boolean)
+    
+    /**
+     * Delete pages from today (since midnight)
+     *
+     * @param startOfDay The timestamp representing the start of today
+     */
+    suspend fun deleteTodayPages(startOfDay: Long)
+    
+    /**
+     * Delete pages from the last hour
+     *
+     * @param oneHourAgo The timestamp representing one hour ago
+     */
+    suspend fun deleteLastHourPages(oneHourAgo: Long)
 }

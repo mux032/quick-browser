@@ -18,6 +18,14 @@ interface ArticleRepository {
     fun getAllSavedArticles(): Flow<List<SavedArticle>>
 
     /**
+     * Search saved articles by title or content
+     *
+     * @param query The search query
+     * @return A flow of lists of saved articles matching the query
+     */
+    fun searchSavedArticles(query: String): Flow<List<SavedArticle>>
+
+    /**
      * Get a saved article by its URL
      *
      * @param url The URL of the article to retrieve

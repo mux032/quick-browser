@@ -1,23 +1,19 @@
 package com.quick.browser.presentation.ui.main
 
 import android.content.Intent
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
-import android.view.Menu
-import android.view.MenuItem
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.widget.Toolbar
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import com.quick.browser.R
 import com.quick.browser.presentation.ui.components.BaseActivity
@@ -43,6 +39,8 @@ class MainActivity : BaseActivity() {
 
     private lateinit var addressBar: EditText
     private lateinit var goButton: ImageButton
+    private lateinit var menuButton: ImageButton
+    private lateinit var addressBarContainer: android.widget.LinearLayout
 
     // Activity result launcher for history activity
     private val historyActivityLauncher = registerForActivityResult(
@@ -96,45 +94,18 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Logger.d(TAG, "onCreate called with intent: ${intent?.action}")
-
-        // Always call super.onCreate() to avoid SuperNotCalledException
-        // Theme will be applied automatically by BaseActivity
         super.onCreate(savedInstanceState)
-
-        // Always set content view to ensure activity is properly initialized
         setContentView(R.layout.activity_main)
-
-        // Check if this is a link sharing intent before setting up the rest of the UI
-        if (isLinkSharingIntent(intent)) {
-            Logger.d(TAG, "Link sharing intent detected in onCreate, handling without full UI initialization")
-            // Handle the intent without initializing the full UI
-            handleLinkSharingIntent(intent)
-            return
-        }
-
-        // Set up toolbar
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false) // Hide default title
-
-        // Ensure toolbar sits below the status bar on all devices
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            v.updatePadding(top = statusBarHeight)
-            insets
-        }
-
-        // settingsService is already initialized in BaseActivity
 
         // Initialize views
         addressBar = findViewById(R.id.address_bar)
         goButton = findViewById(R.id.go_button)
+        menuButton = findViewById(R.id.menu_button)
+        addressBarContainer = findViewById(R.id.address_bar_container)
 
-        // Set up address bar
         setupAddressBar()
-
-        // Handle main app intent (not link sharing)
+        setupMenuButton()
+        setupKeyboardVisibilityListener()
         handleMainAppIntent()
     }
 
@@ -168,6 +139,60 @@ class MainActivity : BaseActivity() {
                 false
             }
         }
+    }
+
+    private fun setupMenuButton() {
+        menuButton.setOnClickListener {
+            showPopupMenu()
+        }
+    }
+
+    private fun showPopupMenu() {
+        val popupMenu = PopupMenu(this, menuButton)
+        popupMenu.menuInflater.inflate(R.menu.main_menu, popupMenu.menu)
+        
+        // Force icons to show in popup menu
+        try {
+            val field = popupMenu.javaClass.getDeclaredField("mPopup")
+            field.isAccessible = true
+            val menuPopupHelper = field.get(popupMenu)
+            val classPopupHelper = Class.forName(menuPopupHelper.javaClass.name)
+            val setForceIcons = classPopupHelper.getMethod("setForceShowIcon", Boolean::class.java)
+            setForceIcons.invoke(menuPopupHelper, true)
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error forcing icons to show in popup menu", e)
+        }
+        
+        popupMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_settings -> {
+                    try {
+                        val intent = Intent(this, SettingsActivity::class.java)
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        Logger.e(TAG, "Error opening settings", e)
+                        Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
+                    }
+                    true
+                }
+                R.id.menu_history -> {
+                    openHistoryActivity()
+                    true
+                }
+                R.id.menu_saved_articles -> {
+                    try {
+                        val intent = Intent(this, SavedArticlesActivity::class.java)
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        Logger.e(TAG, "Error opening saved articles", e)
+                        Toast.makeText(this, "Could not open saved articles", Toast.LENGTH_SHORT).show()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        popupMenu.show()
     }
 
     private fun handleUrlInput(inputUrl: String) {
@@ -212,42 +237,7 @@ class MainActivity : BaseActivity() {
 
 
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.menu_settings -> {
-                try {
-                    // Use the direct class reference instead of Class.forName
-                    val intent = Intent(this, SettingsActivity::class.java)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    Logger.e(TAG, "Error opening settings", e)
-                    Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
-                }
-                true
-            }
-            R.id.menu_history -> {
-                openHistoryActivity()
-                true
-            }
-            R.id.menu_saved_articles -> {
-                try {
-                    val intent = Intent(this, SavedArticlesActivity::class.java)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    Logger.e(TAG, "Error opening saved articles", e)
-                    Toast.makeText(this, "Could not open saved articles", Toast.LENGTH_SHORT).show()
-                }
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
+    
 
     override fun onNewIntent(intent: Intent?) {
         Logger.d(TAG, "onNewIntent called with intent: ${intent?.action}")
@@ -410,6 +400,27 @@ class MainActivity : BaseActivity() {
     }
 
     // Notification permission rationale dialog removed as notifications are now optional
+
+    private fun setupKeyboardVisibilityListener() {
+        // Listen for keyboard visibility changes
+        window.decorView.viewTreeObserver.addOnGlobalLayoutListener {
+            val rect = Rect()
+            window.decorView.getWindowVisibleDisplayFrame(rect)
+            val screenHeight = window.decorView.height
+            val keypadHeight = screenHeight - rect.bottom
+
+            // Update address bar container bottom margin to position it above keyboard
+            val layoutParams = addressBarContainer.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            layoutParams.bottomMargin = if (keypadHeight > screenHeight * 0.15) {
+                // Keyboard is visible, position above it
+                keypadHeight + 24 // Add some padding
+            } else {
+                // Keyboard is hidden, use default margin
+                24
+            }
+            addressBarContainer.layoutParams = layoutParams
+        }
+    }
 
     override fun onResume() {
         super.onResume()

@@ -22,6 +22,15 @@ interface SavedArticleDao {
     fun getAllSavedArticles(): Flow<List<SavedArticle>>
     
     /**
+     * Search saved articles by title or content
+     *
+     * @param query The search query
+     * @return A Flow of lists of saved articles matching the query
+     */
+    @Query("SELECT * FROM saved_articles WHERE title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' ORDER BY savedDate DESC")
+    fun searchSavedArticles(query: String): Flow<List<SavedArticle>>
+    
+    /**
      * Get a saved article by its URL
      *
      * @param url The URL of the article to retrieve
