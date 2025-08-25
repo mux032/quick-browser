@@ -1,9 +1,9 @@
 package com.quick.browser.di
 
 import android.content.Context
-import com.quick.browser.manager.AdBlocker
-import com.quick.browser.manager.SettingsManager
-import com.quick.browser.manager.SummarizationManager
+import com.quick.browser.utils.managers.AdBlocker
+import com.quick.browser.utils.managers.SettingsManager
+import com.quick.browser.utils.managers.SummarizationManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

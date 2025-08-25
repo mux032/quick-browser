@@ -72,21 +72,25 @@ class HistoryRepositoryImpl @Inject constructor(
             isAvailableOffline = entity.isAvailableOffline,
             visitCount = entity.visitCount,
             faviconUrl = entity.faviconUrl,
-            previewImageUrl = entity.previewImageUrl
+            previewImageUrl = entity.previewImageUrl,
+            favicon = entity.favicon
         )
     }
     
     private fun domainToEntity(domain: com.quick.browser.domain.model.WebPage): WebPage {
-        return WebPage(
+        val entity = WebPage(
             url = domain.url,
             title = domain.title,
             timestamp = domain.timestamp,
             content = domain.content ?: "",
             isAvailableOffline = domain.isAvailableOffline,
             visitCount = domain.visitCount,
-            favicon = null, // Not stored in domain model
             faviconUrl = domain.faviconUrl,
             previewImageUrl = domain.previewImageUrl
         )
+        // Copy transient fields
+        entity.summary = domain.summary
+        entity.parentBubbleId = domain.parentBubbleId
+        return entity
     }
 }

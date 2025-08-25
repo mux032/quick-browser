@@ -1,14 +1,12 @@
-#folders
+# Files
+.java-version
+
+# Folders
 .idea/
 .gradle/
 .vscode/
 .DS_Store
-.continue/
-android-sdk/
+.kotlin/
+build/
 app/build/
-app_flow_bubble_view.svg
-/.opencode/
-/extras/
-/.zencoder/
-/.vscode/
-/.kotlin/
+extras/

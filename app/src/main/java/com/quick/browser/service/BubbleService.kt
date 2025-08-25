@@ -5,9 +5,10 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.quick.browser.Constants
 import com.quick.browser.QuickBrowserApplication
-import com.quick.browser.manager.*
-import com.quick.browser.ui.bubble.BubbleIntentProcessor
-import com.quick.browser.util.Logger
+import com.quick.browser.presentation.ui.browser.BubbleIntentProcessor
+import com.quick.browser.utils.Logger
+import com.quick.browser.utils.OfflineArticleSaver
+import com.quick.browser.utils.managers.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Inject
@@ -49,7 +50,7 @@ class BubbleService : LifecycleService() {
     lateinit var summarizationManager: SummarizationManager
 
     @Inject
-    lateinit var offlineArticleSaver: com.quick.browser.util.OfflineArticleSaver
+    lateinit var offlineArticleSaver: OfflineArticleSaver
 
     companion object {
         private const val TAG = "BubbleService"

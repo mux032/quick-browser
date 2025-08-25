@@ -3,7 +3,7 @@ package com.quick.browser.data.repository
 import com.quick.browser.data.SavedArticleDao
 import com.quick.browser.data.local.entity.SavedArticle
 import com.quick.browser.domain.repository.ArticleRepository
-import com.quick.browser.manager.ReadabilityExtractor
+import com.quick.browser.utils.managers.ReadabilityExtractor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

@@ -3,9 +3,9 @@ package com.quick.browser.service
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.quick.browser.manager.AdBlocker
-import com.quick.browser.manager.SettingsManager
-import com.quick.browser.util.Logger
+import com.quick.browser.utils.Logger
+import com.quick.browser.utils.managers.AdBlocker
+import com.quick.browser.utils.managers.SettingsManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import javax.inject.Inject

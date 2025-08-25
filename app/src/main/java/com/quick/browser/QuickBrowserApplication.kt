@@ -5,8 +5,8 @@ import android.os.Build
 import android.os.StrictMode
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.color.DynamicColors
-import com.quick.browser.manager.SettingsManager
 import com.quick.browser.service.BubbleService
+import com.quick.browser.utils.managers.SettingsManager
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 

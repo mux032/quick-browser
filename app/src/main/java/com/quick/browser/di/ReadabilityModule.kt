@@ -1,7 +1,7 @@
 package com.quick.browser.di
 
 import android.content.Context
-import com.quick.browser.manager.ReadabilityExtractor
+import com.quick.browser.utils.managers.ReadabilityExtractor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

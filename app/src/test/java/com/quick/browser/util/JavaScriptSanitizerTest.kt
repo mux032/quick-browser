@@ -1,5 +1,6 @@
 package com.quick.browser.util
 
+import com.quick.browser.utils.JavaScriptSanitizer
 import org.junit.Test
 
 class JavaScriptSanitizerTest {
