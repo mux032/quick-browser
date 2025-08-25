@@ -35,6 +35,18 @@ class ArticleRepositoryImpl @Inject constructor(
     }
     
     /**
+     * Search saved articles by title or content
+     *
+     * @param query The search query
+     * @return A flow of lists of saved articles matching the query
+     */
+    override fun searchSavedArticles(query: String): Flow<List<com.quick.browser.domain.model.SavedArticle>> {
+        return savedArticleDao.searchSavedArticles(query).map { list ->
+            list.map { entityToDomain(it) }
+        }
+    }
+    
+    /**
      * Get a saved article by its URL
      *
      * @param url The URL of the article to retrieve

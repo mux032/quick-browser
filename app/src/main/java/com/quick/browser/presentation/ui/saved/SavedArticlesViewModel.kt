@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.usecase.DeleteArticleUseCase
 import com.quick.browser.domain.usecase.GetSavedArticlesUseCase
+import com.quick.browser.domain.usecase.SearchSavedArticlesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SavedArticlesViewModel @Inject constructor(
     private val getSavedArticlesUseCase: GetSavedArticlesUseCase,
-    private val deleteArticleUseCase: DeleteArticleUseCase
+    private val deleteArticleUseCase: DeleteArticleUseCase,
+    private val searchSavedArticlesUseCase: SearchSavedArticlesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SavedArticlesUiState())
@@ -43,6 +45,25 @@ class SavedArticlesViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = "Failed to load saved articles: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun searchSavedArticles(query: String) {
+        viewModelScope.launch {
+            try {
+                // For search, we'll use LiveData instead of Flow
+                searchSavedArticlesUseCase(query).observeForever { articles ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        articles = articles
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Failed to search saved articles: ${e.message}"
                 )
             }
         }

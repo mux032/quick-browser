@@ -1,10 +1,14 @@
 package com.quick.browser.presentation.ui.history
 
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.Button
+import android.widget.ImageButton
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
@@ -16,12 +20,18 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.material.card.MaterialCardView
 import com.quick.browser.R
+import com.quick.browser.domain.repository.HistoryRepository
 import com.quick.browser.domain.usecase.GetHistoryUseCase
 import com.quick.browser.domain.usecase.SearchHistoryUseCase
 import com.quick.browser.presentation.ui.browser.OfflineArticleSaver
 import com.quick.browser.presentation.ui.components.BaseActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.*
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -35,6 +45,9 @@ class HistoryActivity : BaseActivity() {
     
     @Inject
     lateinit var searchHistoryUseCase: SearchHistoryUseCase
+    
+    @Inject
+    lateinit var historyRepository: HistoryRepository
 
     companion object {
         private const val TAG = "HistoryActivity"
@@ -46,7 +59,9 @@ class HistoryActivity : BaseActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyView: View
     private lateinit var searchView: SearchView
+    private lateinit var searchCard: MaterialCardView
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private var isSearchBarExplicitlyOpened = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,14 +71,25 @@ class HistoryActivity : BaseActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowTitleEnabled(true)
-        supportActionBar?.title = getString(R.string.history_title)
+        supportActionBar?.setDisplayShowTitleEnabled(false) // Hide default title
 
         // Ensure toolbar sits below the status bar on all devices
         ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
             val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             v.updatePadding(top = statusBarHeight)
             insets
+        }
+
+        // Set up custom toolbar buttons
+        val searchButton = toolbar.findViewById<ImageButton>(R.id.toolbar_search)
+        val deleteButton = toolbar.findViewById<ImageButton>(R.id.toolbar_delete)
+        
+        searchButton.setOnClickListener {
+            showSearchBar()
+        }
+        
+        deleteButton.setOnClickListener {
+            showDeleteOptionsDialog()
         }
 
         // Initialize ViewModel
@@ -73,6 +99,7 @@ class HistoryActivity : BaseActivity() {
         recyclerView = findViewById(R.id.history_recycler_view)
         emptyView = findViewById(R.id.empty_history_view)
         searchView = findViewById(R.id.search_view)
+        searchCard = findViewById(R.id.search_card)
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
 
         // Set up RecyclerView
@@ -86,6 +113,9 @@ class HistoryActivity : BaseActivity() {
 
         // Observe history data
         observeHistoryData()
+        
+        // Listen for keyboard visibility changes
+        setupKeyboardVisibilityListener()
     }
 
     private fun setupRecyclerView() {
@@ -109,7 +139,10 @@ class HistoryActivity : BaseActivity() {
     private fun setupSearchView() {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
+                // Hide keyboard when Enter is pressed but keep search bar visible
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(searchView.windowToken, 0)
+                return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
@@ -123,6 +156,26 @@ class HistoryActivity : BaseActivity() {
                 return true
             }
         })
+        
+        // Handle close button click
+        searchView.setOnCloseListener {
+            closeSearchBar()
+            true
+        }
+        
+        // Also handle Enter key from the search view's text field
+        searchView.findViewById<androidx.appcompat.widget.SearchView.SearchAutoComplete>(
+            androidx.appcompat.R.id.search_src_text
+        ).setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                // Hide keyboard when Enter is pressed but keep search bar visible
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(searchView.windowToken, 0)
+                true
+            } else {
+                false
+            }
+        }
     }
 
     private fun setupSwipeRefresh() {
@@ -180,68 +233,155 @@ class HistoryActivity : BaseActivity() {
         setResult(RESULT_OK, resultIntent)
         finish()
     }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.history_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                finish()
-                true
+    
+    private fun showSearchBar() {
+        // Mark that the search bar was explicitly opened
+        isSearchBarExplicitlyOpened = true
+        
+        // Show the search card
+        searchCard.visibility = View.VISIBLE
+        
+        // Post the focus and keyboard show to ensure the view is properly laid out
+        searchCard.post {
+            // Focus on the search view and show keyboard
+            searchView.requestFocus()
+            searchView.isIconified = false
+            
+            // Show keyboard with a delay to ensure proper layout
+            searchView.post {
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
             }
-            R.id.menu_delete_today -> {
-                showDeleteTodayConfirmationDialog()
-                true
-            }
-            R.id.menu_delete_last_month -> {
-                showDeleteLastMonthConfirmationDialog()
-                true
-            }
-            R.id.menu_delete_all -> {
-                showDeleteAllConfirmationDialog()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
         }
     }
-
-    private fun showDeleteTodayConfirmationDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Delete Today's History")
-            .setMessage("Are you sure you want to delete all history from today? This action cannot be undone.")
-            .setPositiveButton("Delete") { _, _ ->
-                historyViewModel.clearAllData()
-                Toast.makeText(this, "Today's history deleted", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+    
+    private fun closeSearchBar() {
+        // Reset the explicit open flag
+        isSearchBarExplicitlyOpened = false
+        
+        // Hide the search card
+        searchCard.visibility = View.GONE
+        
+        // Clear search query
+        searchView.setQuery("", false)
+        
+        // Hide keyboard
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(searchView.windowToken, 0)
+        
+        // Show all history
+        observeHistoryData()
     }
-
-    private fun showDeleteLastMonthConfirmationDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Delete Last Month's History")
-            .setMessage("Are you sure you want to delete all history from the last 30 days? This action cannot be undone.")
-            .setPositiveButton("Delete") { _, _ ->
-                historyViewModel.clearAllData()
-                Toast.makeText(this, "Last month's history deleted", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+    
+    private fun hideSearchBar() {
+        // Hide keyboard
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(searchView.windowToken, 0)
+        
+        // Only hide the search bar if it's not focused (user explicitly closed it) or if it wasn't explicitly opened
+        if ((!searchView.hasFocus() && !isSearchBarExplicitlyOpened) || searchView.query.isNullOrEmpty()) {
+            searchCard.visibility = View.GONE
+            isSearchBarExplicitlyOpened = false
+            // Clear search query
+            searchView.setQuery("", false)
+            // Show all history
+            observeHistoryData()
+        }
     }
-
-    private fun showDeleteAllConfirmationDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Delete All History")
-            .setMessage("Are you sure you want to delete all browsing history? This action cannot be undone.")
-            .setPositiveButton("Delete") { _, _ ->
-                historyViewModel.clearAllData()
-                Toast.makeText(this, "All history deleted", Toast.LENGTH_SHORT).show()
+    
+    private fun setupKeyboardVisibilityListener() {
+        // Listen for keyboard visibility changes
+        window.decorView.viewTreeObserver.addOnGlobalLayoutListener {
+            val rect = Rect()
+            window.decorView.getWindowVisibleDisplayFrame(rect)
+            val screenHeight = window.decorView.height
+            val keypadHeight = screenHeight - rect.bottom
+            
+            // Update search card bottom margin to position it above keyboard
+            val layoutParams = searchCard.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            layoutParams.bottomMargin = if (keypadHeight > screenHeight * 0.15) {
+                // Keyboard is visible, position above it
+                keypadHeight + 32 // Add some padding
+            } else {
+                // Keyboard is hidden, use default margin
+                32
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+            searchCard.layoutParams = layoutParams
+            
+            // If keyboard is hidden AND search view is not focused AND search bar wasn't explicitly opened, hide it
+            if (keypadHeight < screenHeight * 0.15 && !searchView.hasFocus() && !isSearchBarExplicitlyOpened) {
+                if (searchCard.visibility == View.VISIBLE && searchView.query.isNullOrEmpty()) {
+                    searchCard.visibility = View.GONE
+                }
+            }
+        }
     }
-
+    
+    private fun showDeleteOptionsDialog() {
+        // Create custom dialog
+        val dialogView = layoutInflater.inflate(R.layout.dialog_delete_options, null)
+        val radioGroup = dialogView.findViewById<RadioGroup>(R.id.delete_options_radio_group)
+        val cancelButton = dialogView.findViewById<Button>(R.id.button_cancel)
+        val deleteButton = dialogView.findViewById<Button>(R.id.button_delete)
+        
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+        
+        // Set default selection
+        radioGroup.check(R.id.radio_delete_last_hour)
+        
+        // Set up button listeners
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        deleteButton.setOnClickListener {
+            val selectedRadioButtonId = radioGroup.checkedRadioButtonId
+            when (selectedRadioButtonId) {
+                R.id.radio_delete_last_hour -> {
+                    // Delete history from last hour
+                    val oneHourAgo = System.currentTimeMillis() - (60 * 60 * 1000)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        historyRepository.deleteLastHourPages(oneHourAgo)
+                    }
+                    Toast.makeText(this, "Last hour history deleted", Toast.LENGTH_SHORT).show()
+                }
+                R.id.radio_delete_today_yesterday -> {
+                    // Delete history from today and yesterday
+                    val calendar = Calendar.getInstance()
+                    calendar.add(Calendar.DAY_OF_YEAR, -1) // Yesterday
+                    calendar.set(Calendar.HOUR_OF_DAY, 0)
+                    calendar.set(Calendar.MINUTE, 0)
+                    calendar.set(Calendar.SECOND, 0)
+                    calendar.set(Calendar.MILLISECOND, 0)
+                    val yesterdayStart = calendar.timeInMillis
+                    
+                    CoroutineScope(Dispatchers.IO).launch {
+                        historyRepository.deleteTodayPages(yesterdayStart)
+                    }
+                    Toast.makeText(this, "Today and yesterday history deleted", Toast.LENGTH_SHORT).show()
+                }
+                R.id.radio_delete_everything -> {
+                    // Delete all history
+                    CoroutineScope(Dispatchers.IO).launch {
+                        historyRepository.deleteAllPages()
+                    }
+                    Toast.makeText(this, "All history deleted", Toast.LENGTH_SHORT).show()
+                }
+            }
+            dialog.dismiss()
+        }
+        
+        dialog.show()
+    }
+    
+    override fun onBackPressed() {
+        // If search bar is visible, close it instead of closing the activity
+        if (searchCard.visibility == View.VISIBLE) {
+            closeSearchBar()
+        } else {
+            super.onBackPressed()
+        }
+    }
 }

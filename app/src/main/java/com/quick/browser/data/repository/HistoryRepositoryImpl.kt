@@ -122,6 +122,24 @@ class HistoryRepositoryImpl @Inject constructor(
     }
     
     /**
+     * Delete pages from today (since midnight)
+     *
+     * @param startOfDay The timestamp representing the start of today
+     */
+    override suspend fun deleteTodayPages(startOfDay: Long) {
+        webPageDao.deleteTodayPages(startOfDay)
+    }
+    
+    /**
+     * Delete pages from the last hour
+     *
+     * @param oneHourAgo The timestamp representing one hour ago
+     */
+    override suspend fun deleteLastHourPages(oneHourAgo: Long) {
+        webPageDao.deleteLastHourPages(oneHourAgo)
+    }
+    
+    /**
      * Convert a web page entity to a domain model
      *
      * @param entity The web page entity to convert

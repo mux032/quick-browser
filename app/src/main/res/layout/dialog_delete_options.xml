@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/dialog_background">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Delete History"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        android:textColor="?attr/colorPrimary"
+        android:gravity="center"
+        android:paddingBottom="16dp" />
+
+    <RadioGroup
+        android:id="@+id/delete_options_radio_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/radio_delete_last_hour"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Last Hour"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioButton
+            android:id="@+id/radio_delete_today_yesterday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Today and Yesterday"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioButton
+            android:id="@+id/radio_delete_everything"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Everything"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp" />
+
+    </RadioGroup>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/button_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:layout_marginEnd="8dp"
+            style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+        <Button
+            android:id="@+id/button_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Delete"
+            style="@style/Widget.MaterialComponents.Button" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,6 +1,7 @@
 package com.quick.browser.presentation.ui.settings
 
 import android.os.Bundle
+import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
@@ -104,6 +105,10 @@ class SettingsActivity : BaseActivity() {
             Logger.e(TAG, "Error setting up listeners", e)
             throw e
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

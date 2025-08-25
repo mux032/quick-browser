@@ -62,6 +62,14 @@ interface WebPageDao {
     suspend fun deleteAllPages()
 
     /**
+     * Delete pages from the last hour
+     *
+     * @param oneHourAgo The timestamp representing one hour ago
+     */
+    @Query("DELETE FROM web_pages WHERE timestamp >= :oneHourAgo")
+    suspend fun deleteLastHourPages(oneHourAgo: Long)
+
+    /**
      * Search pages by title or URL
      *
      * @param query The search query
