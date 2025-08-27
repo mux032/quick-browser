@@ -55,10 +55,10 @@ class BubbleIntentProcessor(
     private fun handleCreateBubble(intent: Intent) {
         val sharedUrl = intent.getStringExtra(Constants.EXTRA_URL)
         val url = sharedUrl?.let { text -> extractUrl(text) ?: text}
-        Logger.e(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: $url")
+        Logger.d(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: $url")
         
         if (url != null && isValidUrl(url)) {
-            Logger.e(TAG, "Creating bubble with URL: $url")
+            Logger.d(TAG, "Creating bubble with URL: $url")
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationService.isAuthenticationUrl(url)) {

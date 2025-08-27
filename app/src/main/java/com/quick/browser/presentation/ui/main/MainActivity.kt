@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.quick.browser.R
 import com.quick.browser.presentation.ui.components.BaseActivity
@@ -73,7 +74,8 @@ class MainActivity : BaseActivity() {
 
     /** Starts the BubbleService with a specific URL to open in the quick browser. */
     private fun startBubbleServiceWithUrl(url: String) {
-        if (!checkPermissionsAndStartBubble()) {
+        if (!checkOverlayPermission()) {
+            Logger.d(TAG, "Overlay permission not granted, returning early")
             return
         }
 
@@ -86,6 +88,7 @@ class MainActivity : BaseActivity() {
 
         try {
             startForegroundService(intent)
+            Logger.d(TAG, "Successfully started BubbleService with URL: $url")
             // Removed moveTaskToBack(true) to keep the app in foreground
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to start bubble service", e)
@@ -97,6 +100,11 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Set status bar icon color to dark for better visibility on light background
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+        }
+
         // Initialize views
         addressBar = findViewById(R.id.address_bar)
         goButton = findViewById(R.id.go_button)
@@ -106,7 +114,14 @@ class MainActivity : BaseActivity() {
         setupAddressBar()
         setupMenuButton()
         setupKeyboardVisibilityListener()
-        handleMainAppIntent()
+        
+        // Handle incoming intent if it's a link sharing intent
+        if (isLinkSharingIntent(intent)) {
+            Logger.d(TAG, "Link sharing intent detected in onCreate, handling without UI")
+            handleLinkSharingIntent(intent)
+        } else {
+            handleMainAppIntent()
+        }
     }
 
     private fun openHistoryActivity() {
@@ -262,6 +277,9 @@ class MainActivity : BaseActivity() {
             handleLinkSharingIntent(intent)
             return
         }
+        
+        // Handle main app intent for other cases
+        handleMainAppIntent()
     }
 
     /**
@@ -271,7 +289,7 @@ class MainActivity : BaseActivity() {
         Logger.d(TAG, "Handling authentication callback: $uri")
 
         // Use the AuthenticationHandler to handle the return
-        val handled = AuthenticationService.Companion.handleAuthenticationReturn(uri)
+        val handled = AuthenticationService.handleAuthenticationReturn(uri)
 
         if (handled) {
             Logger.d(TAG, "Authentication callback handled successfully")
@@ -287,7 +305,9 @@ class MainActivity : BaseActivity() {
      * Checks if the intent is for link sharing (ACTION_SEND or ACTION_VIEW)
      */
     private fun isLinkSharingIntent(intent: Intent?): Boolean {
-        return intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_VIEW
+        val result = intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_VIEW
+        Logger.d(TAG, "isLinkSharingIntent: action=${intent?.action}, result=$result")
+        return result
     }
 
     /**
@@ -307,10 +327,14 @@ class MainActivity : BaseActivity() {
                 if (sharedText != null) {
                     // Start bubble service with the URL
                     if (checkPermissionsAndStartBubbleWithUrl(sharedText)) {
-                        // Move task to back instead of finishing the activity
-                        // This allows the activity to receive future share intents
+                        // Move task to back after starting the service if permissions were already granted
+                        Logger.d(TAG, "Moving task to back after starting bubble service")
                         moveTaskToBack(true)
+                    } else {
+                        Logger.d(TAG, "Permissions not granted, will start bubble after permission")
                     }
+                } else {
+                    Logger.d(TAG, "No shared text found in ACTION_SEND intent")
                 }
             }
 
@@ -320,11 +344,19 @@ class MainActivity : BaseActivity() {
                 if (url != null) {
                     // Start bubble service with the URL
                     if (checkPermissionsAndStartBubbleWithUrl(url)) {
-                        // Move task to back instead of finishing the activity
-                        // This allows the activity to receive future share intents
+                        // Move task to back after starting the service if permissions were already granted
+                        Logger.d(TAG, "Moving task to back after starting bubble service")
                         moveTaskToBack(true)
+                    } else {
+                        Logger.d(TAG, "Permissions not granted, will start bubble after permission")
                     }
+                } else {
+                    Logger.d(TAG, "No URL found in ACTION_VIEW intent")
                 }
+            }
+            
+            else -> {
+                Logger.d(TAG, "Unsupported intent action: ${intent.action}")
             }
         }
     }
@@ -336,15 +368,17 @@ class MainActivity : BaseActivity() {
     private fun checkPermissionsAndStartBubbleWithUrl(url: String): Boolean {
         // Check overlay permission
         if (!Settings.canDrawOverlays(this)) {
+            // Save the URL to use after permission is granted
+            pendingUrl = url
             // Show permission dialog
             requestOverlayPermission()
-            // Save the URL to use after permission is granted
-            // Note: We should use the ViewModel to manage this state
             return false
         }
 
         // Start bubble service with URL
         startBubbleServiceWithUrl(url)
+        // Move task to back after starting the service
+        moveTaskToBack(true)
         return true
     }
 
@@ -362,14 +396,25 @@ class MainActivity : BaseActivity() {
 
     /** Checks if the BubbleService is currently running. */
     private fun isBubbleServiceRunning(): Boolean {
-        return BubbleService.Companion.isRunning()
+        return BubbleService.isRunning()
+    }
+
+    /** Checks required permissions for overlay */
+    private fun checkOverlayPermission(): Boolean {
+        // Only check for overlay permission as it's essential
+        val canDrawOverlays = Settings.canDrawOverlays(this)
+        Logger.d(TAG, "checkOverlayPermission: canDrawOverlays=$canDrawOverlays")
+        if (!canDrawOverlays) {
+            requestOverlayPermission()
+            return false
+        }
+        return true
     }
 
     /** Checks required permissions and starts the BubbleService if permissions are granted. */
     private fun checkPermissionsAndStartBubble(): Boolean {
         // Only check for overlay permission as it's essential
-        if (!Settings.canDrawOverlays(this)) {
-            requestOverlayPermission()
+        if (!checkOverlayPermission()) {
             return false
         }
 
@@ -392,6 +437,7 @@ class MainActivity : BaseActivity() {
                 Toast.LENGTH_LONG
             )
                 .show()
+            Logger.d(TAG, "Requested overlay permission")
         } catch (e: Exception) {
             Logger.e(TAG, "Error requesting overlay permission", e)
             Toast.makeText(this, "Could not open overlay permission settings", Toast.LENGTH_LONG)
@@ -422,11 +468,25 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    // Store the URL that needs to be opened after permission is granted
+    private var pendingUrl: String? = null
+    
     override fun onResume() {
         super.onResume()
+        Logger.d(TAG, "onResume called")
 
         // Check if we have a saved URL from a previous permission request
-        // Note: We should use the ViewModel to manage this state
-        // For now, we'll keep the existing implementation
+        pendingUrl?.let { url ->
+            Logger.d(TAG, "Found pending URL: $url")
+            if (Settings.canDrawOverlays(this)) {
+                Logger.d(TAG, "Overlay permission granted, starting bubble service with pending URL")
+                // Permission granted, start the bubble service with the URL
+                startBubbleServiceWithUrl(url)
+                pendingUrl = null // Clear the pending URL
+                moveTaskToBack(true) // Move to background
+            } else {
+                Logger.d(TAG, "Overlay permission still not granted")
+            }
+        }
     }
 }
