@@ -2,7 +2,6 @@ package com.quick.browser.presentation.ui.browser
 
 import android.content.Context
 import android.content.Intent
-import android.util.Patterns
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.quick.browser.domain.model.WebPage
 import com.quick.browser.domain.repository.HistoryRepository
@@ -10,6 +9,7 @@ import com.quick.browser.service.AuthenticationService
 import com.quick.browser.service.BubbleService
 import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
+import com.quick.browser.utils.UrlUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -18,7 +18,6 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import java.net.URI
 import java.util.*
-import java.util.regex.Pattern
 
 /**
  * BubbleIntentProcessor handles the processing of intents received by the BubbleService. It
@@ -54,10 +53,10 @@ class BubbleIntentProcessor(
 
     private fun handleCreateBubble(intent: Intent) {
         val sharedUrl = intent.getStringExtra(Constants.EXTRA_URL)
-        val url = sharedUrl?.let { text -> extractUrl(text) ?: text}
+        val url = sharedUrl?.let { text -> UrlUtils.extractUrl(text) ?: text}
         Logger.d(TAG, "handleCreateBubble | Received intent: ${intent.action}, sharedURL: $url")
         
-        if (url != null && isValidUrl(url)) {
+        if (url != null && UrlUtils.isValidUrl(url)) {
             Logger.d(TAG, "Creating bubble with URL: $url")
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
@@ -139,7 +138,7 @@ class BubbleIntentProcessor(
      * @param handler The function to call with the valid URL
      */
     private fun processValidUrl(url: String?, handler: (String) -> Unit) {
-        if (url != null && isValidUrl(url)) {
+        if (url != null && UrlUtils.isValidUrl(url)) {
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationService.isAuthenticationUrl(url)) {
                 Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
@@ -160,7 +159,7 @@ class BubbleIntentProcessor(
         val url = intent.getStringExtra(Constants.EXTRA_URL)
         val bubbleId = intent.getStringExtra(Constants.EXTRA_BUBBLE_ID)
         
-        if (url != null && isValidUrl(url)) {
+        if (url != null && UrlUtils.isValidUrl(url)) {
             // Check if this is an authentication URL that should be handled with Custom Tabs
             if (AuthenticationService.isAuthenticationUrl(url)) {
                 Logger.d(TAG, "Authentication URL detected, opening in Custom Tab: $url")
@@ -213,35 +212,11 @@ class BubbleIntentProcessor(
         
         // Extract URL from shared text if possible
         val url = sharedText?.let { text ->
-            extractUrl(text) ?: text
+            UrlUtils.extractUrl(text) ?: text
         }
         Logger.d(TAG, "handleSharedContent | Received url: $url")
         processValidUrl(url) { validUrl ->
             bubbleService.createOrUpdateBubbleWithNewUrl(validUrl, null)
-        }
-    }
-    
-    /**
-     * Extracts a URL from text that might contain other content
-     */
-    private fun extractUrl(text: String): String? {
-        // Check for Google App specific pattern first (search.app/*)
-        val googleAppPattern = "(https?://)?search\\.app/\\S+"
-        val googleAppMatcher = Pattern.compile(googleAppPattern).matcher(text)
-        if (googleAppMatcher.find()) {
-            Logger.d(TAG, "Found Google App URL: ${googleAppMatcher.group()}")
-            return googleAppMatcher.group()
-        }
-        
-        // Standard URL extraction using regex
-        val urlPattern = "(https?://(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.\\S{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.\\S{2,}|https?://(?:www\\.|(?!www))[a-zA-Z0-9]+\\.\\S{2,}|www\\.[a-zA-Z0-9]+\\.\\S{2,})"
-        val pattern = Pattern.compile(urlPattern)
-        val matcher = pattern.matcher(text)
-        
-        return if (matcher.find()) {
-            matcher.group()
-        } else {
-            null
         }
     }
 
@@ -251,7 +226,7 @@ class BubbleIntentProcessor(
      */
     private fun handleViewAction(intent: Intent) {
         val data = intent.data
-        if (data != null && isValidUrl(data.toString())) {
+        if (data != null && UrlUtils.isValidUrl(data.toString())) {
             val url = data.toString()
             
             // Check if this is an authentication URL that should be handled with Custom Tabs
@@ -268,26 +243,6 @@ class BubbleIntentProcessor(
             
             bubbleService.createOrUpdateBubbleWithNewUrl(url, null)
         }
-    }
-
-    /**
-     * Validates the URL format using Android's built-in Patterns class.
-     * @param url The URL string to validate.
-     * @return True if the URL is valid, false otherwise.
-     */
-    private fun isValidUrl(url: String): Boolean {
-        // First try with Android's built-in pattern
-        if (Patterns.WEB_URL.matcher(url).matches()) {
-            return true
-        }
-        
-        // If that fails, try a more lenient approach for URLs that might have special characters
-        // or don't strictly match the pattern but are still valid URLs
-        val lowerUrl = url.lowercase()
-        return lowerUrl.startsWith("http://") || 
-               lowerUrl.startsWith("https://") || 
-               lowerUrl.startsWith("www.") ||
-               lowerUrl.contains(".")
     }
     
     /**

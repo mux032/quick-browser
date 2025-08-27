@@ -41,7 +41,7 @@ import com.quick.browser.presentation.ui.components.HorizontalSwipeRefreshLayout
 import com.quick.browser.service.*
 import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.UrlFormatter
+import com.quick.browser.utils.UrlUtils
 import com.quick.browser.utils.security.SecurityPolicyManager
 import kotlin.math.exp
 
@@ -994,7 +994,7 @@ class BubbleView @JvmOverloads constructor(
      * @return A properly formatted URL or empty string if invalid
      */
     private fun formatUrl(inputUrl: String): String {
-        return UrlFormatter.formatUrl(inputUrl)
+        return UrlUtils.formatUrl(inputUrl)
     }
 
     /**

@@ -11,7 +11,6 @@ import com.quick.browser.service.AdBlockingService
 import com.quick.browser.service.SettingsService
 import com.quick.browser.utils.JavaScriptSanitizer
 import com.quick.browser.utils.Logger
-import com.quick.browser.utils.UrlFormatter
 import com.quick.browser.utils.security.SecurityPolicyManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -471,13 +470,6 @@ class BubbleWebViewManager(
     fun setVisibility(visibility: Int, alpha: Float = 1f) {
         webView?.visibility = visibility
         webView?.alpha = alpha
-    }
-
-    /**
-     * Format URL to ensure it has proper protocol
-     */
-    private fun formatUrl(url: String): String {
-        return UrlFormatter.formatUrl(url)
     }
 
     // Callback setters

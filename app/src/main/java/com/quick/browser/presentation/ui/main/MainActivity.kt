@@ -33,7 +33,6 @@ import kotlinx.coroutines.launch
 class MainActivity : BaseActivity() {
     companion object {
         private const val TAG = "MainActivity"
-        // Removed NOTIFICATION_PERMISSION constant as it's no longer needed
     }
 
     private val viewModel: MainViewModel by viewModels()

@@ -2,14 +2,15 @@ package com.quick.browser.utils
 
 import android.util.Patterns
 import java.net.URI
+import java.util.regex.Pattern
 
 /**
- * Utility class for URL formatting and validation operations
+ * Utility class for URL formatting, validation, and manipulation operations
  *
  * This object provides methods to format URLs, validate their structure,
- * and extract components such as domains and paths.
+ * extract components such as domains and paths, and manipulate URLs.
  */
-object UrlFormatter {
+object UrlUtils {
     
     /**
      * Format URL to ensure it has proper protocol
@@ -46,17 +47,21 @@ object UrlFormatter {
      */
     fun isValidUrl(url: String): Boolean {
         // First try with Android's built-in pattern
-        if (Patterns.WEB_URL.matcher(url).matches()) {
-            return true
+        try {
+            if (Patterns.WEB_URL.matcher(url).matches()) {
+                return true
+            }
+        } catch (e: Exception) {
+            // If we can't use Android's pattern matcher, fall back to our own validation
         }
         
         // If that fails, try a more lenient approach for URLs that might have special characters
         // or don't strictly match the pattern but are still valid URLs
         val lowerUrl = url.lowercase()
-        return lowerUrl.startsWith("http://") || 
+        return (lowerUrl.startsWith("http://") || 
                lowerUrl.startsWith("https://") || 
                lowerUrl.startsWith("www.") ||
-               lowerUrl.contains(".")
+               lowerUrl.contains("."))
     }
     
     /**
@@ -113,6 +118,29 @@ object UrlFormatter {
             url
         }
     }
+    
+    /**
+     * Extracts a URL from text that might contain other content
+     */
+    fun extractUrl(text: String): String? {
+        // Check for Google App specific pattern first (search.app/*)
+        val googleAppPattern = "(https?://)?search\\.app/\\S+"
+        val googleAppMatcher = Pattern.compile(googleAppPattern).matcher(text)
+        if (googleAppMatcher.find()) {
+            return googleAppMatcher.group()
+        }
+        
+        // Standard URL extraction using regex
+        val urlPattern = "(https?://(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.\\S{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.\\S{2,}|https?://(?:www\\.|(?!www))[a-zA-Z0-9]+\\.\\S{2,}|www\\.[a-zA-Z0-9]+\\.\\S{2,})"
+        val pattern = Pattern.compile(urlPattern)
+        val matcher = pattern.matcher(text)
+        
+        return if (matcher.find()) {
+            matcher.group()
+        } else {
+            null
+        }
+    }
 }
 
 /**
@@ -120,32 +148,39 @@ object UrlFormatter {
  *
  * @return The formatted URL with appropriate protocol
  */
-fun String.formatUrl(): String = UrlFormatter.formatUrl(this)
+fun String.formatUrl(): String = UrlUtils.formatUrl(this)
 
 /**
  * Extension function to validate URL
  *
  * @return True if the URL is valid, false otherwise
  */
-fun String.isValidUrl(): Boolean = UrlFormatter.isValidUrl(this)
+fun String.isValidUrl(): Boolean = UrlUtils.isValidUrl(this)
 
 /**
  * Extension function to extract domain from URL
  *
  * @return The domain or empty string if invalid
  */
-fun String.extractDomain(): String = UrlFormatter.extractDomain(this)
+fun String.extractDomain(): String = UrlUtils.extractDomain(this)
 
 /**
  * Extension function to check if URL is HTTPS
  *
  * @return True if URL is HTTPS
  */
-fun String.isHttpsUrl(): Boolean = UrlFormatter.isHttpsUrl(this)
+fun String.isHttpsUrl(): Boolean = UrlUtils.isHttpsUrl(this)
 
 /**
  * Extension function to get URL without query parameters
  *
  * @return URL without query parameters
  */
-fun String.getUrlWithoutQuery(): String = UrlFormatter.getUrlWithoutQuery(this)
+fun String.getUrlWithoutQuery(): String = UrlUtils.getUrlWithoutQuery(this)
+
+/**
+ * Extension function to extract URL from text
+ *
+ * @return The extracted URL or null if none found
+ */
+fun String.extractUrl(): String? = UrlUtils.extractUrl(this)

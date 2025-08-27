@@ -320,13 +320,13 @@ class AdBlockingService(private val context: Context, private val encryptedPrefs
         return runCatching {
             // Skip data URLs and other non-standard protocols that can't be parsed
             if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                return@runCatching url
+                return@runCatching ""
             }
             
             val uri = URL(url)
-            val host = uri.host
+            val host = uri.host ?: return@runCatching ""
             if (host.startsWith("www.")) host.substring(4) else host
-        }.getOrDefault(url)
+        }.getOrDefault("")
     }
 
     /**
