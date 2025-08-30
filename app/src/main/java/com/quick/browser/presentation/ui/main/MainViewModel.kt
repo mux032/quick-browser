@@ -9,6 +9,7 @@ import com.quick.browser.presentation.ui.base.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,8 +25,15 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiState<MainUiState>>(UiState.Loading)
     val uiState: StateFlow<UiState<MainUiState>> = _uiState
 
+    private val _pendingUrl = MutableStateFlow<String?>(null)
+    val pendingUrl: StateFlow<String?> = _pendingUrl.asStateFlow()
+
     init {
         loadSettings()
+    }
+
+    fun setPendingUrl(url: String?) {
+        _pendingUrl.value = url
     }
 
     /**

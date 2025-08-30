@@ -13,8 +13,11 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.quick.browser.R
 import com.quick.browser.presentation.ui.components.BaseActivity
 import com.quick.browser.presentation.ui.history.HistoryActivity
@@ -54,7 +57,23 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    // Removed permissionLauncher as notification permission is now optional
+    private val overlayPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        // After returning from settings, check if permission was granted
+        if (Settings.canDrawOverlays(this)) {
+            val pendingUrl = viewModel.pendingUrl.value
+            if (pendingUrl != null) {
+                startBubbleServiceWithUrl(pendingUrl)
+                viewModel.setPendingUrl(null) // Clear the pending URL
+            } else {
+                startBubbleService()
+            }
+        } else {
+            Toast.makeText(this, "Overlay permission is required to use the floating browser", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     /** Starts the BubbleService to display floating bubbles. */
     private fun startBubbleService() {
@@ -73,10 +92,6 @@ class MainActivity : BaseActivity() {
 
     /** Starts the BubbleService with a specific URL to open in the quick browser. */
     private fun startBubbleServiceWithUrl(url: String) {
-        if (!checkPermissionsAndStartBubble()) {
-            return
-        }
-
         Logger.d(TAG, "startBubbleServiceWithUrl: Starting service with URL: $url")
         val intent =
             Intent(this, BubbleService::class.java).apply {
@@ -107,6 +122,7 @@ class MainActivity : BaseActivity() {
         setupMenuButton()
         setupKeyboardVisibilityListener()
         handleMainAppIntent()
+        observePendingUrl()
     }
 
     private fun openHistoryActivity() {
@@ -305,12 +321,8 @@ class MainActivity : BaseActivity() {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
                 Logger.d(TAG, "Received shared text: $sharedText")
                 if (sharedText != null) {
-                    // Start bubble service with the URL
-                    if (checkPermissionsAndStartBubbleWithUrl(sharedText)) {
-                        // Move task to back instead of finishing the activity
-                        // This allows the activity to receive future share intents
-                        moveTaskToBack(true)
-                    }
+                    checkPermissionsAndStartBubbleWithUrl(sharedText)
+                    moveTaskToBack(true)
                 }
             }
 
@@ -318,34 +330,24 @@ class MainActivity : BaseActivity() {
                 val url = intent.data?.toString()
                 Logger.d(TAG, "Received view URL: $url")
                 if (url != null) {
-                    // Start bubble service with the URL
-                    if (checkPermissionsAndStartBubbleWithUrl(url)) {
-                        // Move task to back instead of finishing the activity
-                        // This allows the activity to receive future share intents
-                        moveTaskToBack(true)
-                    }
+                    checkPermissionsAndStartBubbleWithUrl(url)
+                    moveTaskToBack(true)
                 }
             }
         }
     }
 
     /**
-     * Checks permissions and starts the bubble service with a URL
-     * Returns true if successful, false if permissions are needed
+     * Checks permissions and starts the bubble service with a URL.
+     * If permission is not granted, it stores the URL and requests permission.
      */
-    private fun checkPermissionsAndStartBubbleWithUrl(url: String): Boolean {
-        // Check overlay permission
+    private fun checkPermissionsAndStartBubbleWithUrl(url: String) {
         if (!Settings.canDrawOverlays(this)) {
-            // Show permission dialog
+            viewModel.setPendingUrl(url)
             requestOverlayPermission()
-            // Save the URL to use after permission is granted
-            // Note: We should use the ViewModel to manage this state
-            return false
+        } else {
+            startBubbleServiceWithUrl(url)
         }
-
-        // Start bubble service with URL
-        startBubbleServiceWithUrl(url)
-        return true
     }
 
     /**
@@ -366,40 +368,49 @@ class MainActivity : BaseActivity() {
     }
 
     /** Checks required permissions and starts the BubbleService if permissions are granted. */
-    private fun checkPermissionsAndStartBubble(): Boolean {
-        // Only check for overlay permission as it's essential
+    private fun checkPermissionsAndStartBubble() {
         if (!Settings.canDrawOverlays(this)) {
+            viewModel.setPendingUrl(null) // No pending URL for a fresh start
             requestOverlayPermission()
-            return false
+        } else {
+            startBubbleService()
         }
-
-        // Start the service regardless of notification permission
-        startBubbleService()
-        return true
     }
 
-    /** Requests overlay permission to draw bubbles over other apps. */
+    /**
+     * Shows a rationale dialog and requests overlay permission.
+     */
     private fun requestOverlayPermission() {
-        try {
-            val overlayIntent =
-                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                    data = "package:$packageName".toUri()
-                }
-            startActivity(overlayIntent)
-            Toast.makeText(
-                this,
-                "Please allow drawing over other apps to use the quick browser",
-                Toast.LENGTH_LONG
-            )
-                .show()
-        } catch (e: Exception) {
-            Logger.e(TAG, "Error requesting overlay permission", e)
-            Toast.makeText(this, "Could not open overlay permission settings", Toast.LENGTH_LONG)
-                .show()
-        }
+        AlertDialog.Builder(this)
+            .setTitle("Permission Required")
+            .setMessage("To show the floating browser, Quick Browser needs permission to draw over other apps. Please grant this permission in the next screen.")
+            .setPositiveButton("Go to Settings") { _, _ ->
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    "package:$packageName".toUri()
+                )
+                overlayPermissionLauncher.launch(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
-    // Notification permission rationale dialog removed as notifications are now optional
+    /**
+     * Observes the pending URL from the ViewModel.
+     * This is not strictly necessary with the ActivityResultLauncher, but can be a good practice.
+     */
+    private fun observePendingUrl() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.pendingUrl.collect { url ->
+                    if (url != null && Settings.canDrawOverlays(this@MainActivity)) {
+                        startBubbleServiceWithUrl(url)
+                        viewModel.setPendingUrl(null)
+                    }
+                }
+            }
+        }
+    }
 
     private fun setupKeyboardVisibilityListener() {
         // Listen for keyboard visibility changes
@@ -424,9 +435,6 @@ class MainActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        // Check if we have a saved URL from a previous permission request
-        // Note: We should use the ViewModel to manage this state
-        // For now, we'll keep the existing implementation
+        // The ActivityResultLauncher and observer now handle the logic that was previously hinted at for onResume.
     }
 }
