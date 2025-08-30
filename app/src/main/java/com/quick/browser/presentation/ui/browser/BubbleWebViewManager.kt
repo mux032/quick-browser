@@ -1,11 +1,15 @@
 package com.quick.browser.presentation.ui.browser
 
 import android.R
+import android.app.DownloadManager
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Environment
 import android.view.View
 import android.webkit.*
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.quick.browser.service.AdBlockingService
 import com.quick.browser.service.SettingsService
@@ -112,6 +116,9 @@ class BubbleWebViewManager(
             // Set up JavaScript interface for scroll detection
             setupScrollDetection(webView)
 
+            // Set up download listener
+            setupDownloadListener(webView)
+
             Logger.d(TAG, "WebView setup complete for bubble: $bubbleId")
 
         } catch (e: Exception) {
@@ -195,6 +202,30 @@ class BubbleWebViewManager(
 
         // Set up WebViewClient for page loading and error handling
         webView.webViewClient = createScrollAwareWebViewClient()
+    }
+
+    /**
+     * Set up the download listener for the WebView.
+     */
+    private fun setupDownloadListener(webView: WebView) {
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+            try {
+                val request = DownloadManager.Request(Uri.parse(url))
+                request.setMimeType(mimeType)
+                request.addRequestHeader("User-Agent", userAgent)
+                request.setDescription("Downloading file...")
+                val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+                request.setTitle(fileName)
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                downloadManager.enqueue(request)
+                Toast.makeText(context, "Downloading $fileName", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Logger.e(TAG, "Error handling download", e)
+                Toast.makeText(context, "Error: Could not download file", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     /**

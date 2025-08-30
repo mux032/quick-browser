@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -183,27 +184,6 @@ open class WebViewClientEx(
                     false
                 }
             }
-            // Handle file downloads
-            url.endsWith(".pdf") ||
-                    url.endsWith(".doc") ||
-                    url.endsWith(".docx") ||
-                    url.endsWith(".xls") ||
-                    url.endsWith(".xlsx") ||
-                    url.endsWith(".zip") ||
-                    url.endsWith(".rar") ||
-                    url.endsWith(".apk") -> {
-                try {
-                    // Let the system download manager handle it
-                    val intent = Intent(Intent.ACTION_VIEW)
-                    intent.data = Uri.parse(url)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    view?.context?.startActivity(intent)
-                    true
-                } catch (e: Exception) {
-                    // If no app can handle it, let WebView try to handle it
-                    false
-                }
-            }
             // Handle regular URLs - let WebView load them directly
             else -> {
                 // Return false to let WebView handle normal URLs
@@ -211,5 +191,38 @@ open class WebViewClientEx(
                 false
             }
         }
+    }
+
+    override fun onReceivedError(
+        view: WebView?,
+        request: WebResourceRequest?,
+        error: WebResourceError?
+    ) {
+        // On newer APIs, this is the primary error handler
+        if (request?.isForMainFrame == true) {
+            val failingUrl = request.url.toString()
+            Logger.e("WebViewClientEx", "Error loading page: ${error?.errorCode} ${error?.description} for $failingUrl")
+            // Avoid getting into an error loop
+            if (!failingUrl.endsWith("error_page.html")) {
+                view?.loadUrl("file:///android_asset/error_page.html")
+            }
+        }
+        super.onReceivedError(view, request, error)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onReceivedError(
+        view: WebView?,
+        errorCode: Int,
+        description: String?,
+        failingUrl: String?
+    ) {
+        // On older APIs, this is the error handler
+        Logger.e("WebViewClientEx", "Error loading page: $errorCode $description for $failingUrl")
+        // Avoid getting into an error loop
+        if (failingUrl != null && !failingUrl.endsWith("error_page.html")) {
+            view?.loadUrl("file:///android_asset/error_page.html")
+        }
+        super.onReceivedError(view, errorCode, description, failingUrl)
     }
 }

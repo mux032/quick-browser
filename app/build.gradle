@@ -60,9 +60,11 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean", "ENABLE_STRICT_MODE", "true"
         }
         debug {
             testCoverageEnabled true
+            buildConfigField "boolean", "ENABLE_STRICT_MODE", "false"
         }
     }
 

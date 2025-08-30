@@ -4,6 +4,7 @@ import android.content.Context
 import android.webkit.CookieManager
 import android.webkit.WebSettings
 import android.webkit.WebView
+import com.quick.browser.BuildConfig
 import com.quick.browser.utils.Logger
 import java.security.MessageDigest
 import java.security.cert.Certificate
@@ -21,7 +22,7 @@ class SecurityPolicyManager(private val context: Context) {
     
     companion object {
         private const val TAG = "SecurityPolicyManager"
-        private const val ENABLE_STRICT_MODE = true
+        private const val ENABLE_STRICT_MODE = BuildConfig.ENABLE_STRICT_MODE
     }
     
     /**
