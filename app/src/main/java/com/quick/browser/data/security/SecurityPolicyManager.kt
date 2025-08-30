@@ -22,14 +22,16 @@ class SecurityPolicyManager(private val context: Context) {
     companion object {
         private const val TAG = "SecurityPolicyManager"
         private const val ENABLE_STRICT_MODE = true
+        private const val DESKTOP_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
     }
     
     /**
      * Apply strict security settings to a WebView
      *
      * @param webView The WebView to configure
+     * @param isDesktopMode Whether to use a desktop user agent
      */
-    fun applySecuritySettings(webView: WebView) {
+    fun applySecuritySettings(webView: WebView, isDesktopMode: Boolean) {
         try {
             val settings = webView.settings
             
@@ -54,7 +56,7 @@ class SecurityPolicyManager(private val context: Context) {
             settings.databaseEnabled = false
             
             // Set user agent
-            setUserAgent(settings)
+            setUserAgent(settings, isDesktopMode)
             
             // Apply additional security settings
             applyAdvancedSecuritySettings(webView, settings)
@@ -84,17 +86,25 @@ class SecurityPolicyManager(private val context: Context) {
     }
     
     /**
-     * Set a secure user agent string
+     * Set a secure user agent string and viewport settings based on the selected mode.
      *
      * @param settings The WebView settings to modify
+     * @param isDesktopMode Whether to use a desktop user agent
      */
-    private fun setUserAgent(settings: WebSettings) {
+    private fun setUserAgent(settings: WebSettings, isDesktopMode: Boolean) {
         try {
-            // Remove identifying information from user agent
-            val originalUserAgent = settings.userAgentString
-            // Remove any build-specific information that could be used for fingerprinting
-            val secureUserAgent = originalUserAgent.replace(Regex("Build/[^\\s]+"), "Build/XYZ")
-            settings.userAgentString = secureUserAgent
+            if (isDesktopMode) {
+                settings.userAgentString = DESKTOP_USER_AGENT
+                settings.useWideViewPort = true
+                settings.loadWithOverviewMode = true
+            } else {
+                // Use the default mobile user agent and viewport settings
+                val originalUserAgent = WebSettings.getDefaultUserAgent(context)
+                val secureUserAgent = originalUserAgent.replace(Regex("Build/[^\\s]+"), "Build/XYZ")
+                settings.userAgentString = secureUserAgent
+                settings.useWideViewPort = false
+                settings.loadWithOverviewMode = false
+            }
         } catch (e: Exception) {
             Logger.w(TAG, "Could not set secure user agent", e)
         }

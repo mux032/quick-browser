@@ -101,7 +101,7 @@ class BubbleWebViewManager(
             webView.setBackgroundColor(ContextCompat.getColor(context, R.color.white))
 
             // Apply security settings first
-            securityPolicyManager.applySecuritySettings(webView)
+            securityPolicyManager.applySecuritySettings(webView, settingsService.isDesktopModeEnabled())
 
             // Configure WebView settings
             configureWebViewSettings(webView)
@@ -124,9 +124,7 @@ class BubbleWebViewManager(
      */
     private fun configureWebViewSettings(webView: WebView) {
         webView.settings.apply {
-            // Basic settings
-            loadWithOverviewMode = true
-            useWideViewPort = true
+            // Basic settings are now handled by SecurityPolicyManager based on desktop mode
 
             // Zoom settings
             builtInZoomControls = true

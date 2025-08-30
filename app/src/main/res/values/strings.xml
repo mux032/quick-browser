@@ -59,6 +59,7 @@
     <!-- Settings Screen -->
     <string name="browser_settings">Browser Settings</string>
     <string name="enable_javascript">Enable JavaScript</string>
+    <string name="desktop_mode">Desktop Mode</string>
     <string name="block_ads">Block ads</string>
     <string name="block_ads_and_trackers">Block ads and trackers</string>
     <string name="appearance">Appearance</string>

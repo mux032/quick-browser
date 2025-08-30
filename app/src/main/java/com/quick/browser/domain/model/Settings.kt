@@ -32,5 +32,6 @@ data class Settings(
     val animSpeed: Float = 1.0f,
     val saveHistory: Boolean = true,
     val encryptData: Boolean = true,
-    val bubblePositionRight: Boolean = false
+    val bubblePositionRight: Boolean = false,
+    val isDesktopModeEnabled: Boolean = false
 )

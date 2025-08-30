@@ -41,6 +41,7 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
         private const val KEY_DYNAMIC_COLOR = "pref_dynamic_color"
         private const val KEY_NIGHT_MODE = "pref_night_mode"
         private const val KEY_LAST_SHARED_URL = "last_shared_url"
+        private const val KEY_DESKTOP_MODE = "pref_desktop_mode"
 
         // Reader mode settings keys
         private const val KEY_READER_FONT_SIZE = "pref_reader_font_size"
@@ -83,6 +84,17 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
         const val READER_ALIGN_JUSTIFY = "justify"
 
 
+    }
+
+    /**
+     * Desktop mode settings
+     */
+    fun isDesktopModeEnabled(): Boolean {
+        return preferences.getBoolean(KEY_DESKTOP_MODE, false)
+    }
+
+    fun setDesktopModeEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_DESKTOP_MODE, enabled).apply()
     }
 
     /**

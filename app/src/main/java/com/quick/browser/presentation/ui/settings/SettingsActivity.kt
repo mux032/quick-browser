@@ -23,6 +23,7 @@ class SettingsActivity : BaseActivity() {
     private lateinit var switchJavaScript: SwitchMaterial
     private lateinit var switchBlockAds: SwitchMaterial
     private lateinit var switchSaveHistory: SwitchMaterial
+    private lateinit var switchDesktopMode: SwitchMaterial
 
     companion object {
         private const val TAG = "SettingsActivity"
@@ -66,6 +67,7 @@ class SettingsActivity : BaseActivity() {
             switchJavaScript = findViewById(R.id.switch_javascript)
             switchBlockAds = findViewById(R.id.switch_block_ads)
             switchSaveHistory = findViewById(R.id.switch_save_history)
+            switchDesktopMode = findViewById(R.id.switch_desktop_mode)
         } catch (e: Exception) {
             Logger.e(TAG, "Error initializing views", e)
             throw e
@@ -78,6 +80,7 @@ class SettingsActivity : BaseActivity() {
             switchJavaScript.isChecked = settingsService.isJavaScriptEnabled()
             switchBlockAds.isChecked = settingsService.isAdBlockEnabled()
             switchSaveHistory.isChecked = settingsService.isSaveHistoryEnabled()
+            switchDesktopMode.isChecked = settingsService.isDesktopModeEnabled()
         } catch (e: Exception) {
             Logger.e(TAG, "Error loading settings", e)
             throw e
@@ -99,6 +102,11 @@ class SettingsActivity : BaseActivity() {
             // Save history setting
             switchSaveHistory.setOnCheckedChangeListener { _, isChecked ->
                 settingsService.setSaveHistoryEnabled(isChecked)
+            }
+
+            // Desktop mode setting
+            switchDesktopMode.setOnCheckedChangeListener { _, isChecked ->
+                settingsService.setDesktopModeEnabled(isChecked)
             }
 
         } catch (e: Exception) {
