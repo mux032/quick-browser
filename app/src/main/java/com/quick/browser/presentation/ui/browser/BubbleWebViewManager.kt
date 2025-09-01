@@ -264,6 +264,99 @@ class BubbleWebViewManager(
             }
         }, "ScrollDetector")
     }
+    
+    /**
+     * Inject JavaScript for scroll detection
+     */
+    fun injectScrollDetectionJavaScript() {
+        val webView = this.webView ?: return
+        
+        // Inject JavaScript to monitor scrolling in real-time
+        val js = """
+            (function() {
+                // Variables for scroll tracking
+                var lastScrollY = window.scrollY || document.documentElement.scrollTop;
+                var lastScrollDirection = null;
+                var scrollThreshold = 3; // Lower threshold for more sensitivity
+                var consecutiveThreshold = 2; // Number of consecutive scrolls in same direction to trigger
+                var consecutiveCount = 0;
+                var lastNotifiedDirection = null;
+                
+                // Use requestAnimationFrame for smoother performance
+                var ticking = false;
+                
+                // Main scroll handler
+                window.addEventListener('scroll', function() {
+                    if (!ticking) {
+                        window.requestAnimationFrame(function() {
+                            var currentScrollY = window.scrollY || document.documentElement.scrollTop;
+                            var scrollDelta = currentScrollY - lastScrollY;
+                            
+                            // Determine scroll direction
+                            if (Math.abs(scrollDelta) > scrollThreshold) {
+                                var currentDirection = scrollDelta > 0 ? 'down' : 'up';
+                                
+                                // Check if we're continuing in the same direction
+                                if (currentDirection === lastScrollDirection) {
+                                    consecutiveCount++;
+                                } else {
+                                    consecutiveCount = 1;
+                                    lastScrollDirection = currentDirection;
+                                }
+                                
+                                // Only notify when we have enough consecutive scrolls in the same direction
+                                // or when direction changes from the last notification
+                                if ((consecutiveCount >= consecutiveThreshold && 
+                                    currentDirection !== lastNotifiedDirection) || 
+                                    (currentDirection !== lastNotifiedDirection && 
+                                    Math.abs(scrollDelta) > scrollThreshold * 3)) {
+                                    
+                                    if (currentDirection === 'down' && window.ScrollDetector) {
+                                        window.ScrollDetector.onScrollDown();
+                                    } else if (window.ScrollDetector) {
+                                        window.ScrollDetector.onScrollUp();
+                                    }
+                                    lastNotifiedDirection = currentDirection;
+                                }
+                                
+                                lastScrollY = currentScrollY;
+                            }
+                            
+                            ticking = false;
+                        });
+                        
+                        ticking = true;
+                    }
+                }, { passive: true });
+                
+                // Also detect touch events for more responsive mobile scrolling
+                var touchStartY = 0;
+                
+                document.addEventListener('touchstart', function(e) {
+                    touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+                
+                document.addEventListener('touchmove', function(e) {
+                    var touchY = e.touches[0].clientY;
+                    var touchDelta = touchStartY - touchY;
+                    
+                    // Detect significant touch movement
+                    if (Math.abs(touchDelta) > 10) {
+                        if (touchDelta > 0) {
+                            // Swiping up = scrolling down
+                            if (window.ScrollDetector) window.ScrollDetector.onScrollDown();
+                        } else {
+                            // Swiping down = scrolling up
+                            if (window.ScrollDetector) window.ScrollDetector.onScrollUp();
+                        }
+                        touchStartY = touchY;
+                    }
+                }, { passive: true });
+            })();
+        """.trimIndent()
+        
+        webView.evaluateJavascript(js, null)
+    }
 
     /**
      * Handle received favicon from WebView

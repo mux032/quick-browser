@@ -5,6 +5,8 @@ import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.view.MotionEvent
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -38,9 +40,8 @@ class MainActivity : BaseActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     private lateinit var addressBar: EditText
-    private lateinit var goButton: ImageButton
     private lateinit var menuButton: ImageButton
-    private lateinit var addressBarContainer: android.widget.LinearLayout
+    private lateinit var toolbar: androidx.appcompat.widget.Toolbar
 
     // Activity result launcher for history activity
     private val historyActivityLauncher = registerForActivityResult(
@@ -106,9 +107,8 @@ class MainActivity : BaseActivity() {
 
         // Initialize views
         addressBar = findViewById(R.id.address_bar)
-        goButton = findViewById(R.id.go_button)
         menuButton = findViewById(R.id.menu_button)
-        addressBarContainer = findViewById(R.id.address_bar_container)
+        toolbar = findViewById(R.id.toolbar)
 
         setupAddressBar()
         setupMenuButton()
@@ -129,16 +129,6 @@ class MainActivity : BaseActivity() {
     }
 
     private fun setupAddressBar() {
-        // Handle go button click
-        goButton.setOnClickListener {
-            val url = addressBar.text.toString().trim()
-            if (url.isNotEmpty()) {
-                handleUrlInput(url)
-            } else {
-                Toast.makeText(this, "Please enter a URL", Toast.LENGTH_SHORT).show()
-            }
-        }
-
         // Handle enter key press in address bar
         addressBar.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
@@ -151,6 +141,17 @@ class MainActivity : BaseActivity() {
                 true
             } else {
                 false
+            }
+        }
+        
+        // Handle address bar focus change
+        addressBar.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                // Show keyboard
+                addressBar.post {
+                    val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                    imm.showSoftInput(addressBar, InputMethodManager.SHOW_IMPLICIT)
+                }
             }
         }
     }
@@ -223,10 +224,6 @@ class MainActivity : BaseActivity() {
             }
         }
 
-        // Show loading state
-        goButton.isEnabled = false
-        goButton.alpha = 0.5f
-
         // Clear the address bar
         addressBar.text.clear()
 
@@ -239,12 +236,6 @@ class MainActivity : BaseActivity() {
 
         // Provide user feedback
         Toast.makeText(this, "Opening in bubble...", Toast.LENGTH_SHORT).show()
-
-        // Reset button state after a short delay
-        goButton.postDelayed({
-            goButton.isEnabled = true
-            goButton.alpha = 1.0f
-        }, 1000)
 
         Logger.d(TAG, "Opening URL in bubble: $url")
     }
@@ -454,16 +445,37 @@ class MainActivity : BaseActivity() {
             val screenHeight = window.decorView.height
             val keypadHeight = screenHeight - rect.bottom
 
-            // Update address bar container bottom margin to position it above keyboard
-            val layoutParams = addressBarContainer.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
-            layoutParams.bottomMargin = if (keypadHeight > screenHeight * 0.15) {
-                // Keyboard is visible, position above it
-                keypadHeight + 24 // Add some padding
+            // Update toolbar position based on keyboard visibility
+            val layoutParams = toolbar.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            if (keypadHeight > screenHeight * 0.15) {
+                // Keyboard is visible, position toolbar above it
+                layoutParams.bottomMargin = keypadHeight
+                // Hide menu button when keyboard is visible
+                menuButton.visibility = View.GONE
             } else {
-                // Keyboard is hidden, use default margin
-                24
+                // Keyboard is hidden, toolbar sits at bottom of screen
+                layoutParams.bottomMargin = 0
+                // Show menu button when keyboard is hidden
+                menuButton.visibility = View.VISIBLE
             }
-            addressBarContainer.layoutParams = layoutParams
+            toolbar.layoutParams = layoutParams
+        }
+        
+        // Set up touch listener to hide keyboard when clicking outside
+        window.decorView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                val view = currentFocus
+                if (view is EditText) {
+                    val outRect = Rect()
+                    view.getGlobalVisibleRect(outRect)
+                    if (!outRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
+                        view.clearFocus()
+                        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                        imm.hideSoftInputFromWindow(view.windowToken, 0)
+                    }
+                }
+            }
+            false
         }
     }
 
