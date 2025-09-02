@@ -61,6 +61,7 @@ class BubbleTouchHandler(
         fun getSettingsButton(): MaterialButton
         fun getToolbarContainer(): View
         fun getResizeHandles(): List<ImageView>
+        fun getResizeHandlesContainer(): View
         fun getContentContainer(): FrameLayout
         fun getWebViewContainer(): View
         fun updateDimensions(width: Int, height: Int)
@@ -248,6 +249,9 @@ class BubbleTouchHandler(
                     initialHeight = delegate.getExpandedContainer().height
                     isResizing = true
                     activeResizeHandle = handle
+                    
+                    // Show resize handle when resizing starts
+                    handle.alpha = 1.0f
                     return@setOnTouchListener true
                 }
 
@@ -267,6 +271,9 @@ class BubbleTouchHandler(
                     // Stop resizing
                     isResizing = false
                     activeResizeHandle = null
+                    
+                    // Hide resize handle after resizing is complete (make it transparent but keep visible for touch)
+                    handle.alpha = 0.0f
                     return@setOnTouchListener true
                 }
             }
@@ -302,12 +309,10 @@ class BubbleTouchHandler(
         var newX = originalX
         var newY = originalY
 
-        // Get resize handles
+        // Get resize handles (now only bottom handles)
         val resizeHandles = delegate.getResizeHandles()
-        val resizeHandleTopLeft = resizeHandles[0] // Assuming order: TL, TR, BL, BR
-        val resizeHandleTopRight = resizeHandles[1]
-        val resizeHandleBottomLeft = resizeHandles[2]
-        val resizeHandleBottomRight = resizeHandles[3]
+        val resizeHandleBottomLeft = resizeHandles[0] // Assuming order: BL, BR
+        val resizeHandleBottomRight = resizeHandles[1]
 
         when (handle) {
             resizeHandleBottomRight -> {
@@ -328,43 +333,6 @@ class BubbleTouchHandler(
                 if (originalX + widthChange >= 0) {
                     newWidth = desiredWidth
                     newX = originalX + widthChange
-                }
-            }
-
-            resizeHandleTopRight -> {
-                // Top-right corner: resize width directly and height inversely
-                newWidth = (initialWidth + dx).toInt().coerceIn(minWidth, maxWidth)
-                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight, maxHeight)
-
-                // Calculate how much the height will actually change
-                val heightChange = originalHeight - desiredHeight
-
-                // Only change height if we can also adjust the Y position
-                if (originalY + heightChange >= 0) {
-                    newHeight = desiredHeight
-                    newY = originalY + heightChange
-                }
-            }
-
-            resizeHandleTopLeft -> {
-                // Top-left corner: resize both width and height inversely
-                val desiredWidth = (initialWidth - dx).toInt().coerceIn(minWidth, maxWidth)
-                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight, maxHeight)
-
-                // Calculate position changes
-                val widthChange = originalWidth - desiredWidth
-                val heightChange = originalHeight - desiredHeight
-
-                // Apply width change if X position can be adjusted
-                if (originalX + widthChange >= 0) {
-                    newWidth = desiredWidth
-                    newX = originalX + widthChange
-                }
-
-                // Apply height change if Y position can be adjusted
-                if (originalY + heightChange >= 0) {
-                    newHeight = desiredHeight
-                    newY = originalY + heightChange
                 }
             }
         }

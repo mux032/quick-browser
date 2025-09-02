@@ -323,8 +323,6 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun showResizeHandles() {
         val handles = listOf(
-            uiManager.getResizeHandleTopLeft(),
-            uiManager.getResizeHandleTopRight(),
             uiManager.getResizeHandleBottomLeft(),
             uiManager.getResizeHandleBottomRight()
         )
@@ -378,8 +376,6 @@ class BubbleView @JvmOverloads constructor(
      */
     private fun hideResizeHandles() {
         val handles = listOf(
-            uiManager.getResizeHandleTopLeft(),
-            uiManager.getResizeHandleTopRight(),
             uiManager.getResizeHandleBottomLeft(),
             uiManager.getResizeHandleBottomRight()
         )
@@ -729,9 +725,9 @@ class BubbleView @JvmOverloads constructor(
             urlBarContainer = uiManager.getUrlBarContainer(),
             expandedContainer = uiManager.getExpandedContainer(),
             onEnd = {
-                // Show resize handles after expansion is complete
-                showResizeHandles()
+                // Show resize handles container but keep handles invisible until touched
                 uiManager.getResizeHandlesContainer().visibility = VISIBLE
+                uiManager.hideResizeHandles()
 
                 // Make WebView visible and ensure content is loaded
                 loadContentInExpandedWebView()
@@ -1084,11 +1080,13 @@ class BubbleView @JvmOverloads constructor(
 
     override fun getResizeHandles(): List<ImageView> {
         return listOf(
-            uiManager.getResizeHandleTopLeft(),
-            uiManager.getResizeHandleTopRight(),
             uiManager.getResizeHandleBottomLeft(),
             uiManager.getResizeHandleBottomRight()
         )
+    }
+
+    override fun getResizeHandlesContainer(): View {
+        return uiManager.getResizeHandlesContainer()
     }
 
     override fun getContentContainer(): FrameLayout {

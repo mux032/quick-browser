@@ -56,8 +56,6 @@ class BubbleUIManager(
     
     // Resize handles
     private lateinit var resizeHandlesContainer: FrameLayout
-    private lateinit var resizeHandleTopLeft: ImageView
-    private lateinit var resizeHandleTopRight: ImageView
     private lateinit var resizeHandleBottomLeft: ImageView
     private lateinit var resizeHandleBottomRight: ImageView
     
@@ -129,8 +127,6 @@ class BubbleUIManager(
             
             // Initialize resize handles
             resizeHandlesContainer = bubbleView.findViewById(R.id.resize_handles_container) ?: throw IllegalStateException("resize_handles_container not found")
-            resizeHandleTopLeft = bubbleView.findViewById(R.id.resize_handle_top_left) ?: throw IllegalStateException("resize_handle_top_left not found")
-            resizeHandleTopRight = bubbleView.findViewById(R.id.resize_handle_top_right) ?: throw IllegalStateException("resize_handle_top_right not found")
             resizeHandleBottomLeft = bubbleView.findViewById(R.id.resize_handle_bottom_left) ?: throw IllegalStateException("resize_handle_bottom_left not found")
             resizeHandleBottomRight = bubbleView.findViewById(R.id.resize_handle_bottom_right) ?: throw IllegalStateException("resize_handle_bottom_right not found")
             
@@ -320,27 +316,30 @@ class BubbleUIManager(
     fun showResizeHandles() {
         resizeHandlesContainer.visibility = View.VISIBLE
         val handles = listOf(
-            resizeHandleTopLeft,
-            resizeHandleTopRight,
             resizeHandleBottomLeft,
             resizeHandleBottomRight
         )
         // Animation would be handled by animator
-        handles.forEach { it.visibility = View.VISIBLE }
+        handles.forEach { 
+            it.visibility = View.VISIBLE
+            it.alpha = 1.0f
+        }
     }
     
     /**
-     * Hide resize handles
+     * Hide resize handles (make them transparent but still visible for touch detection)
      */
     fun hideResizeHandles() {
         val handles = listOf(
-            resizeHandleTopLeft,
-            resizeHandleTopRight,
             resizeHandleBottomLeft,
             resizeHandleBottomRight
         )
-        handles.forEach { it.visibility = View.GONE }
-        resizeHandlesContainer.visibility = View.GONE
+        // Make handles transparent but keep them visible for touch detection
+        handles.forEach { 
+            it.visibility = View.VISIBLE
+            it.alpha = 0.0f
+        }
+        resizeHandlesContainer.visibility = View.VISIBLE
     }
     
     /**
@@ -418,8 +417,6 @@ class BubbleUIManager(
     fun getContentContainer(): FrameLayout = contentContainer
     fun getToolbarContainer(): View = toolbarContainer
     fun getResizeHandlesContainer(): FrameLayout = resizeHandlesContainer
-    fun getResizeHandleTopLeft(): ImageView = resizeHandleTopLeft
-    fun getResizeHandleTopRight(): ImageView = resizeHandleTopRight
     fun getResizeHandleBottomLeft(): ImageView = resizeHandleBottomLeft
     fun getResizeHandleBottomRight(): ImageView = resizeHandleBottomRight
     
