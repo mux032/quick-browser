@@ -58,6 +58,7 @@ class BubbleUIManager(
     private lateinit var resizeHandlesContainer: FrameLayout
     private lateinit var resizeHandleBottomLeft: ImageView
     private lateinit var resizeHandleBottomRight: ImageView
+    private lateinit var resizeBar: View
     
     // Action buttons
     private lateinit var btnClose: MaterialButton
@@ -129,6 +130,7 @@ class BubbleUIManager(
             resizeHandlesContainer = bubbleView.findViewById(R.id.resize_handles_container) ?: throw IllegalStateException("resize_handles_container not found")
             resizeHandleBottomLeft = bubbleView.findViewById(R.id.resize_handle_bottom_left) ?: throw IllegalStateException("resize_handle_bottom_left not found")
             resizeHandleBottomRight = bubbleView.findViewById(R.id.resize_handle_bottom_right) ?: throw IllegalStateException("resize_handle_bottom_right not found")
+            resizeBar = bubbleView.findViewById(R.id.resize_bar) ?: throw IllegalStateException("resize_bar not found")
             
             // Initialize action buttons
             btnClose = bubbleView.findViewById(R.id.btn_close) ?: throw IllegalStateException("btn_close not found")
@@ -419,6 +421,7 @@ class BubbleUIManager(
     fun getResizeHandlesContainer(): FrameLayout = resizeHandlesContainer
     fun getResizeHandleBottomLeft(): ImageView = resizeHandleBottomLeft
     fun getResizeHandleBottomRight(): ImageView = resizeHandleBottomRight
+    fun getResizeBar(): View = resizeBar
     
     fun getBtnSaveArticle(): MaterialButton = btnSaveArticle
     

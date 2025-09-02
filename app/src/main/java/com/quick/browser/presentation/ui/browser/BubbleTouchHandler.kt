@@ -286,9 +286,9 @@ class BubbleTouchHandler(
      * Resize the bubble based on which handle is being dragged
      */
     private fun resizeBubble(handle: ImageView, dx: Float, dy: Float) {
-        // Define minimum and maximum dimensions
+        // Define minimum and maximum dimensions (consistent with BubbleResizeBarHandler)
         val minWidth = context.resources.displayMetrics.widthPixels / 3
-        val minHeight = context.resources.displayMetrics.heightPixels / 3
+        val minHeight = (context.resources.displayMetrics.heightPixels / 3) * 3 / 4 // Reduce height by 25%
         val maxWidth = context.resources.displayMetrics.widthPixels - 50
         val maxHeight = context.resources.displayMetrics.heightPixels - 100
 
@@ -355,6 +355,19 @@ class BubbleTouchHandler(
         val expandedContainer = delegate.getExpandedContainer()
         val webViewContainer = delegate.getWebViewContainer()
         val contentContainer = delegate.getContentContainer()
+
+        // Check if we should auto-collapse the bubble (consistent with BubbleResizeBarHandler)
+        val minWidth = context.resources.displayMetrics.widthPixels / 3
+        val minHeight = (context.resources.displayMetrics.heightPixels / 3) * 3 / 4 // Reduce height by 25%
+        
+        if (newWidth <= minWidth && newHeight <= minHeight) {
+            // Hide resize handles container immediately
+            delegate.getResizeHandlesContainer().visibility = View.GONE
+            
+            // Auto-collapse the bubble
+            delegate.onBubbleToggleExpanded()
+            return
+        }
 
         // Apply the new dimensions to the container
         val containerParams = expandedContainer.layoutParams

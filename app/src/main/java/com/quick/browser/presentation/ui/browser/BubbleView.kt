@@ -89,7 +89,13 @@ class BubbleView @JvmOverloads constructor(
     // Dependencies passed through constructor
     private val bubbleAnimator = BubbleAnimator(context)
     private val touchHandler = BubbleTouchHandler(context, this)
+    private val resizeBarHandler = BubbleResizeBarHandler(context, this)
     private var webViewModel: WebViewModel? = null
+
+    /**
+     * Get the bubble animator instance
+     */
+    fun getBubbleAnimator(): BubbleAnimator = bubbleAnimator
 
     // WebView Manager - handles all WebView-related functionality
     private lateinit var webViewManager: BubbleWebViewManager
@@ -141,6 +147,11 @@ class BubbleView @JvmOverloads constructor(
 
             // Initialize touch handler after all views are set up
             touchHandler.initialize(this)
+            
+            // Initialize resize bar handler
+            post {
+                resizeBarHandler.setupResizeBarTouch(uiManager.getResizeBar(), this)
+            }
 
             Logger.d(TAG, "BubbleView initialization completed for bubble: $bubbleId")
         } catch (e: Exception) {
