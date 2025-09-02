@@ -683,34 +683,6 @@
                 android:clipToPadding="false"
                 android:visibility="gone">
                 
-                <!-- Top Left Handle -->
-                <ImageView
-                    android:id="@+id/resize_handle_top_left"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="top|start"
-                    android:layout_marginStart="-3dp"
-                    android:layout_marginTop="-3dp"
-                    android:src="@drawable/resize_corner_top_left"
-                    android:contentDescription="@string/resize_handle"
-                    android:elevation="16dp"
-                    android:scaleType="fitCenter"
-                    android:padding="0dp" />
-                    
-                <!-- Top Right Handle -->
-                <ImageView
-                    android:id="@+id/resize_handle_top_right"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="top|end"
-                    android:layout_marginEnd="-3dp"
-                    android:layout_marginTop="-3dp"
-                    android:src="@drawable/resize_corner_top_right"
-                    android:contentDescription="@string/resize_handle"
-                    android:elevation="16dp"
-                    android:scaleType="fitCenter"
-                    android:padding="0dp" />
-                    
                 <!-- Bottom Left Handle -->
                 <ImageView
                     android:id="@+id/resize_handle_bottom_left"
@@ -738,6 +710,22 @@
                     android:elevation="16dp"
                     android:scaleType="fitCenter"
                     android:padding="0dp" />
+                    
+                <!-- Horizontal resize bar at bottom center -->
+                <View
+                    android:id="@+id/resize_bar"
+                    android:layout_width="80dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/resize_bar_background"
+                    android:elevation="16dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
             </FrameLayout>
 
         </FrameLayout>

@@ -61,6 +61,7 @@ class BubbleTouchHandler(
         fun getSettingsButton(): MaterialButton
         fun getToolbarContainer(): View
         fun getResizeHandles(): List<ImageView>
+        fun getResizeHandlesContainer(): View
         fun getContentContainer(): FrameLayout
         fun getWebViewContainer(): View
         fun updateDimensions(width: Int, height: Int)
@@ -248,6 +249,9 @@ class BubbleTouchHandler(
                     initialHeight = delegate.getExpandedContainer().height
                     isResizing = true
                     activeResizeHandle = handle
+                    
+                    // Show resize handle when resizing starts
+                    handle.alpha = 1.0f
                     return@setOnTouchListener true
                 }
 
@@ -267,6 +271,9 @@ class BubbleTouchHandler(
                     // Stop resizing
                     isResizing = false
                     activeResizeHandle = null
+                    
+                    // Hide resize handle after resizing is complete (make it transparent but keep visible for touch)
+                    handle.alpha = 0.0f
                     return@setOnTouchListener true
                 }
             }
@@ -279,9 +286,9 @@ class BubbleTouchHandler(
      * Resize the bubble based on which handle is being dragged
      */
     private fun resizeBubble(handle: ImageView, dx: Float, dy: Float) {
-        // Define minimum and maximum dimensions
+        // Define minimum and maximum dimensions (consistent with BubbleResizeBarHandler)
         val minWidth = context.resources.displayMetrics.widthPixels / 3
-        val minHeight = context.resources.displayMetrics.heightPixels / 3
+        val minHeight = (context.resources.displayMetrics.heightPixels / 3) * 3 / 4 // Reduce height by 25%
         val maxWidth = context.resources.displayMetrics.widthPixels - 50
         val maxHeight = context.resources.displayMetrics.heightPixels - 100
 
@@ -302,12 +309,10 @@ class BubbleTouchHandler(
         var newX = originalX
         var newY = originalY
 
-        // Get resize handles
+        // Get resize handles (now only bottom handles)
         val resizeHandles = delegate.getResizeHandles()
-        val resizeHandleTopLeft = resizeHandles[0] // Assuming order: TL, TR, BL, BR
-        val resizeHandleTopRight = resizeHandles[1]
-        val resizeHandleBottomLeft = resizeHandles[2]
-        val resizeHandleBottomRight = resizeHandles[3]
+        val resizeHandleBottomLeft = resizeHandles[0] // Assuming order: BL, BR
+        val resizeHandleBottomRight = resizeHandles[1]
 
         when (handle) {
             resizeHandleBottomRight -> {
@@ -330,43 +335,6 @@ class BubbleTouchHandler(
                     newX = originalX + widthChange
                 }
             }
-
-            resizeHandleTopRight -> {
-                // Top-right corner: resize width directly and height inversely
-                newWidth = (initialWidth + dx).toInt().coerceIn(minWidth, maxWidth)
-                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight, maxHeight)
-
-                // Calculate how much the height will actually change
-                val heightChange = originalHeight - desiredHeight
-
-                // Only change height if we can also adjust the Y position
-                if (originalY + heightChange >= 0) {
-                    newHeight = desiredHeight
-                    newY = originalY + heightChange
-                }
-            }
-
-            resizeHandleTopLeft -> {
-                // Top-left corner: resize both width and height inversely
-                val desiredWidth = (initialWidth - dx).toInt().coerceIn(minWidth, maxWidth)
-                val desiredHeight = (initialHeight - dy).toInt().coerceIn(minHeight, maxHeight)
-
-                // Calculate position changes
-                val widthChange = originalWidth - desiredWidth
-                val heightChange = originalHeight - desiredHeight
-
-                // Apply width change if X position can be adjusted
-                if (originalX + widthChange >= 0) {
-                    newWidth = desiredWidth
-                    newX = originalX + widthChange
-                }
-
-                // Apply height change if Y position can be adjusted
-                if (originalY + heightChange >= 0) {
-                    newHeight = desiredHeight
-                    newY = originalY + heightChange
-                }
-            }
         }
 
         // Apply the new dimensions
@@ -387,6 +355,19 @@ class BubbleTouchHandler(
         val expandedContainer = delegate.getExpandedContainer()
         val webViewContainer = delegate.getWebViewContainer()
         val contentContainer = delegate.getContentContainer()
+
+        // Check if we should auto-collapse the bubble (consistent with BubbleResizeBarHandler)
+        val minWidth = context.resources.displayMetrics.widthPixels / 3
+        val minHeight = (context.resources.displayMetrics.heightPixels / 3) * 3 / 4 // Reduce height by 25%
+        
+        if (newWidth <= minWidth && newHeight <= minHeight) {
+            // Hide resize handles container immediately
+            delegate.getResizeHandlesContainer().visibility = View.GONE
+            
+            // Auto-collapse the bubble
+            delegate.onBubbleToggleExpanded()
+            return
+        }
 
         // Apply the new dimensions to the container
         val containerParams = expandedContainer.layoutParams

@@ -179,8 +179,8 @@ class BubbleDisplayManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 100
-            y = 100
+            x = 50
+            y = 900
         }
     }
 
