@@ -368,8 +368,9 @@ class BubbleWebViewManager(
         webViewModel?.let { viewModel ->
             val currentUrl = webView?.url
             if (currentUrl != null) {
-                viewModel.updateFavicon(currentUrl, favicon)
-                Logger.d(TAG, "Updated favicon in WebViewModel for URL: $currentUrl")
+                // Pass the bubble ID so the WebViewModel can store it with the correct key
+                viewModel.updateFavicon(currentUrl, favicon, bubbleId)
+                Logger.d(TAG, "Updated favicon in WebViewModel for URL: $currentUrl with bubbleId: $bubbleId")
             }
         }
     }

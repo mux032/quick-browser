@@ -82,7 +82,7 @@ class BubbleResizeBarHandler(
         
         // Calculate new dimensions (moving up decreases size, moving down increases size)
         // Positive dy means moving down, negative dy means moving up
-        val sizeChange = (dy * 0.5).toInt() // Reduce speed to 0.5x for better control
+        val sizeChange = (dy * 0.7).toInt() // Increase speed to 0.7x for better responsiveness
         var newWidth = (initialWidth + sizeChange).coerceIn(minWidth, maxWidth)
         var newHeight = (initialHeight + sizeChange).coerceIn(minHeight, maxHeight)
         

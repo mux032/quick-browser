@@ -1,14 +1,13 @@
 package com.quick.browser.presentation.ui.browser
 
 import android.animation.*
-import android.content.Context
 import android.view.View
 import android.view.animation.*
 
 /**
  * Handles all animations for the bubble UI
  */
-class BubbleAnimator(private val context: Context) {
+class BubbleAnimator() {
 
     /**
      * Animate expanding a view with a scale and fade effect
@@ -70,6 +69,16 @@ class BubbleAnimator(private val context: Context) {
         bubbleContainer: View,
         onEnd: (() -> Unit)? = null
     ) {
+        // Reset the corner style of the expanded container to default (bottom rounded corners)
+        if (expandedContainer is com.google.android.material.card.MaterialCardView) {
+            expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                .setTopLeftCornerSize(0f)
+                .setTopRightCornerSize(0f)
+                .setBottomLeftCornerSize(16f)
+                .setBottomRightCornerSize(16f)
+                .build()
+        }
+
         // Phase 1: Start collapsing the expanded container
         val collapseAnimSet = AnimatorSet()
         val alphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
@@ -127,60 +136,127 @@ class BubbleAnimator(private val context: Context) {
     /**
      * Animate expanding from bubble to expanded container with smooth transition
      * This creates a gradual transition similar to collapse but in reverse
+     *
+     * @param bubbleContainer The bubble icon container
+     * @param urlBarContainer The URL bar container
+     * @param expandedContainer The expanded content container
+     * @param showUrlBar Whether to show the URL bar
+     * @param onEnd Callback when animation completes
      */
     fun animateExpandFromBubble(
         bubbleContainer: View,
         urlBarContainer: View,
         expandedContainer: View,
+        showUrlBar: Boolean = true,
         onEnd: (() -> Unit)? = null
     ) {
-        // Phase 1: Start shrinking the bubble container
+        // Position the expanded container and URL bar to overlap with the bubble initially
+        // This prevents the "narrow strip" effect where they appear below the bubble
+        expandedContainer.translationY = 0f
+        urlBarContainer.translationY = 0f
+
+        // Update the corner style of the expanded container based on URL bar visibility
+        if (expandedContainer is com.google.android.material.card.MaterialCardView) {
+            if (showUrlBar) {
+                // When URL bar is visible, use bottom rounded corners only
+                expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                    .setTopLeftCornerSize(0f)
+                    .setTopRightCornerSize(0f)
+                    .setBottomLeftCornerSize(16f)
+                    .setBottomRightCornerSize(16f)
+                    .build()
+            } else {
+                // When URL bar is hidden, use all rounded corners
+                expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                    .setAllCornerSizes(16f)
+                    .build()
+            }
+        }
+
+        // Phase 1: Start shrinking the bubble container while showing expanded elements
         val bubbleCollapseAnim = AnimatorSet()
         val bubbleAlphaAnim = ObjectAnimator.ofFloat(bubbleContainer, "alpha", 1f, 0f)
         val bubbleScaleXAnim = ObjectAnimator.ofFloat(bubbleContainer, "scaleX", 1f, 0.3f)
         val bubbleScaleYAnim = ObjectAnimator.ofFloat(bubbleContainer, "scaleY", 1f, 0.3f)
-        
+
+        // Show expanded container immediately but keep it transparent and scaled down
+        expandedContainer.alpha = 0f
+        expandedContainer.scaleX = 0.3f
+        expandedContainer.scaleY = 0.3f
+        expandedContainer.visibility = View.VISIBLE
+
+        // Show URL bar based on setting but keep it transparent and scaled down
+        // Both URL bar and expanded container overlap with the bubble due to FrameLayout
+        urlBarContainer.alpha = 0f
+        urlBarContainer.scaleX = 0.3f
+        urlBarContainer.scaleY = 0.3f
+        urlBarContainer.visibility = if (showUrlBar) View.VISIBLE else View.GONE
+
         bubbleCollapseAnim.playTogether(bubbleAlphaAnim, bubbleScaleXAnim, bubbleScaleYAnim)
         bubbleCollapseAnim.duration = ANIMATION_DURATION_MEDIUM
         bubbleCollapseAnim.interpolator = AccelerateInterpolator()
-        
+
         bubbleCollapseAnim.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                // Hide bubble container and show URL bar
+                // Hide bubble container completely
                 bubbleContainer.visibility = View.GONE
-                urlBarContainer.visibility = View.VISIBLE
-                
+
                 // Reset bubble container properties for next time
                 bubbleContainer.scaleX = 1f
                 bubbleContainer.scaleY = 1f
                 bubbleContainer.alpha = 1f
-                
-                // Phase 2: Show expanded container with scale-up animation
-                expandedContainer.alpha = 0f
-                expandedContainer.scaleX = 0.3f
-                expandedContainer.scaleY = 0.3f
-                expandedContainer.visibility = View.VISIBLE
-                
-                // Animate expanded container appearing with smooth scale-up effect
+
+                // Phase 2: Scale up and fade in the expanded elements
                 val expandAnimSet = AnimatorSet()
+
+                // Animate expanded container
                 val expandAlphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 0f, 1f)
                 val expandScaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 0.3f, 1f)
                 val expandScaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 0.3f, 1f)
-                
-                expandAnimSet.playTogether(expandAlphaAnim, expandScaleXAnim, expandScaleYAnim)
+
+                // Create a list of all animators to play together
+                val allAnimators = mutableListOf<Animator>(
+                    expandAlphaAnim,
+                    expandScaleXAnim,
+                    expandScaleYAnim
+                )
+
+                // Animate URL bar if it's visible
+                if (showUrlBar) {
+                    val urlBarAlphaAnim = ObjectAnimator.ofFloat(urlBarContainer, "alpha", 0f, 1f)
+                    val urlBarScaleXAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleX", 0.3f, 1f)
+                    val urlBarScaleYAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleY", 0.3f, 1f)
+                    
+                    // Add URL bar animators to the list
+                    allAnimators.addAll(listOf(urlBarAlphaAnim, urlBarScaleXAnim, urlBarScaleYAnim))
+                }
+
+                expandAnimSet.playTogether(allAnimators)
                 expandAnimSet.duration = ANIMATION_DURATION_MEDIUM
                 expandAnimSet.interpolator = OvershootInterpolator(1.1f)
-                
+
                 expandAnimSet.addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
+                        // Reset expanded container properties
+                        expandedContainer.scaleX = 1f
+                        expandedContainer.scaleY = 1f
+                        expandedContainer.alpha = 1f
+
+                        // Reset URL bar properties if visible
+                        if (showUrlBar) {
+                            urlBarContainer.scaleX = 1f
+                            urlBarContainer.scaleY = 1f
+                            urlBarContainer.alpha = 1f
+                        }
+
                         onEnd?.invoke()
                     }
                 })
-                
+
                 expandAnimSet.start()
             }
         })
-        
+
         bubbleCollapseAnim.start()
     }
     
@@ -379,6 +455,16 @@ class BubbleAnimator(private val context: Context) {
         bubbleContainer: View,
         onEnd: (() -> Unit)? = null
     ) {
+        // Reset the corner style of the expanded container to default (bottom rounded corners)
+        if (expandedContainer is com.google.android.material.card.MaterialCardView) {
+            expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                .setTopLeftCornerSize(0f)
+                .setTopRightCornerSize(0f)
+                .setBottomLeftCornerSize(16f)
+                .setBottomRightCornerSize(16f)
+                .build()
+        }
+
         // Create simultaneous animations for both URL bar and expanded container
         val urlBarAnimSet = AnimatorSet()
         val urlBarAlphaAnim = ObjectAnimator.ofFloat(urlBarContainer, "alpha", 1f, 0f)

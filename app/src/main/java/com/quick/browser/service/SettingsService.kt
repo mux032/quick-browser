@@ -41,6 +41,7 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
         private const val KEY_DYNAMIC_COLOR = "pref_dynamic_color"
         private const val KEY_NIGHT_MODE = "pref_night_mode"
         private const val KEY_LAST_SHARED_URL = "last_shared_url"
+        private const val KEY_SHOW_URL_BAR = "pref_show_url_bar"
 
         // Reader mode settings keys
         private const val KEY_READER_FONT_SIZE = "pref_reader_font_size"
@@ -54,6 +55,7 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
         private const val DEFAULT_EXPANDED_BUBBLE_SIZE = 64
         private const val DEFAULT_THEME_COLOR = "Blue"
         private const val DEFAULT_DYNAMIC_COLOR = true
+        private const val DEFAULT_SHOW_URL_BAR = true
 
         // Reader mode default values
         private const val DEFAULT_READER_FONT_SIZE = 18
@@ -351,6 +353,17 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
 
     fun setNightModeEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_NIGHT_MODE, enabled).apply()
+    }
+
+    /**
+     * Show URL bar settings
+     */
+    fun isUrlBarVisible(): Boolean {
+        return preferences.getBoolean(KEY_SHOW_URL_BAR, DEFAULT_SHOW_URL_BAR)
+    }
+
+    fun setUrlBarVisible(visible: Boolean) {
+        preferences.edit().putBoolean(KEY_SHOW_URL_BAR, visible).apply()
     }
 
     /**

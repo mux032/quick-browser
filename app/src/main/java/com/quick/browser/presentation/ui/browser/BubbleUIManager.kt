@@ -13,6 +13,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.quick.browser.R
 import com.quick.browser.utils.Logger
 
@@ -45,7 +46,7 @@ class BubbleUIManager(
     private lateinit var bubbleIcon: ImageView
     private lateinit var progressBar: ProgressBar
     private lateinit var bubbleContainer: View
-    private lateinit var urlBarContainer: View
+    private lateinit var urlBarContainer: MaterialCardView
     private lateinit var urlBarIcon: ImageView
     private lateinit var urlBarText: EditText
     private lateinit var btnUrlBarShare: MaterialButton
@@ -265,10 +266,13 @@ class BubbleUIManager(
      * Update the URL bar icon
      */
     fun updateUrlBarIcon(bitmap: Bitmap?) {
+        Logger.d(TAG, "Updating URL bar icon, bitmap is null: ${bitmap == null}")
         if (bitmap != null) {
             urlBarIcon.setImageBitmap(bitmap)
+            Logger.d(TAG, "Set custom favicon in URL bar, dimensions: ${bitmap.width}x${bitmap.height}")
         } else {
             urlBarIcon.setImageResource(R.drawable.ic_globe)
+            Logger.d(TAG, "Set default globe icon in URL bar")
         }
     }
     
@@ -298,9 +302,9 @@ class BubbleUIManager(
     /**
      * Show expanded container with animation
      */
-    fun showExpandedContainer() {
+    fun showExpandedContainer(showUrlBar: Boolean = true) {
         expandedContainer.visibility = View.VISIBLE
-        urlBarContainer.visibility = View.VISIBLE
+        urlBarContainer.visibility = if (showUrlBar) View.VISIBLE else View.GONE
     }
     
     /**
