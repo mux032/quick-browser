@@ -2,13 +2,14 @@
 <resources>
     <!-- Main colors -->
     <color name="primary">#2A5081</color>
-    <color name="primary_dark">#2A5081</color>
-    <color name="primary_light">#C5CAE9</color>
+    <color name="primary_dark">#0f4080</color>
+    <color name="primary_light">#8aa2c3</color>
     <color name="colorAccent">#FF4081</color>
 
     <!-- Aliases for themes.xml compatibility -->
     <color name="colorPrimary">@color/primary</color>
     <color name="colorPrimaryDark">@color/primary_dark</color>
+    <color name="colorPrimaryLight">@color/primary_light</color>
     <color name="primaryTextColor">#FFFFFF</color>
     <color name="secondaryColor">#2A5081</color>
     <color name="secondaryDarkColor">#C2185B</color>

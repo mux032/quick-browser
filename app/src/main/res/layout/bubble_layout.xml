@@ -144,7 +144,7 @@
                             android:background="?attr/selectableItemBackgroundBorderless"
                             app:icon="@drawable/ic_share"
                             app:iconSize="20dp"
-                            app:iconTint="?android:attr/textColorSecondary"
+                            app:iconTint="@color/colorPrimary"
                             android:contentDescription="@string/share" />
                         
                         <!-- Settings button -->
@@ -163,7 +163,7 @@
                             android:background="?attr/selectableItemBackgroundBorderless"
                             app:icon="@drawable/ic_more_vert"
                             app:iconSize="20dp"
-                            app:iconTint="?android:attr/textColorSecondary"
+                            app:iconTint="@color/colorPrimary"
                             android:contentDescription="@string/settings" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
