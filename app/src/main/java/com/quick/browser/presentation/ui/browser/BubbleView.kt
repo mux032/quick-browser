@@ -727,14 +727,11 @@ class BubbleView @JvmOverloads constructor(
         webViewContainer.visibility = VISIBLE
         webViewContainer.alpha = 1f
 
-        // Set the dimensions for the expanded container
+        // Set the dimensions for the expanded container BEFORE starting animation
         resizeExpandedContainer()
 
         // Check if URL bar should be visible based on settings
         val showUrlBar = settingsService.isUrlBarVisible()
-        
-        // Show expanded container with URL bar visibility setting
-        uiManager.showExpandedContainer(showUrlBar)
 
         // Start the expand animation with proper sequencing
         bubbleAnimator.animateExpandFromBubble(
@@ -749,13 +746,6 @@ class BubbleView @JvmOverloads constructor(
 
                 // Make WebView visible and ensure content is loaded
                 loadContentInExpandedWebView()
-                
-                // Show or hide URL bar based on settings
-                if (showUrlBar) {
-                    uiManager.getUrlBarContainer().visibility = VISIBLE
-                } else {
-                    uiManager.getUrlBarContainer().visibility = GONE
-                }
             }
         )
     }

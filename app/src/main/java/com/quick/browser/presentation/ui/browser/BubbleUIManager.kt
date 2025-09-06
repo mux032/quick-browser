@@ -13,6 +13,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.quick.browser.R
 import com.quick.browser.utils.Logger
 
@@ -45,7 +46,7 @@ class BubbleUIManager(
     private lateinit var bubbleIcon: ImageView
     private lateinit var progressBar: ProgressBar
     private lateinit var bubbleContainer: View
-    private lateinit var urlBarContainer: View
+    private lateinit var urlBarContainer: MaterialCardView
     private lateinit var urlBarIcon: ImageView
     private lateinit var urlBarText: EditText
     private lateinit var btnUrlBarShare: MaterialButton
