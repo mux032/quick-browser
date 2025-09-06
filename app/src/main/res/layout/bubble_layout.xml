@@ -598,7 +598,7 @@
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/toolbar_container"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_height="32dp"
                         android:layout_gravity="bottom|center_horizontal"
                         android:layout_marginBottom="16dp"
                         app:cardCornerRadius="24dp"
@@ -713,10 +713,10 @@
                 <!-- Horizontal resize bar at bottom center -->
                 <View
                     android:id="@+id/resize_bar"
-                    android:layout_width="80dp"
+                    android:layout_width="100dp"
                     android:layout_height="4dp"
                     android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="10dp"
                     android:background="@drawable/resize_bar_background"
                     android:elevation="16dp"
                     android:paddingTop="12dp"
