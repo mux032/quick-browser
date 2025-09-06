@@ -127,11 +127,18 @@ class BubbleAnimator(private val context: Context) {
     /**
      * Animate expanding from bubble to expanded container with smooth transition
      * This creates a gradual transition similar to collapse but in reverse
+     *
+     * @param bubbleContainer The bubble icon container
+     * @param urlBarContainer The URL bar container
+     * @param expandedContainer The expanded content container
+     * @param showUrlBar Whether to show the URL bar
+     * @param onEnd Callback when animation completes
      */
     fun animateExpandFromBubble(
         bubbleContainer: View,
         urlBarContainer: View,
         expandedContainer: View,
+        showUrlBar: Boolean = true,
         onEnd: (() -> Unit)? = null
     ) {
         // Phase 1: Start shrinking the bubble container
@@ -146,9 +153,9 @@ class BubbleAnimator(private val context: Context) {
         
         bubbleCollapseAnim.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                // Hide bubble container and show URL bar
+                // Hide bubble container and show URL bar based on setting
                 bubbleContainer.visibility = View.GONE
-                urlBarContainer.visibility = View.VISIBLE
+                urlBarContainer.visibility = if (showUrlBar) View.VISIBLE else View.GONE
                 
                 // Reset bubble container properties for next time
                 bubbleContainer.scaleX = 1f

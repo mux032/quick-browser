@@ -741,6 +741,7 @@ class BubbleView @JvmOverloads constructor(
             bubbleContainer = uiManager.getBubbleContainer(),
             urlBarContainer = uiManager.getUrlBarContainer(),
             expandedContainer = uiManager.getExpandedContainer(),
+            showUrlBar = showUrlBar,
             onEnd = {
                 // Show resize handles container but keep handles invisible until touched
                 uiManager.getResizeHandlesContainer().visibility = VISIBLE
