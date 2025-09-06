@@ -23,6 +23,7 @@ class SettingsActivity : BaseActivity() {
     private lateinit var switchJavaScript: SwitchMaterial
     private lateinit var switchBlockAds: SwitchMaterial
     private lateinit var switchSaveHistory: SwitchMaterial
+    private lateinit var switchShowUrlBar: SwitchMaterial
 
     companion object {
         private const val TAG = "SettingsActivity"
@@ -66,6 +67,7 @@ class SettingsActivity : BaseActivity() {
             switchJavaScript = findViewById(R.id.switch_javascript)
             switchBlockAds = findViewById(R.id.switch_block_ads)
             switchSaveHistory = findViewById(R.id.switch_save_history)
+            switchShowUrlBar = findViewById(R.id.switch_show_url_bar)
         } catch (e: Exception) {
             Logger.e(TAG, "Error initializing views", e)
             throw e
@@ -78,6 +80,7 @@ class SettingsActivity : BaseActivity() {
             switchJavaScript.isChecked = settingsService.isJavaScriptEnabled()
             switchBlockAds.isChecked = settingsService.isAdBlockEnabled()
             switchSaveHistory.isChecked = settingsService.isSaveHistoryEnabled()
+            switchShowUrlBar.isChecked = settingsService.isUrlBarVisible()
         } catch (e: Exception) {
             Logger.e(TAG, "Error loading settings", e)
             throw e
@@ -99,6 +102,11 @@ class SettingsActivity : BaseActivity() {
             // Save history setting
             switchSaveHistory.setOnCheckedChangeListener { _, isChecked ->
                 settingsService.setSaveHistoryEnabled(isChecked)
+            }
+
+            // Show URL bar setting
+            switchShowUrlBar.setOnCheckedChangeListener { _, isChecked ->
+                settingsService.setUrlBarVisible(isChecked)
             }
 
         } catch (e: Exception) {

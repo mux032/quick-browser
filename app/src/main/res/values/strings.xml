@@ -76,6 +76,7 @@
     <string name="privacy">Privacy</string>
     <string name="save_browsing_history">Save browsing history</string>
     <string name="encrypt_saved_pages">Encrypt saved pages</string>
+    <string name="show_url_bar">Show URL Bar</string>
 
     <!-- History Screen -->
     <string name="browsing_history">Browsing History</string>

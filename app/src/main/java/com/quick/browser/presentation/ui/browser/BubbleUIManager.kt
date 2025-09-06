@@ -298,9 +298,9 @@ class BubbleUIManager(
     /**
      * Show expanded container with animation
      */
-    fun showExpandedContainer() {
+    fun showExpandedContainer(showUrlBar: Boolean = true) {
         expandedContainer.visibility = View.VISIBLE
-        urlBarContainer.visibility = View.VISIBLE
+        urlBarContainer.visibility = if (showUrlBar) View.VISIBLE else View.GONE
     }
     
     /**

@@ -730,6 +730,12 @@ class BubbleView @JvmOverloads constructor(
         // Set the dimensions for the expanded container
         resizeExpandedContainer()
 
+        // Check if URL bar should be visible based on settings
+        val showUrlBar = settingsService.isUrlBarVisible()
+        
+        // Show expanded container with URL bar visibility setting
+        uiManager.showExpandedContainer(showUrlBar)
+
         // Start the expand animation with proper sequencing
         bubbleAnimator.animateExpandFromBubble(
             bubbleContainer = uiManager.getBubbleContainer(),
@@ -742,6 +748,13 @@ class BubbleView @JvmOverloads constructor(
 
                 // Make WebView visible and ensure content is loaded
                 loadContentInExpandedWebView()
+                
+                // Show or hide URL bar based on settings
+                if (showUrlBar) {
+                    uiManager.getUrlBarContainer().visibility = VISIBLE
+                } else {
+                    uiManager.getUrlBarContainer().visibility = GONE
+                }
             }
         )
     }
@@ -1578,6 +1591,8 @@ class BubbleView @JvmOverloads constructor(
         } else {
             // Update reader mode state before showing settings panel
             settingsPanelManager.setReaderMode(readModeManager.isReadMode())
+            // Refresh all settings values including URL bar setting
+            settingsPanelManager.refreshSettingsValues()
             settingsPanelManager.show(settingsPanel, uiManager.getBtnUrlBarSettings())
         }
     }
