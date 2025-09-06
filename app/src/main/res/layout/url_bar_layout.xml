@@ -8,7 +8,6 @@
     android:layout_marginEnd="8dp"
     android:layout_marginTop="0dp"
     android:layout_marginBottom="0dp"
-    app:shapeAppearanceOverlay="@style/UrlBarTopRoundedCorners"
     app:cardElevation="3dp"
     app:cardBackgroundColor="@android:color/white"
     app:strokeWidth="0.5dp"

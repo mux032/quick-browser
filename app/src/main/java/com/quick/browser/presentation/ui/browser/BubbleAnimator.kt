@@ -1,14 +1,13 @@
 package com.quick.browser.presentation.ui.browser
 
 import android.animation.*
-import android.content.Context
 import android.view.View
 import android.view.animation.*
 
 /**
  * Handles all animations for the bubble UI
  */
-class BubbleAnimator(private val context: Context) {
+class BubbleAnimator() {
 
     /**
      * Animate expanding a view with a scale and fade effect
@@ -70,6 +69,16 @@ class BubbleAnimator(private val context: Context) {
         bubbleContainer: View,
         onEnd: (() -> Unit)? = null
     ) {
+        // Reset the corner style of the expanded container to default (bottom rounded corners)
+        if (expandedContainer is com.google.android.material.card.MaterialCardView) {
+            expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                .setTopLeftCornerSize(0f)
+                .setTopRightCornerSize(0f)
+                .setBottomLeftCornerSize(16f)
+                .setBottomRightCornerSize(16f)
+                .build()
+        }
+
         // Phase 1: Start collapsing the expanded container
         val collapseAnimSet = AnimatorSet()
         val alphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
@@ -145,6 +154,24 @@ class BubbleAnimator(private val context: Context) {
         // This prevents the "narrow strip" effect where they appear below the bubble
         expandedContainer.translationY = 0f
         urlBarContainer.translationY = 0f
+
+        // Update the corner style of the expanded container based on URL bar visibility
+        if (expandedContainer is com.google.android.material.card.MaterialCardView) {
+            if (showUrlBar) {
+                // When URL bar is visible, use bottom rounded corners only
+                expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                    .setTopLeftCornerSize(0f)
+                    .setTopRightCornerSize(0f)
+                    .setBottomLeftCornerSize(16f)
+                    .setBottomRightCornerSize(16f)
+                    .build()
+            } else {
+                // When URL bar is hidden, use all rounded corners
+                expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                    .setAllCornerSizes(16f)
+                    .build()
+            }
+        }
 
         // Phase 1: Start shrinking the bubble container while showing expanded elements
         val bubbleCollapseAnim = AnimatorSet()
@@ -428,6 +455,16 @@ class BubbleAnimator(private val context: Context) {
         bubbleContainer: View,
         onEnd: (() -> Unit)? = null
     ) {
+        // Reset the corner style of the expanded container to default (bottom rounded corners)
+        if (expandedContainer is com.google.android.material.card.MaterialCardView) {
+            expandedContainer.shapeAppearanceModel = expandedContainer.shapeAppearanceModel.toBuilder()
+                .setTopLeftCornerSize(0f)
+                .setTopRightCornerSize(0f)
+                .setBottomLeftCornerSize(16f)
+                .setBottomRightCornerSize(16f)
+                .build()
+        }
+
         // Create simultaneous animations for both URL bar and expanded container
         val urlBarAnimSet = AnimatorSet()
         val urlBarAlphaAnim = ObjectAnimator.ofFloat(urlBarContainer, "alpha", 1f, 0f)

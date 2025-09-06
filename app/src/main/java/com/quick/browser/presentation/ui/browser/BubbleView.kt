@@ -87,7 +87,7 @@ class BubbleView @JvmOverloads constructor(
     }
 
     // Dependencies passed through constructor
-    private val bubbleAnimator = BubbleAnimator(context)
+    private val bubbleAnimator = BubbleAnimator()
     private val touchHandler = BubbleTouchHandler(context, this)
     private val resizeBarHandler = BubbleResizeBarHandler(context, this)
     private var webViewModel: WebViewModel? = null
@@ -328,18 +328,6 @@ class BubbleView @JvmOverloads constructor(
     // Resize handle setup is now handled by BubbleTouchHandler
 
     // Resize functionality moved to BubbleTouchHandler
-
-    /**
-     * Show resize handles when bubble is expanded
-     */
-    private fun showResizeHandles() {
-        val handles = listOf(
-            uiManager.getResizeHandleBottomLeft(),
-            uiManager.getResizeHandleBottomRight()
-        )
-
-        bubbleAnimator.animateResizeHandlesShow(handles)
-    }
 
     /**
      * Calculate a smooth zoom level based on the width ratio of the bubble to screen
@@ -1130,22 +1118,6 @@ class BubbleView @JvmOverloads constructor(
     }
 
     /**
-     * Get size multiplier based on size string
-     *
-     * @param sizeString String representation of size (small, medium, large, extra_large)
-     * @return Float multiplier for the size
-     */
-    private fun getSizeValue(sizeString: String): Float {
-        return when (sizeString) {
-            "small" -> 0.5f
-            "medium" -> 0.75f
-            "large" -> 1.0f
-            "extra_large" -> 1.25f
-            else -> 0.75f  // default to medium
-        }
-    }
-
-    /**
      * Set a listener to be called when the bubble is closed
      *
      * @param listener Callback function to invoke when bubble is closed
@@ -1349,16 +1321,6 @@ class BubbleView @JvmOverloads constructor(
 
         // Hide resize handles when expanded container is hidden
         uiManager.getResizeHandlesContainer().visibility = GONE
-    }
-
-    /**
-     * Show the WebView and load content
-     */
-    private fun showWebView() {
-        webViewContainer.visibility = VISIBLE
-
-        // Load URL in WebView
-        loadUrlInWebView()
     }
 
     /**
