@@ -223,16 +223,26 @@ class WebViewModel @Inject constructor(
      * Updates the favicon of a web page
      * @param url The URL of the web page
      * @param favicon The new favicon bitmap
+     * @param bubbleId The ID of the bubble (optional)
      */
-    fun updateFavicon(url: String, favicon: Bitmap) {
+    fun updateFavicon(url: String, favicon: Bitmap, bubbleId: String? = null) {
         viewModelScope.launch {
             try {
-                Logger.d("WebViewModel", "Updating favicon for URL: $url")
+                Logger.d("WebViewModel", "Updating favicon for URL: $url, bubbleId: $bubbleId, favicon dimensions: ${favicon.width}x${favicon.height}")
                 val currentPages = _uiState.value.webPages.toMutableMap()
 
                 // Find all pages with this URL (might be multiple if opened in different bubbles)
-                val matchingPages = currentPages.entries.filter {
-                    it.value.url == url || it.key.endsWith("_$url")
+                val matchingPages = if (bubbleId != null) {
+                    // If bubbleId is provided, only update pages for that bubble
+                    currentPages.entries.filter {
+                        (it.value.url == url && it.value.parentBubbleId == bubbleId) ||
+                                it.key == "${bubbleId}_$url"
+                    }
+                } else {
+                    // Otherwise check all pages with this URL
+                    currentPages.entries.filter {
+                        it.value.url == url || it.key.endsWith("_$url")
+                    }
                 }
 
                 if (matchingPages.isNotEmpty()) {
@@ -242,6 +252,7 @@ class WebViewModel @Inject constructor(
                         // Update the favicon in the WebPage object
                         val updatedPage = currentPage.copy(favicon = favicon)
                         currentPages[entry.key] = updatedPage
+                        Logger.d("WebViewModel", "Updated favicon for existing page with key: ${entry.key}")
                     }
                     Logger.d("WebViewModel", "Favicon updated successfully for ${matchingPages.size} pages with URL: $url")
                 } else {
@@ -253,15 +264,24 @@ class WebViewModel @Inject constructor(
                         content = "",
                         isAvailableOffline = false,
                         visitCount = 1,
-                        favicon = favicon
+                        favicon = favicon,
+                        parentBubbleId = bubbleId
                     )
-                    // We don't know the bubble ID here, but we'll set it when loadUrl is called
-                    currentPages[url] = webPage
-                    Logger.d("WebViewModel", "Created new page with favicon for URL: $url")
+                    
+                    // Set the parent bubble ID if provided
+                    val key = if (bubbleId != null) {
+                        "${bubbleId}_$url"
+                    } else {
+                        url
+                    }
+                    
+                    currentPages[key] = webPage
+                    Logger.d("WebViewModel", "Created new page with favicon for URL: $url, bubbleId: $bubbleId, stored with key: $key")
                 }
                 _uiState.value = _uiState.value.copy(webPages = currentPages)
+                Logger.d("WebViewModel", "WebViewModel now has ${currentPages.size} web pages")
             } catch (e: Exception) {
-                Logger.e("WebViewModel", "Error updating favicon for URL: $url", e)
+                Logger.e("WebViewModel", "Error updating favicon for URL: $url, bubbleId: $bubbleId", e)
             }
         }
     }

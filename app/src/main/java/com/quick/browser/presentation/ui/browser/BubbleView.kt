@@ -100,6 +100,9 @@ class BubbleView @JvmOverloads constructor(
     // WebView Manager - handles all WebView-related functionality
     private lateinit var webViewManager: BubbleWebViewManager
 
+    // Current favicon for the URL bar
+    private var currentFavicon: Bitmap? = null
+
     // Summary/Summarization UI and State
     private lateinit var btnSummarize: MaterialButton // Changed from fabSummarize to btnSummarize
     private lateinit var summaryContainer: FrameLayout
@@ -421,6 +424,9 @@ class BubbleView @JvmOverloads constructor(
             
             // Connect WebView URL changes to UI URL bar updates
             webViewManager.setOnUrlChangedCallback { newUrl -> onWebViewUrlChanged(newUrl) }
+            
+            // Connect WebView favicon updates to UI favicon updates
+            webViewManager.setOnFaviconReceivedCallback { favicon -> onWebViewFaviconReceived(favicon) }
 
             // Initialize settings panel manager with WebView
             setupSettingsPanelManager()
@@ -745,23 +751,61 @@ class BubbleView @JvmOverloads constructor(
      * Update the URL bar with current URL and favicon
      */
     private fun updateUrlBar() {
+        Logger.d(TAG, "Updating URL bar for bubble: $bubbleId, URL: $url")
+        
         // Set the URL text
         uiManager.updateUrlBarText(url)
 
-        // Note: This is a temporary fix. In a real application, we should properly observe the UI state.
-        // For now, we'll comment out this functionality.
-        /*
-        // Update the favicon in the URL bar
-        webViewModel?.webPages?.value?.get(url)?.favicon?.let { favicon ->
-            uiManager.updateUrlBarIcon(favicon)
-        } ?: run {
-            // Use default globe icon if no favicon available
+        // Use the stored favicon if available, otherwise try to get it from WebViewModel
+        if (currentFavicon != null) {
+            Logger.d(TAG, "Using stored favicon for bubble: $bubbleId")
+            uiManager.updateUrlBarIcon(currentFavicon)
+            return
+        }
+
+        // Update the favicon in the URL bar from WebViewModel
+        try {
+            webViewModel?.uiState?.value?.webPages?.let { webPages ->
+                Logger.d(TAG, "Found WebViewModel with ${webPages.size} web pages")
+                
+                // Log all available keys for debugging
+                webPages.forEach { entry ->
+                    Logger.d(TAG, "Available web page key: ${entry.key}, URL: ${entry.value.url}, has favicon: ${entry.value.favicon != null}")
+                }
+                
+                // Try to find the web page with the current URL
+                // First try with the bubble ID prefix (composite key)
+                val compositeKey = "${bubbleId}_${url}"
+                var favicon = webPages[compositeKey]?.favicon
+                Logger.d(TAG, "Looking for favicon with composite key: $compositeKey, found: ${favicon != null}")
+                
+                // If not found, try with just the URL
+                if (favicon == null) {
+                    favicon = webPages[url]?.favicon
+                    Logger.d(TAG, "Looking for favicon with URL key: $url, found: ${favicon != null}")
+                }
+                
+                // Update the URL bar icon
+                if (favicon != null) {
+                    Logger.d(TAG, "Updating URL bar with favicon from WebViewModel for bubble: $bubbleId")
+                    // Store the favicon for future use
+                    currentFavicon = favicon
+                    uiManager.updateUrlBarIcon(favicon)
+                } else {
+                    Logger.d(TAG, "No favicon found, using default globe icon for bubble: $bubbleId")
+                    // Use default globe icon if no favicon available
+                    uiManager.updateUrlBarIcon(null)
+                }
+            } ?: run {
+                Logger.d(TAG, "No WebViewModel available, using default globe icon for bubble: $bubbleId")
+                // Use default globe icon if webViewModel is not available
+                uiManager.updateUrlBarIcon(null)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error updating URL bar favicon for bubble: $bubbleId", e)
+            // Use default globe icon if there's an error
             uiManager.updateUrlBarIcon(null)
         }
-        */
-        
-        // Use default globe icon for now
-        uiManager.updateUrlBarIcon(null)
     }
 
     /**
@@ -1496,10 +1540,23 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun onWebViewFaviconReceived(favicon: Bitmap) {
+        Logger.d(TAG, "Received favicon for bubble: $bubbleId, isBubbleExpanded: ${stateManager.isBubbleExpanded}")
+        
+        // Store the current favicon
+        currentFavicon = favicon
+        
         // Update local favicon
         updateFavicon(favicon)
+        
+        // Update URL bar favicon if bubble is expanded
+        if (stateManager.isBubbleExpanded) {
+            Logger.d(TAG, "Updating URL bar favicon for bubble: $bubbleId")
+            uiManager.updateUrlBarIcon(favicon)
+        } else {
+            Logger.d(TAG, "Bubble is not expanded, not updating URL bar favicon for bubble: $bubbleId")
+        }
 
-        Logger.d(TAG, "Received favicon for bubble: $bubbleId")
+        Logger.d(TAG, "Finished processing favicon for bubble: $bubbleId")
     }
 
     override fun onWebViewTitleReceived(title: String) {

@@ -266,10 +266,13 @@ class BubbleUIManager(
      * Update the URL bar icon
      */
     fun updateUrlBarIcon(bitmap: Bitmap?) {
+        Logger.d(TAG, "Updating URL bar icon, bitmap is null: ${bitmap == null}")
         if (bitmap != null) {
             urlBarIcon.setImageBitmap(bitmap)
+            Logger.d(TAG, "Set custom favicon in URL bar, dimensions: ${bitmap.width}x${bitmap.height}")
         } else {
             urlBarIcon.setImageResource(R.drawable.ic_globe)
+            Logger.d(TAG, "Set default globe icon in URL bar")
         }
     }
     
