@@ -38,10 +38,15 @@ class BubbleSettingsPanel(
     // Settings panel state
     private var isVisible = false
     private var isReaderMode = false
+    private var webView: WebView? = null
 
     // Settings controls - will be initialized when panel is set up
     private var adBlockSwitch: SwitchMaterial? = null
     private var javascriptSwitch: SwitchMaterial? = null
+    private var btnNavBack: MaterialButton? = null
+    private var btnNavForward: MaterialButton? = null
+    private var btnSaveArticleIcon: MaterialButton? = null
+    private var btnOpenFullIcon: MaterialButton? = null
 
     // UI sections
     private var browserSettingsSection: View? = null
@@ -68,6 +73,7 @@ class BubbleSettingsPanel(
         fun onReaderBackgroundChanged(background: String)
         fun onReaderTextAlignChanged(alignment: String)
         fun onSaveOfflineRequested()
+        fun onOpenInFullRequested()
     }
 
     private var listener: SettingsPanelListener? = null
@@ -86,6 +92,7 @@ class BubbleSettingsPanel(
      * @param webView The WebView instance to apply settings changes to
      */
     fun initialize(settingsPanel: View, webView: WebView) {
+        this.webView = webView
         setupSettingsControls(settingsPanel, webView)
         setupReaderModeControls(settingsPanel)
         setupTouchHandling(settingsPanel)
@@ -101,6 +108,12 @@ class BubbleSettingsPanel(
         // Get UI sections
         browserSettingsSection = settingsPanel.findViewById(R.id.browser_settings_section)
         readerSettingsSection = settingsPanel.findViewById(R.id.reader_settings_section)
+
+        // Get new controls
+        btnNavBack = settingsPanel.findViewById(R.id.btn_nav_back)
+        btnNavForward = settingsPanel.findViewById(R.id.btn_nav_forward)
+        btnSaveArticleIcon = settingsPanel.findViewById(R.id.btn_save_article_icon)
+        btnOpenFullIcon = settingsPanel.findViewById(R.id.btn_open_full_icon)
 
         // Set up ad blocking switch
         adBlockSwitch = settingsPanel.findViewById(R.id.ad_block_switch)
@@ -131,6 +144,38 @@ class BubbleSettingsPanel(
                     webView.reload()
                 }
             }
+        }
+
+        // Set up navigation buttons
+        btnNavBack?.setOnClickListener {
+            webView.goBack()
+            // Update button states after navigation
+            updateNavigationButtons(webView)
+        }
+
+        btnNavForward?.setOnClickListener {
+            webView.goForward()
+            // Update button states after navigation
+            updateNavigationButtons(webView)
+        }
+
+        // Set up save article icon
+        btnSaveArticleIcon?.setOnClickListener {
+            listener?.onSaveOfflineRequested()
+            // Hide the settings panel after the action
+            settingsPanel.post {
+                hide(settingsPanel)
+            }
+        }
+
+        // Set up open full icon
+        btnOpenFullIcon?.setOnClickListener {
+            // Hide the settings panel first
+            hide(settingsPanel)
+            // Notify the listener to open in full after a short delay to allow animation to complete
+            settingsPanel.postDelayed({
+                listener?.onOpenInFullRequested()
+            }, 300)
         }
     }
 
@@ -360,6 +405,7 @@ class BubbleSettingsPanel(
     fun refreshSettingsValues() {
         updateSettingsValues()
         updateReaderModeValues()
+        webView?.let { updateNavigationButtons(it) }
     }
 
     /**
@@ -471,6 +517,23 @@ class BubbleSettingsPanel(
                 context,
                 if (currentBg == SettingsService.READER_BG_DARK) R.color.primary else android.R.color.darker_gray
             )
+        }
+    }
+
+    /**
+     * Update navigation button states based on WebView capabilities
+     */
+    private fun updateNavigationButtons(webView: WebView) {
+        btnNavBack?.let { button ->
+            val canGoBack = webView.canGoBack()
+            button.isEnabled = canGoBack
+            button.alpha = if (canGoBack) 1.0f else 0.5f
+        }
+
+        btnNavForward?.let { button ->
+            val canGoForward = webView.canGoForward()
+            button.isEnabled = canGoForward
+            button.alpha = if (canGoForward) 1.0f else 0.5f
         }
     }
 

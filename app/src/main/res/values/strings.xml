@@ -179,6 +179,9 @@
     <string name="history_title">History</string>
     <string name="saved_articles">Saved Articles</string>
 
+    <string name="back">Back</string>
+    <string name="forward">Forward</string>
+
     <!-- Service -->
     <string name="bubble_service_channel_name">Browser Service</string>
     <string name="bubble_service_channel_description">Keeps the quick browser running in background</string>

@@ -543,6 +543,12 @@ class BubbleView @JvmOverloads constructor(
                 Logger.d(TAG, "Save for offline reading requested for bubble $bubbleId")
                 saveArticleForOfflineReading()
             }
+            
+            override fun onOpenInFullRequested() {
+                // Handle open in full
+                Logger.d(TAG, "Open in full requested for bubble $bubbleId")
+                openFullWebView()
+            }
         })
     }
 
@@ -1124,7 +1130,7 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun getSettingsButton(): MaterialButton {
-        return uiManager.getBtnUrlBarSettings()
+        return uiManager.getBtnToolbarSettings()
     }
 
     override fun getToolbarContainer(): View {
@@ -1614,7 +1620,7 @@ class BubbleView @JvmOverloads constructor(
             settingsPanelManager.setReaderMode(readModeManager.isReadMode())
             // Refresh all settings values including URL bar setting
             settingsPanelManager.refreshSettingsValues()
-            settingsPanelManager.show(settingsPanel, uiManager.getBtnUrlBarSettings())
+            settingsPanelManager.show(settingsPanel, uiManager.getBtnToolbarSettings())
         }
     }
 

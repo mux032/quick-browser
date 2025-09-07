@@ -523,35 +523,29 @@ class BubbleAnimator() {
     // ======================================
     
     /**
-     * Animate settings panel appearing with dropdown effect
+     * Animate settings panel showing with dropdown effect from toolbar
      * 
      * @param panel The settings panel view to animate
-     * @param fromButton The button that triggered the panel (for positioning)
+     * @param fromButton Optional button that triggered the panel (for positioning)
      * @param onEnd Callback to invoke when animation completes
      */
     fun animateSettingsPanelShow(panel: View, fromButton: View? = null, onEnd: (() -> Unit)? = null) {
         // Set initial state
         panel.alpha = 0f
-        panel.scaleX = 0.3f
-        panel.scaleY = 0.3f
-        panel.translationY = -50f
+        panel.scaleX = 0.8f
+        panel.scaleY = 0.8f
+        panel.translationY = 30f // Start slightly below final position
         panel.visibility = View.VISIBLE
         
-        // Set pivot point based on button position if provided
-        fromButton?.let { button ->
-            panel.pivotX = button.x + (button.width / 2f)
-            panel.pivotY = 0f
-        } ?: run {
-            // Default to top-right corner
-            panel.pivotX = panel.width * 0.9f
-            panel.pivotY = 0f
-        }
+        // Set pivot point to bottom center for upward expansion
+        panel.pivotX = panel.width / 2f
+        panel.pivotY = panel.height.toFloat()
         
         val animSet = AnimatorSet()
         val alphaAnim = ObjectAnimator.ofFloat(panel, "alpha", 0f, 1f)
-        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 0.3f, 1f)
-        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 0.3f, 1f)
-        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", -50f, 0f)
+        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 0.8f, 1f)
+        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 0.8f, 1f)
+        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", 30f, 0f)
         
         animSet.playTogether(alphaAnim, scaleXAnim, scaleYAnim, translateYAnim)
         animSet.duration = ANIMATION_DURATION_MEDIUM
@@ -573,15 +567,15 @@ class BubbleAnimator() {
      * @param onEnd Callback to invoke when animation completes
      */
     fun animateSettingsPanelHide(panel: View, onEnd: (() -> Unit)? = null) {
-        // Set pivot to maintain dropdown effect
-        panel.pivotX = panel.width * 0.9f
-        panel.pivotY = 0f
+        // Set pivot to bottom center for upward collapse
+        panel.pivotX = panel.width / 2f
+        panel.pivotY = panel.height.toFloat()
         
         val animSet = AnimatorSet()
         val alphaAnim = ObjectAnimator.ofFloat(panel, "alpha", 1f, 0f)
-        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 1f, 0.3f)
-        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 1f, 0.3f)
-        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", 0f, -30f)
+        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 1f, 0.8f)
+        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 1f, 0.8f)
+        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", 0f, 30f)
         
         animSet.playTogether(alphaAnim, scaleXAnim, scaleYAnim, translateYAnim)
         animSet.duration = ANIMATION_DURATION_SHORT
