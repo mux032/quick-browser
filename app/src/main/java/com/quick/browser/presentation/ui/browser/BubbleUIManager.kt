@@ -2,10 +2,7 @@ package com.quick.browser.presentation.ui.browser
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.view.ContextThemeWrapper
-import android.view.LayoutInflater
-import android.view.View
-import android.view.WindowManager
+import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -16,6 +13,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.quick.browser.R
 import com.quick.browser.utils.Logger
+import kotlin.math.hypot
 
 /**
  * BubbleUIManager handles all UI components and interactions for a single BubbleView.
@@ -49,8 +47,7 @@ class BubbleUIManager(
     private lateinit var urlBarContainer: MaterialCardView
     private lateinit var urlBarIcon: ImageView
     private lateinit var urlBarText: EditText
-    private lateinit var btnUrlBarShare: MaterialButton
-    private lateinit var btnUrlBarSettings: MaterialButton
+    private lateinit var btnUrlBarMinimize: MaterialButton
     private lateinit var expandedContainer: View
     private lateinit var contentContainer: FrameLayout
     private lateinit var toolbarContainer: View
@@ -63,10 +60,10 @@ class BubbleUIManager(
     
     // Action buttons
     private lateinit var btnClose: MaterialButton
-    private lateinit var btnOpenFull: MaterialButton
     private lateinit var btnReadMode: MaterialButton
     private lateinit var btnSummarize: MaterialButton
-    private lateinit var btnSaveArticle: MaterialButton
+    private lateinit var btnMinimize: MaterialButton
+    private lateinit var btnToolbarSettings: MaterialButton
     
     // Utility
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -80,7 +77,7 @@ class BubbleUIManager(
         fun onToggleSummaryMode()
         fun onSaveArticle()
         fun onSettingsButtonClicked()
-        fun onShareButtonClicked()
+        fun onMinimizeBubble()
         fun onUrlSubmitted(url: String)
         fun onUrlBarFocusChanged(hasFocus: Boolean)
         fun onUrlBarClicked()
@@ -121,8 +118,7 @@ class BubbleUIManager(
             urlBarContainer = bubbleView.findViewById(R.id.url_bar_container) ?: throw IllegalStateException("url_bar_container not found")
             urlBarIcon = bubbleView.findViewById(R.id.url_bar_icon) ?: throw IllegalStateException("url_bar_icon not found")
             urlBarText = bubbleView.findViewById(R.id.url_bar_text) ?: throw IllegalStateException("url_bar_text not found")
-            btnUrlBarShare = bubbleView.findViewById(R.id.btn_url_bar_share) ?: throw IllegalStateException("btn_url_bar_share not found")
-            btnUrlBarSettings = bubbleView.findViewById(R.id.btn_url_bar_settings) ?: throw IllegalStateException("btn_url_bar_settings not found")
+            btnUrlBarMinimize = bubbleView.findViewById(R.id.btn_url_bar_minimize) ?: throw IllegalStateException("btn_url_bar_minimize not found")
             expandedContainer = bubbleView.findViewById(R.id.expanded_container) ?: throw IllegalStateException("expanded_container not found")
             contentContainer = bubbleView.findViewById(R.id.content_container) ?: throw IllegalStateException("content_container not found")
             toolbarContainer = bubbleView.findViewById(R.id.toolbar_container) ?: throw IllegalStateException("toolbar_container not found")
@@ -135,10 +131,10 @@ class BubbleUIManager(
             
             // Initialize action buttons
             btnClose = bubbleView.findViewById(R.id.btn_close) ?: throw IllegalStateException("btn_close not found")
-            btnOpenFull = bubbleView.findViewById(R.id.btn_open_full) ?: throw IllegalStateException("btn_open_full not found")
             btnReadMode = bubbleView.findViewById(R.id.btn_read_mode) ?: throw IllegalStateException("btn_read_mode not found")
             btnSummarize = bubbleView.findViewById(R.id.btn_summarize) ?: throw IllegalStateException("btn_summarize not found")
-            btnSaveArticle = bubbleView.findViewById(R.id.btn_save_article) ?: throw IllegalStateException("btn_save_article not found")
+            btnMinimize = bubbleView.findViewById(R.id.btn_minimize) ?: throw IllegalStateException("btn_minimize not found")
+            btnToolbarSettings = bubbleView.findViewById(R.id.btn_toolbar_settings) ?: throw IllegalStateException("btn_toolbar_settings not found")
             
             Logger.d(TAG, "UI components initialized successfully for bubble: $bubbleId")
             
@@ -164,10 +160,6 @@ class BubbleUIManager(
             uiListener?.onCloseBubble()
         }
         
-        btnOpenFull.setOnClickListener { 
-            uiListener?.onOpenFullWebView()
-        }
-        
         btnReadMode.setOnClickListener { 
             uiListener?.onToggleReadMode()
         }
@@ -176,17 +168,69 @@ class BubbleUIManager(
             uiListener?.onToggleSummaryMode()
         }
         
-        btnSaveArticle.setOnClickListener {
-            uiListener?.onSaveArticle()
-        }
-
-        btnUrlBarShare.setOnClickListener { 
-            uiListener?.onShareButtonClicked()
+        // Toolbar minimize button listener
+        btnMinimize.setOnClickListener { 
+            uiListener?.onMinimizeBubble()
         }
         
-        // URL bar settings button listener
-        btnUrlBarSettings.setOnClickListener { 
+        // URL bar minimize button listener
+        btnUrlBarMinimize.setOnClickListener { 
+            uiListener?.onMinimizeBubble()
+        }
+        
+        // Toolbar settings button listener
+        btnToolbarSettings.setOnClickListener { 
             uiListener?.onSettingsButtonClicked()
+        }
+        
+        // URL bar icon touch listener for drag functionality
+        var isDragging = false
+        var startX = 0f
+        var startY = 0f
+        var lastX = 0f
+        var lastY = 0f
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+        
+        urlBarIcon.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = event.rawX
+                    startY = event.rawY
+                    lastX = startX
+                    lastY = startY
+                    isDragging = false
+                    true // Consume the event
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaX = event.rawX - startX
+                    val deltaY = event.rawY - startY
+                    
+                    // Check if movement exceeds touch slop to start dragging
+                    if (!isDragging && hypot(deltaX, deltaY) > touchSlop) {
+                        isDragging = true
+                    }
+                    
+                    // If dragging, move the bubble
+                    if (isDragging) {
+                        val moveX = event.rawX - lastX
+                        val moveY = event.rawY - lastY
+                        // Notify the bubble view to move the bubble
+                        bubbleView.handleFaviconDrag(moveX, moveY)
+                        lastX = event.rawX
+                        lastY = event.rawY
+                    }
+                    true // Consume the event
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // If it was just a click (not a drag), minimize the bubble
+                    if (!isDragging) {
+                        uiListener?.onMinimizeBubble()
+                    }
+                    isDragging = false
+                    true // Consume the event
+                }
+                else -> false
+            }
         }
         
         Logger.d(TAG, "Click listeners set up successfully for bubble: $bubbleId")
@@ -349,6 +393,20 @@ class BubbleUIManager(
     }
     
     /**
+     * Hide the resize bar
+     */
+    fun hideResizeBar() {
+        resizeBar.visibility = View.GONE
+    }
+    
+    /**
+     * Show the resize bar
+     */
+    fun showResizeBar() {
+        resizeBar.visibility = View.VISIBLE
+    }
+    
+    /**
      * Show toolbar
      */
     fun showToolbar() {
@@ -417,8 +475,7 @@ class BubbleUIManager(
     fun getUrlBarContainer(): View = urlBarContainer
     fun getUrlBarIcon(): ImageView = urlBarIcon
     fun getUrlBarText(): EditText = urlBarText
-    fun getBtnUrlBarShare(): MaterialButton = btnUrlBarShare
-    fun getBtnUrlBarSettings(): MaterialButton = btnUrlBarSettings
+    fun getBtnUrlBarMinimize(): MaterialButton = btnUrlBarMinimize
     fun getExpandedContainer(): View = expandedContainer
     fun getContentContainer(): FrameLayout = contentContainer
     fun getToolbarContainer(): View = toolbarContainer
@@ -427,7 +484,8 @@ class BubbleUIManager(
     fun getResizeHandleBottomRight(): ImageView = resizeHandleBottomRight
     fun getResizeBar(): View = resizeBar
     
-    fun getBtnSaveArticle(): MaterialButton = btnSaveArticle
+    fun getBtnMinimize(): MaterialButton = btnMinimize
+    fun getBtnToolbarSettings(): MaterialButton = btnToolbarSettings
     
     /**
      * Clean up resources and references

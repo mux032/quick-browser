@@ -29,15 +29,16 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.WebView
 import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.*
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
-import com.quick.browser.presentation.ui.components.HorizontalSwipeRefreshLayout
 import com.quick.browser.service.*
 import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
@@ -119,9 +120,10 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var settingsPanelManager: BubbleSettingsPanel
 
     // Add SwipeRefreshLayout property
-    private lateinit var swipeRefreshLayout: HorizontalSwipeRefreshLayout
-    private lateinit var backArrow: ImageView
-    private lateinit var forwardArrow: ImageView
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    
+    // WindowManager for handling window layout updates
+    private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
     companion object {
         private const val TAG = "BubbleView"
@@ -174,36 +176,14 @@ class BubbleView @JvmOverloads constructor(
 
             // WebView container (managed separately due to WebViewManager requirements)
             webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
+            swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout) ?: throw IllegalStateException("SwipeRefreshLayout not found in layout")
 
-            // Initialize SwipeRefreshLayout and wrap the WebView
-            swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout) as? HorizontalSwipeRefreshLayout
-                ?: HorizontalSwipeRefreshLayout(context).also { srl ->
-                    srl.id = R.id.swipe_refresh_layout
-                    // Remove webViewContainer from its parent and add to SwipeRefreshLayout
-                    val parent = webViewContainer.parent as? ViewGroup
-                    parent?.removeView(webViewContainer)
-                    srl.addView(webViewContainer)
-                    parent?.addView(srl)
-                }
-
-            // Set up pull-to-refresh listener
+            // Set up SwipeRefreshLayout
             swipeRefreshLayout.setOnRefreshListener {
-                // Refresh the current page
                 webViewManager.reload()
             }
-            swipeRefreshLayout.webView = webViewContainer
 
             // Initialize and set arrow views
-            backArrow = findViewById(R.id.back_arrow)
-            forwardArrow = findViewById(R.id.forward_arrow)
-            swipeRefreshLayout.setArrowImageViews(backArrow, forwardArrow)
-
-            // Optionally, set refresh indicator colors
-            swipeRefreshLayout.setColorSchemeResources(
-                R.color.colorPrimary,
-                R.color.colorAccent,
-                R.color.secondaryColor
-            )
 
             // Ensure summary views and FAB are initialized after layout is ready
             initializeSummaryViews()
@@ -317,9 +297,22 @@ class BubbleView @JvmOverloads constructor(
      * Load a new URL in the WebView
      */
     private fun loadNewUrl(inputUrl: String) {
-        val formattedUrl = formatUrl(inputUrl)
+        var formattedUrl = inputUrl
+
+        // Check if it looks like a valid URL or domain
+        val isValidUrl = formattedUrl.startsWith("http://") || formattedUrl.startsWith("https://") || 
+                         (formattedUrl.contains(".") && !formattedUrl.contains(" ") && !formattedUrl.contains("\\"))
+
+        if (!isValidUrl) {
+            // Treat as search query
+            formattedUrl = "https://www.google.com/search?q=${android.net.Uri.encode(formattedUrl)}"
+        } else if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+            // Add https:// if no protocol is specified but it looks like a domain
+            formattedUrl = "https://$formattedUrl"
+        }
+
         url = formattedUrl
-        webViewContainer.loadUrl(formattedUrl)
+        webViewManager.loadUrl(formattedUrl)
         updateUrlBar()
 
         // Update read mode manager with new URL
@@ -402,8 +395,8 @@ class BubbleView @JvmOverloads constructor(
      * Set up the content container with appropriate visibility
      */
     private fun setupContent() {
-        // Show WebView for all bubbles
-        webViewContainer.visibility = VISIBLE
+        // Show SwipeRefreshLayout for all bubbles
+        swipeRefreshLayout.visibility = VISIBLE
 
         // Set up WebView using the WebViewManager
         setupWebViewManager()
@@ -427,6 +420,9 @@ class BubbleView @JvmOverloads constructor(
             
             // Connect WebView favicon updates to UI favicon updates
             webViewManager.setOnFaviconReceivedCallback { favicon -> onWebViewFaviconReceived(favicon) }
+            
+            // Connect WebView page finished to stop swipe refresh
+            webViewManager.setOnPageFinishedCallback { onWebViewPageFinished() }
 
             // Initialize settings panel manager with WebView
             setupSettingsPanelManager()
@@ -542,6 +538,12 @@ class BubbleView @JvmOverloads constructor(
                 // Handle save for offline reading
                 Logger.d(TAG, "Save for offline reading requested for bubble $bubbleId")
                 saveArticleForOfflineReading()
+            }
+            
+            override fun onShareRequested() {
+                // Handle share functionality
+                Logger.d(TAG, "Share requested for bubble $bubbleId")
+                shareCurrentUrl()
             }
         })
     }
@@ -691,6 +693,36 @@ class BubbleView @JvmOverloads constructor(
     }
 
     /**
+     * Share the current URL
+     */
+    private fun shareCurrentUrl() {
+        try {
+            val currentUrl = url
+            if (currentUrl.isBlank()) {
+                Toast.makeText(context, "No URL to share", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Collapse the bubble before showing share UI
+            setExpanded(false)
+
+            // Post the share intent to ensure the bubble is collapsed first
+            post {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, currentUrl)
+                }
+                val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share_via))
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error sharing URL", e)
+            Toast.makeText(context, context.getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
      * Toggle bubble expanded state with animation
      *
      * When expanded, the bubble shows a WebView with the loaded URL.
@@ -729,6 +761,10 @@ class BubbleView @JvmOverloads constructor(
 
         // Check if URL bar should be visible based on settings
         val showUrlBar = settingsService.isUrlBarVisible()
+        
+        // Show or hide the minimize button in the toolbar based on URL bar visibility
+        // When URL bar is hidden, show the minimize button in the toolbar
+        uiManager.getBtnMinimize().visibility = if (showUrlBar) View.GONE else View.VISIBLE
 
         // Start the expand animation with proper sequencing
         bubbleAnimator.animateExpandFromBubble(
@@ -737,8 +773,9 @@ class BubbleView @JvmOverloads constructor(
             expandedContainer = uiManager.getExpandedContainer(),
             showUrlBar = showUrlBar,
             onEnd = {
-                // Show resize handles container but keep handles invisible until touched
+                // Show resize handles container and resize bar
                 uiManager.getResizeHandlesContainer().visibility = VISIBLE
+                uiManager.showResizeBar()
                 uiManager.hideResizeHandles()
 
                 // Make WebView visible and ensure content is loaded
@@ -830,11 +867,11 @@ class BubbleView @JvmOverloads constructor(
 
         uiManager.getExpandedContainer().layoutParams = layoutParams
 
-        // Update WebView dimensions to match the container
-        val webViewParams = webViewContainer.layoutParams
-        webViewParams.width = layoutParams.width
-        webViewParams.height = layoutParams.height
-        webViewContainer.layoutParams = webViewParams
+        // Update SwipeRefreshLayout dimensions to match the container
+        val swipeLayoutParams = swipeRefreshLayout.layoutParams
+        swipeLayoutParams.width = layoutParams.width
+        swipeLayoutParams.height = layoutParams.height
+        swipeRefreshLayout.layoutParams = swipeLayoutParams
 
         // Update content container dimensions to match
         val contentParams = uiManager.getContentContainer().layoutParams
@@ -859,7 +896,7 @@ class BubbleView @JvmOverloads constructor(
 
         // Force layout update
         uiManager.getExpandedContainer().requestLayout()
-        webViewContainer.requestLayout()
+        swipeRefreshLayout.requestLayout()
         uiManager.getContentContainer().requestLayout()
     }
 
@@ -870,9 +907,10 @@ class BubbleView @JvmOverloads constructor(
         try {
             Logger.d(TAG, "Making WebView visible for bubble $bubbleId with URL: $url")
 
-            // Make WebView fully visible with animation
+            // Make SwipeRefreshLayout and WebView visible
+            swipeRefreshLayout.visibility = VISIBLE
             webViewContainer.visibility = VISIBLE
-            webViewContainer.animate()
+            swipeRefreshLayout.animate()
                 .alpha(1f)
                 .setDuration(200)
                 .start()
@@ -903,6 +941,7 @@ class BubbleView @JvmOverloads constructor(
             }
 
             // Force layout update to ensure content is visible
+            swipeRefreshLayout.requestLayout()
             webViewContainer.requestLayout()
 
             Logger.d(TAG, "WebView is now visible for bubble $bubbleId")
@@ -911,9 +950,7 @@ class BubbleView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Collapse the bubble to show only the icon
-     */
+    /**\n     * Collapse the bubble to show only the icon\n     */
     private fun collapseBubble() {
         // Disable input focus to prevent accidental keyboard
         uiManager.disableWindowFocus()
@@ -930,15 +967,16 @@ class BubbleView @JvmOverloads constructor(
         // Exit read mode if active
         readModeManager.forceExitReadMode()
 
-        // Hide resize handles immediately
+        // Hide resize handles and resize bar immediately
         hideResizeHandles()
+        uiManager.hideResizeBar()
 
         // Keep WebView loaded but make it invisible immediately to prevent flash
-        webViewContainer.visibility = INVISIBLE
-        webViewContainer.alpha = 0f
+        swipeRefreshLayout.visibility = INVISIBLE
+        swipeRefreshLayout.alpha = 0f
 
         // Start the collapse animation with proper sequencing
-        bubbleAnimator.animateCollapseTobubble(
+        bubbleAnimator.animateCollapseToBubble(
             expandedContainer = uiManager.getExpandedContainer(),
             urlBarContainer = uiManager.getUrlBarContainer(),
             bubbleContainer = uiManager.getBubbleContainer(),
@@ -956,9 +994,10 @@ class BubbleView @JvmOverloads constructor(
      * Directly animates the bubble disappearing, regardless of its current state.
      */
     private fun closeBubbleWithAnimation() {
-        // Hide resize handles immediately to prevent them from showing during animation
+        // Hide resize handles and resize bar immediately to prevent them from showing during animation
         if (stateManager.isBubbleExpanded) {
             hideResizeHandles()
+            uiManager.hideResizeBar()
         }
 
         // Hide settings panel if visible
@@ -972,8 +1011,8 @@ class BubbleView @JvmOverloads constructor(
 
         // Hide WebView immediately to prevent flash during animation
         if (stateManager.isBubbleExpanded) {
-            webViewContainer.visibility = INVISIBLE
-            webViewContainer.alpha = 0f
+            swipeRefreshLayout.visibility = INVISIBLE
+            swipeRefreshLayout.alpha = 0f
         }
 
         // Animate the entire bubble view disappearing directly
@@ -1048,6 +1087,27 @@ class BubbleView @JvmOverloads constructor(
     }
 
     /**
+     * Handle favicon drag to move the bubble window
+     */
+    fun handleFaviconDrag(deltaX: Float, deltaY: Float) {
+        try {
+            val params = layoutParams as? WindowManager.LayoutParams
+            if (params != null) {
+                // Calculate new position
+                val newX = params.x + deltaX.toInt()
+                val newY = params.y + deltaY.toInt()
+                
+                // Update position
+                params.x = newX
+                params.y = newY
+                windowManager.updateViewLayout(this, params)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error handling favicon drag", e)
+        }
+    }
+
+    /**
      * Handle touch events for dragging the bubble and handling click events.
      *
      * This method delegates to BubbleTouchHandler for all touch handling logic.
@@ -1083,8 +1143,17 @@ class BubbleView @JvmOverloads constructor(
     // ======================================
 
     override fun onBubbleDragged(x: Int, y: Int) {
-        // Handle bubble drag position updates if needed
-        // This is called when the bubble position changes during drag
+        // Handle bubble drag position updates by updating the window layout
+        try {
+            val params = layoutParams as? WindowManager.LayoutParams
+            if (params != null) {
+                params.x = x
+                params.y = y
+                windowManager.updateViewLayout(this, params)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error dragging bubble", e)
+        }
     }
 
     override fun onBubbleClicked() {
@@ -1121,7 +1190,7 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun getSettingsButton(): MaterialButton {
-        return uiManager.getBtnUrlBarSettings()
+        return uiManager.getBtnToolbarSettings()
     }
 
     override fun getToolbarContainer(): View {
@@ -1139,12 +1208,16 @@ class BubbleView @JvmOverloads constructor(
         return uiManager.getResizeHandlesContainer()
     }
 
+    override fun getResizeBar(): View {
+        return uiManager.getResizeBar()
+    }
+
     override fun getContentContainer(): FrameLayout {
         return uiManager.getContentContainer()
     }
 
     override fun getWebViewContainer(): View {
-        return webViewContainer
+        return swipeRefreshLayout
     }
 
     override fun updateDimensions(width: Int, height: Int) {
@@ -1305,8 +1378,8 @@ class BubbleView @JvmOverloads constructor(
         uiManager.updateProgress(progress)
 
         // Hide the refresh indicator when loading is complete
-        if (::swipeRefreshLayout.isInitialized) {
-            swipeRefreshLayout.isRefreshing = progress in 1..99
+        if (progress in 1..99) {
+            // TODO: Implement refresh indicator if needed
         }
 
         when {
@@ -1366,8 +1439,9 @@ class BubbleView @JvmOverloads constructor(
         stateManager.setActive(false)
         uiManager.getExpandedContainer().visibility = GONE
 
-        // Hide resize handles when expanded container is hidden
+        // Hide resize handles and resize bar when expanded container is hidden
         uiManager.getResizeHandlesContainer().visibility = GONE
+        uiManager.hideResizeBar()
     }
 
     /**
@@ -1383,14 +1457,14 @@ class BubbleView @JvmOverloads constructor(
                 Logger.d(TAG, "Authentication URL detected in loadUrlInWebView, opening in Custom Tab: $formattedUrl")
                 AuthenticationService.openInCustomTab(context, formattedUrl, bubbleId)
                 // Load a blank page in the WebView to avoid showing the authentication page
-                webViewContainer.loadUrl("about:blank")
+                webViewManager.loadUrl("about:blank")
             } else {
-                // Load the URL in the WebView
-                webViewContainer.loadUrl(formattedUrl)
+                // Load the URL in the WebView using WebViewManager
+                webViewManager.loadUrl(formattedUrl)
             }
         } else {
             Logger.d(TAG, "Invalid URL format in showWebView: $url")
-            webViewContainer.loadUrl("about:blank")
+            webViewManager.loadUrl("about:blank")
         }
     }
 
@@ -1568,6 +1642,13 @@ class BubbleView @JvmOverloads constructor(
     override fun onWebViewProgressChanged(progress: Int) {
         updateProgress(progress)
     }
+    
+    override fun onWebViewPageFinished() {
+        // Stop the swipe refresh layout when page finishes loading
+        if (::swipeRefreshLayout.isInitialized) {
+            swipeRefreshLayout.isRefreshing = false
+        }
+    }
 
     // ================== UIInteractionListener Implementation ==================
 
@@ -1606,8 +1687,13 @@ class BubbleView @JvmOverloads constructor(
             settingsPanelManager.setReaderMode(readModeManager.isReadMode())
             // Refresh all settings values including URL bar setting
             settingsPanelManager.refreshSettingsValues()
-            settingsPanelManager.show(settingsPanel, uiManager.getBtnUrlBarSettings())
+            settingsPanelManager.show(settingsPanel, uiManager.getBtnToolbarSettings())
         }
+    }
+
+    override fun onMinimizeBubble() {
+        // Collapse the bubble to its minimized state
+        setExpanded(false)
     }
 
     override fun onUrlSubmitted(url: String) {
@@ -1629,23 +1715,5 @@ class BubbleView @JvmOverloads constructor(
     
     override fun onSaveArticle() {
         saveArticleForOfflineReading()
-    }
-
-    override fun onShareButtonClicked() {
-        try {
-            // Collapse bubble view before sharing
-            setExpanded(false)
-
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, url)
-            }
-            val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share_via))
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(chooser)
-        } catch (e: Exception) {
-            Logger.e(TAG, "Error sharing URL", e)
-            Toast.makeText(context, context.getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
-        }
     }
 }

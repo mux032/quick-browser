@@ -63,6 +63,7 @@ class BubbleWebViewManager(
     private var onFaviconReceivedCallback: ((Bitmap) -> Unit)? = null
     private var onTitleReceivedCallback: ((String) -> Unit)? = null
     private var onProgressChangedCallback: ((Int) -> Unit)? = null
+    private var onPageFinishedCallback: (() -> Unit)? = null
 
     /**
      * Initialize the WebView manager with required components
@@ -238,6 +239,9 @@ class BubbleWebViewManager(
             },
             onScrollUp = {
                 onScrollUpCallback?.invoke()
+            },
+            onPageFinishedCallback = {
+                onPageFinishedCallback?.invoke()
             },
             settingsService = settingsService,
             adBlockingService = adBlockingService
@@ -595,6 +599,10 @@ class BubbleWebViewManager(
         onProgressChangedCallback = callback
     }
 
+    fun setOnPageFinishedCallback(callback: () -> Unit) {
+        onPageFinishedCallback = callback
+    }
+
     /**
      * Clean up resources
      */
@@ -620,5 +628,6 @@ class BubbleWebViewManager(
         onFaviconReceivedCallback = null
         onTitleReceivedCallback = null
         onProgressChangedCallback = null
+        onPageFinishedCallback = null
     }
 }

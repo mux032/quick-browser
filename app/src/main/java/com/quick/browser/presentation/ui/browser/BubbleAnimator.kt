@@ -63,7 +63,7 @@ class BubbleAnimator() {
      * Animate collapsing expanded container to bubble with smooth transition
      * This creates a gradual transition similar to expansion but in reverse
      */
-    fun animateCollapseTobubble(
+    fun animateCollapseToBubble(
         expandedContainer: View,
         urlBarContainer: View,
         bubbleContainer: View,
@@ -79,30 +79,38 @@ class BubbleAnimator() {
                 .build()
         }
 
-        // Phase 1: Start collapsing the expanded container
+        // Phase 1: Start collapsing the expanded container and URL bar together
         val collapseAnimSet = AnimatorSet()
-        val alphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
-        val scaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 1f, 0.3f)
-        val scaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 1f, 0.3f)
+        val expandedAlphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
+        val expandedScaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 1f, 0.3f)
+        val expandedScaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 1f, 0.3f)
         
-        collapseAnimSet.playTogether(alphaAnim, scaleXAnim, scaleYAnim)
+        val urlBarAlphaAnim = ObjectAnimator.ofFloat(urlBarContainer, "alpha", 1f, 0f)
+        val urlBarScaleXAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleX", 1f, 0.3f)
+        val urlBarScaleYAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleY", 1f, 0.3f)
+        
+        collapseAnimSet.playTogether(
+            expandedAlphaAnim, expandedScaleXAnim, expandedScaleYAnim,
+            urlBarAlphaAnim, urlBarScaleXAnim, urlBarScaleYAnim
+        )
         collapseAnimSet.duration = ANIMATION_DURATION_MEDIUM
         collapseAnimSet.interpolator = AccelerateInterpolator()
         
         collapseAnimSet.addListener(object : AnimatorListenerAdapter() {
-            override fun onAnimationStart(animation: Animator) {
-                // Hide URL bar immediately when animation starts to prevent flash
-                urlBarContainer.visibility = View.GONE
-            }
-            
             override fun onAnimationEnd(animation: Animator) {
-                // Hide expanded container completely
+                // Hide expanded container and URL bar completely
                 expandedContainer.visibility = View.GONE
+                urlBarContainer.visibility = View.GONE
                 
                 // Reset expanded container properties for next time
                 expandedContainer.scaleX = 1f
                 expandedContainer.scaleY = 1f
                 expandedContainer.alpha = 1f
+                
+                // Reset URL bar properties for next time
+                urlBarContainer.scaleX = 1f
+                urlBarContainer.scaleY = 1f
+                urlBarContainer.alpha = 1f
                 
                 // Phase 2: Show bubble container with scale-up animation
                 bubbleContainer.alpha = 0f
@@ -515,35 +523,29 @@ class BubbleAnimator() {
     // ======================================
     
     /**
-     * Animate settings panel appearing with dropdown effect
+     * Animate settings panel showing with dropdown effect from toolbar
      * 
      * @param panel The settings panel view to animate
-     * @param fromButton The button that triggered the panel (for positioning)
+     * @param fromButton Optional button that triggered the panel (for positioning)
      * @param onEnd Callback to invoke when animation completes
      */
     fun animateSettingsPanelShow(panel: View, fromButton: View? = null, onEnd: (() -> Unit)? = null) {
         // Set initial state
         panel.alpha = 0f
-        panel.scaleX = 0.3f
-        panel.scaleY = 0.3f
-        panel.translationY = -50f
+        panel.scaleX = 0.8f
+        panel.scaleY = 0.8f
+        panel.translationY = 30f // Start slightly below final position
         panel.visibility = View.VISIBLE
         
-        // Set pivot point based on button position if provided
-        fromButton?.let { button ->
-            panel.pivotX = button.x + (button.width / 2f)
-            panel.pivotY = 0f
-        } ?: run {
-            // Default to top-right corner
-            panel.pivotX = panel.width * 0.9f
-            panel.pivotY = 0f
-        }
+        // Set pivot point to bottom center for upward expansion
+        panel.pivotX = panel.width / 2f
+        panel.pivotY = panel.height.toFloat()
         
         val animSet = AnimatorSet()
         val alphaAnim = ObjectAnimator.ofFloat(panel, "alpha", 0f, 1f)
-        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 0.3f, 1f)
-        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 0.3f, 1f)
-        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", -50f, 0f)
+        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 0.8f, 1f)
+        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 0.8f, 1f)
+        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", 30f, 0f)
         
         animSet.playTogether(alphaAnim, scaleXAnim, scaleYAnim, translateYAnim)
         animSet.duration = ANIMATION_DURATION_MEDIUM
@@ -565,15 +567,15 @@ class BubbleAnimator() {
      * @param onEnd Callback to invoke when animation completes
      */
     fun animateSettingsPanelHide(panel: View, onEnd: (() -> Unit)? = null) {
-        // Set pivot to maintain dropdown effect
-        panel.pivotX = panel.width * 0.9f
-        panel.pivotY = 0f
+        // Set pivot to bottom center for upward collapse
+        panel.pivotX = panel.width / 2f
+        panel.pivotY = panel.height.toFloat()
         
         val animSet = AnimatorSet()
         val alphaAnim = ObjectAnimator.ofFloat(panel, "alpha", 1f, 0f)
-        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 1f, 0.3f)
-        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 1f, 0.3f)
-        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", 0f, -30f)
+        val scaleXAnim = ObjectAnimator.ofFloat(panel, "scaleX", 1f, 0.8f)
+        val scaleYAnim = ObjectAnimator.ofFloat(panel, "scaleY", 1f, 0.8f)
+        val translateYAnim = ObjectAnimator.ofFloat(panel, "translationY", 0f, 30f)
         
         animSet.playTogether(alphaAnim, scaleXAnim, scaleYAnim, translateYAnim)
         animSet.duration = ANIMATION_DURATION_SHORT

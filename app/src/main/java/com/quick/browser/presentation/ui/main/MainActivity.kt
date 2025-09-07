@@ -213,15 +213,16 @@ class MainActivity : BaseActivity() {
     private fun handleUrlInput(inputUrl: String) {
         var url = inputUrl
 
-        // Add https:// if no protocol is specified
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            // Check if it looks like a domain (contains a dot and no spaces)
-            url = if (url.contains(".") && !url.contains(" ")) {
-                "https://$url"
-            } else {
-                // Treat as search query
-                "https://www.google.com/search?q=${Uri.encode(url)}"
-            }
+        // Check if it looks like a valid URL or domain
+        val isValidUrl = url.startsWith("http://") || url.startsWith("https://") || 
+                         (url.contains(".") && !url.contains(" ") && !url.contains("\\"))
+
+        if (!isValidUrl) {
+            // Treat as search query
+            url = "https://www.google.com/search?q=${Uri.encode(url)}"
+        } else if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            // Add https:// if no protocol is specified but it looks like a domain
+            url = "https://$url"
         }
 
         // Clear the address bar

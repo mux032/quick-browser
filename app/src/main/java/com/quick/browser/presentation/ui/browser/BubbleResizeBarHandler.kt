@@ -92,16 +92,7 @@ class BubbleResizeBarHandler(
         val newX = initialX - widthChange / 2
         val newY = initialY - heightChange / 2
         
-        // Check if we should auto-collapse the bubble
-        val collapseThresholdWidth = minWidth // Collapse when width is below minimum
-        val collapseThresholdHeight = minHeight // Collapse when height is below minimum
-        if (newWidth <= collapseThresholdWidth && newHeight <= collapseThresholdHeight) {
-            // Auto-collapse the bubble with bounce animation
-            bounceAndCollapse(delegate)
-            return
-        }
-        
-        // Apply the new dimensions
+        // Apply the new dimensions (removed auto-collapse feature)
         applyBubbleResize(newWidth, newHeight, newX, newY, delegate)
     }
     
@@ -169,20 +160,5 @@ class BubbleResizeBarHandler(
         expandedContainer.requestLayout()
         webViewContainer.requestLayout()
         contentContainer.requestLayout()
-    }
-    
-    /**
-     * Perform a bounce animation and then collapse the bubble
-     */
-    private fun bounceAndCollapse(delegate: BubbleTouchHandler.BubbleTouchDelegate) {
-        val expandedContainer = delegate.getExpandedContainer()
-        
-        // Hide resize handles container immediately to prevent them from showing during bounce
-        delegate.getResizeHandlesContainer().visibility = View.GONE
-        
-        // Perform bounce animation and collapse when it completes
-        bubbleView.getBubbleAnimator().animateBounce(expandedContainer, false) { // false for collapse bounce
-            delegate.onBubbleToggleExpanded()
-        }
     }
 }
