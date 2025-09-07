@@ -46,7 +46,7 @@ class BubbleSettingsPanel(
     private var btnNavBack: MaterialButton? = null
     private var btnNavForward: MaterialButton? = null
     private var btnSaveArticleIcon: MaterialButton? = null
-    private var btnOpenFullIcon: MaterialButton? = null
+    private var btnShareIcon: MaterialButton? = null
 
     // UI sections
     private var browserSettingsSection: View? = null
@@ -73,7 +73,7 @@ class BubbleSettingsPanel(
         fun onReaderBackgroundChanged(background: String)
         fun onReaderTextAlignChanged(alignment: String)
         fun onSaveOfflineRequested()
-        fun onOpenInFullRequested()
+        fun onShareRequested()
     }
 
     private var listener: SettingsPanelListener? = null
@@ -113,7 +113,7 @@ class BubbleSettingsPanel(
         btnNavBack = settingsPanel.findViewById(R.id.btn_nav_back)
         btnNavForward = settingsPanel.findViewById(R.id.btn_nav_forward)
         btnSaveArticleIcon = settingsPanel.findViewById(R.id.btn_save_article_icon)
-        btnOpenFullIcon = settingsPanel.findViewById(R.id.btn_open_full_icon)
+        btnShareIcon = settingsPanel.findViewById(R.id.btn_share_icon)
 
         // Set up ad blocking switch
         adBlockSwitch = settingsPanel.findViewById(R.id.ad_block_switch)
@@ -168,14 +168,13 @@ class BubbleSettingsPanel(
             }
         }
 
-        // Set up open full icon
-        btnOpenFullIcon?.setOnClickListener {
-            // Hide the settings panel first
-            hide(settingsPanel)
-            // Notify the listener to open in full after a short delay to allow animation to complete
-            settingsPanel.postDelayed({
-                listener?.onOpenInFullRequested()
-            }, 300)
+        // Set up share icon
+        btnShareIcon?.setOnClickListener {
+            listener?.onShareRequested()
+            // Hide the settings panel after the action
+            settingsPanel.post {
+                hide(settingsPanel)
+            }
         }
     }
 

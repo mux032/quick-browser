@@ -128,13 +128,13 @@
                             android:paddingBottom="2dp"
                             android:text="https://google.com" />
                         
-                        <!-- Share button -->
+                        <!-- Minimize button -->
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_url_bar_share"
+                            android:id="@+id/btn_url_bar_minimize"
                             style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                            android:layout_width="28dp"
+                            android:layout_width="22dp"
                             android:layout_height="match_parent"
-                            android:layout_marginStart="4dp"
+                            android:layout_marginStart="10dp"
                             android:layout_marginEnd="0dp"
                             android:minWidth="0dp"
                             android:minHeight="0dp"
@@ -142,10 +142,10 @@
                             android:clickable="true"
                             android:focusable="true"
                             android:background="?attr/selectableItemBackgroundBorderless"
-                            app:icon="@drawable/ic_share"
+                            app:icon="@drawable/ic_minimize"
                             app:iconSize="20dp"
                             app:iconTint="@color/colorPrimary"
-                            android:contentDescription="@string/share" />
+                            android:contentDescription="@string/minimize_bubble" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -172,39 +172,17 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <com.quick.browser.presentation.ui.components.HorizontalSwipeRefreshLayout
-                                android:id="@+id/swipe_refresh_layout"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent">
-
-                            <!-- WebView for regular bubbles -->
-                            <WebView
-                                android:id="@+id/web_view"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:background="@android:color/white"
-                                android:hardwareAccelerated="true"
-                                android:scrollbars="vertical"
-                                android:scrollbarStyle="insideOverlay"
-                                android:visibility="gone" />
-                        </com.quick.browser.presentation.ui.components.HorizontalSwipeRefreshLayout>
-                        <ImageView
-                            android:id="@+id/back_arrow"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@drawable/ic_chevron_left"
-                            android:layout_gravity="start|center_vertical"
-                            android:visibility="gone"
-                            android:alpha="0.0" />
-
-                        <ImageView
-                            android:id="@+id/forward_arrow"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@drawable/ic_chevron_right"
-                            android:layout_gravity="end|center_vertical"
-                            android:visibility="gone"
-                            android:alpha="0.0" />
+                        <!-- WebView for regular bubbles -->
+                        <WebView
+                            android:id="@+id/web_view"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/white"
+                            android:hardwareAccelerated="true"
+                            android:scrollbars="vertical"
+                            android:scrollbarStyle="insideOverlay"
+                            android:visibility="gone" />
+                        
                         <!-- Summary container that will be shown when summarize is clicked -->
                         <androidx.core.widget.NestedScrollView
                             android:id="@+id/summary_container"
@@ -362,7 +340,7 @@
                                     android:layout_marginTop="8dp"
                                     android:layout_marginBottom="8dp" />
                                 
-                                <!-- Quick actions (Nav/Save/Open) -->
+                                <!-- Quick actions (Nav/Save/Share) -->
                                 <LinearLayout
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
@@ -409,13 +387,13 @@
                                         app:iconTint="@color/colorPrimary" />
                                     
                                     <com.google.android.material.button.MaterialButton
-                                        android:id="@+id/btn_open_full_icon"
+                                        android:id="@+id/btn_share_icon"
                                         style="@style/Widget.MaterialComponents.Button.TextButton"
                                         android:layout_width="0dp"
                                         android:layout_height="40dp"
                                         android:layout_weight="1"
                                         android:layout_marginStart="4dp"
-                                        app:icon="@drawable/ic_open_full"
+                                        app:icon="@drawable/ic_share"
                                         app:iconGravity="textStart"
                                         app:iconSize="24dp"
                                         app:iconTint="@color/colorPrimary" />

@@ -49,7 +49,7 @@ class BubbleUIManager(
     private lateinit var urlBarContainer: MaterialCardView
     private lateinit var urlBarIcon: ImageView
     private lateinit var urlBarText: EditText
-    private lateinit var btnUrlBarShare: MaterialButton
+    private lateinit var btnUrlBarMinimize: MaterialButton
     private lateinit var expandedContainer: View
     private lateinit var contentContainer: FrameLayout
     private lateinit var toolbarContainer: View
@@ -78,7 +78,7 @@ class BubbleUIManager(
         fun onToggleSummaryMode()
         fun onSaveArticle()
         fun onSettingsButtonClicked()
-        fun onShareButtonClicked()
+        fun onMinimizeBubble()
         fun onUrlSubmitted(url: String)
         fun onUrlBarFocusChanged(hasFocus: Boolean)
         fun onUrlBarClicked()
@@ -119,7 +119,7 @@ class BubbleUIManager(
             urlBarContainer = bubbleView.findViewById(R.id.url_bar_container) ?: throw IllegalStateException("url_bar_container not found")
             urlBarIcon = bubbleView.findViewById(R.id.url_bar_icon) ?: throw IllegalStateException("url_bar_icon not found")
             urlBarText = bubbleView.findViewById(R.id.url_bar_text) ?: throw IllegalStateException("url_bar_text not found")
-            btnUrlBarShare = bubbleView.findViewById(R.id.btn_url_bar_share) ?: throw IllegalStateException("btn_url_bar_share not found")
+            btnUrlBarMinimize = bubbleView.findViewById(R.id.btn_url_bar_minimize) ?: throw IllegalStateException("btn_url_bar_minimize not found")
             expandedContainer = bubbleView.findViewById(R.id.expanded_container) ?: throw IllegalStateException("expanded_container not found")
             contentContainer = bubbleView.findViewById(R.id.content_container) ?: throw IllegalStateException("content_container not found")
             toolbarContainer = bubbleView.findViewById(R.id.toolbar_container) ?: throw IllegalStateException("toolbar_container not found")
@@ -167,9 +167,10 @@ class BubbleUIManager(
         btnSummarize.setOnClickListener { 
             uiListener?.onToggleSummaryMode()
         }
-
-        btnUrlBarShare.setOnClickListener { 
-            uiListener?.onShareButtonClicked()
+        
+        // URL bar minimize button listener
+        btnUrlBarMinimize.setOnClickListener { 
+            uiListener?.onMinimizeBubble()
         }
         
         // Toolbar settings button listener
@@ -419,7 +420,7 @@ class BubbleUIManager(
     fun getUrlBarContainer(): View = urlBarContainer
     fun getUrlBarIcon(): ImageView = urlBarIcon
     fun getUrlBarText(): EditText = urlBarText
-    fun getBtnUrlBarShare(): MaterialButton = btnUrlBarShare
+    fun getBtnUrlBarMinimize(): MaterialButton = btnUrlBarMinimize
     fun getExpandedContainer(): View = expandedContainer
     fun getContentContainer(): FrameLayout = contentContainer
     fun getToolbarContainer(): View = toolbarContainer

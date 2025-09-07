@@ -37,7 +37,6 @@ import androidx.core.net.toUri
 import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
-import com.quick.browser.presentation.ui.components.HorizontalSwipeRefreshLayout
 import com.quick.browser.service.*
 import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
@@ -119,9 +118,6 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var settingsPanelManager: BubbleSettingsPanel
 
     // Add SwipeRefreshLayout property
-    private lateinit var swipeRefreshLayout: HorizontalSwipeRefreshLayout
-    private lateinit var backArrow: ImageView
-    private lateinit var forwardArrow: ImageView
 
     companion object {
         private const val TAG = "BubbleView"
@@ -175,35 +171,7 @@ class BubbleView @JvmOverloads constructor(
             // WebView container (managed separately due to WebViewManager requirements)
             webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
 
-            // Initialize SwipeRefreshLayout and wrap the WebView
-            swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout) as? HorizontalSwipeRefreshLayout
-                ?: HorizontalSwipeRefreshLayout(context).also { srl ->
-                    srl.id = R.id.swipe_refresh_layout
-                    // Remove webViewContainer from its parent and add to SwipeRefreshLayout
-                    val parent = webViewContainer.parent as? ViewGroup
-                    parent?.removeView(webViewContainer)
-                    srl.addView(webViewContainer)
-                    parent?.addView(srl)
-                }
-
-            // Set up pull-to-refresh listener
-            swipeRefreshLayout.setOnRefreshListener {
-                // Refresh the current page
-                webViewManager.reload()
-            }
-            swipeRefreshLayout.webView = webViewContainer
-
             // Initialize and set arrow views
-            backArrow = findViewById(R.id.back_arrow)
-            forwardArrow = findViewById(R.id.forward_arrow)
-            swipeRefreshLayout.setArrowImageViews(backArrow, forwardArrow)
-
-            // Optionally, set refresh indicator colors
-            swipeRefreshLayout.setColorSchemeResources(
-                R.color.colorPrimary,
-                R.color.colorAccent,
-                R.color.secondaryColor
-            )
 
             // Ensure summary views and FAB are initialized after layout is ready
             initializeSummaryViews()
@@ -544,10 +512,10 @@ class BubbleView @JvmOverloads constructor(
                 saveArticleForOfflineReading()
             }
             
-            override fun onOpenInFullRequested() {
-                // Handle open in full
-                Logger.d(TAG, "Open in full requested for bubble $bubbleId")
-                openFullWebView()
+            override fun onShareRequested() {
+                // Handle share functionality
+                Logger.d(TAG, "Share requested for bubble $bubbleId")
+                shareCurrentUrl()
             }
         })
     }
@@ -694,6 +662,36 @@ class BubbleView @JvmOverloads constructor(
                 Logger.e(TAG, "Failed to save article for bubble $bubbleId: $error")
             }
         )
+    }
+
+    /**
+     * Share the current URL
+     */
+    private fun shareCurrentUrl() {
+        try {
+            val currentUrl = url
+            if (currentUrl.isBlank()) {
+                Toast.makeText(context, "No URL to share", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Collapse the bubble before showing share UI
+            setExpanded(false)
+
+            // Post the share intent to ensure the bubble is collapsed first
+            post {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, currentUrl)
+                }
+                val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share_via))
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error sharing URL", e)
+            Toast.makeText(context, context.getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
+        }
     }
 
     /**
@@ -1318,8 +1316,8 @@ class BubbleView @JvmOverloads constructor(
         uiManager.updateProgress(progress)
 
         // Hide the refresh indicator when loading is complete
-        if (::swipeRefreshLayout.isInitialized) {
-            swipeRefreshLayout.isRefreshing = progress in 1..99
+        if (progress in 1..99) {
+            // TODO: Implement refresh indicator if needed
         }
 
         when {
@@ -1624,6 +1622,11 @@ class BubbleView @JvmOverloads constructor(
         }
     }
 
+    override fun onMinimizeBubble() {
+        // Collapse the bubble to its minimized state
+        setExpanded(false)
+    }
+
     override fun onUrlSubmitted(url: String) {
         loadNewUrl(url)
         uiManager.hideKeyboard()
@@ -1643,23 +1646,5 @@ class BubbleView @JvmOverloads constructor(
     
     override fun onSaveArticle() {
         saveArticleForOfflineReading()
-    }
-
-    override fun onShareButtonClicked() {
-        try {
-            // Collapse bubble view before sharing
-            setExpanded(false)
-
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, url)
-            }
-            val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share_via))
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(chooser)
-        } catch (e: Exception) {
-            Logger.e(TAG, "Error sharing URL", e)
-            Toast.makeText(context, context.getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
-        }
     }
 }
