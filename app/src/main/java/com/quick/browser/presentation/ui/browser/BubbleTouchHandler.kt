@@ -62,6 +62,7 @@ class BubbleTouchHandler(
         fun getToolbarContainer(): View
         fun getResizeHandles(): List<ImageView>
         fun getResizeHandlesContainer(): View
+        fun getResizeBar(): View
         fun getContentContainer(): FrameLayout
         fun getWebViewContainer(): View
         fun updateDimensions(width: Int, height: Int)
@@ -83,7 +84,6 @@ class BubbleTouchHandler(
     fun initialize(delegate: BubbleTouchDelegate) {
         this.delegate = delegate
         setupResizeHandles()
-        setupToolbarDrag()
     }
 
     /**
@@ -180,17 +180,18 @@ class BubbleTouchHandler(
         screenWidth: Int,
         screenHeight: Int
     ) {
+
+        // Only handle dragging when bubble is collapsed
+        if (delegate.isBubbleExpanded()) {
+            return
+        }
+        
         val dx = event.rawX - initialTouchX
         val dy = event.rawY - initialTouchY
 
         // Check if we've moved enough to consider it a drag
         if (!isDragging && hypot(dx, dy) > touchSlop) {
             isDragging = true
-            // Only collapse if expanded when starting to drag from the bubble itself
-            // (not from the toolbar, which has its own drag handler)
-            if (delegate.isBubbleExpanded() && event.y < delegate.getExpandedContainer().top) {
-                delegate.onBubbleToggleExpanded()
-            }
         }
 
         if (isDragging) {
@@ -356,20 +357,7 @@ class BubbleTouchHandler(
         val webViewContainer = delegate.getWebViewContainer()
         val contentContainer = delegate.getContentContainer()
 
-        // Check if we should auto-collapse the bubble (consistent with BubbleResizeBarHandler)
-        val minWidth = context.resources.displayMetrics.widthPixels / 3
-        val minHeight = (context.resources.displayMetrics.heightPixels / 3) * 3 / 4 // Reduce height by 25%
-        
-        if (newWidth <= minWidth && newHeight <= minHeight) {
-            // Hide resize handles container immediately
-            delegate.getResizeHandlesContainer().visibility = View.GONE
-            
-            // Auto-collapse the bubble
-            delegate.onBubbleToggleExpanded()
-            return
-        }
-
-        // Apply the new dimensions to the container
+        // Apply the new dimensions to the container (removed auto-collapse feature)
         val containerParams = expandedContainer.layoutParams
         containerParams.width = newWidth
         containerParams.height = newHeight
@@ -422,64 +410,5 @@ class BubbleTouchHandler(
         expandedContainer.requestLayout()
         webViewContainer.requestLayout()
         contentContainer.requestLayout()
-    }
-
-    /**
-     * Set up toolbar drag functionality to allow dragging the expanded bubble
-     * when the toolbar is touched and dragged
-     */
-    private fun setupToolbarDrag() {
-        delegate.getToolbarContainer().setOnTouchListener { _, event ->
-            if (bubbleView.layoutParams !is WindowManager.LayoutParams || !delegate.isBubbleExpanded()) {
-                return@setOnTouchListener false
-            }
-
-            val params = bubbleView.layoutParams as WindowManager.LayoutParams
-            val screenWidth = context.resources.displayMetrics.widthPixels
-            val screenHeight = context.resources.displayMetrics.heightPixels
-
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    initialX = params.x.toFloat()
-                    initialY = params.y.toFloat()
-                    initialTouchX = event.rawX
-                    initialTouchY = event.rawY
-                    isDragging = false
-                    true
-                }
-
-                MotionEvent.ACTION_MOVE -> {
-                    val dx = event.rawX - initialTouchX
-                    val dy = event.rawY - initialTouchY
-
-                    // Check if we've moved enough to consider it a drag
-                    if (!isDragging && hypot(dx, dy) > touchSlop) {
-                        isDragging = true
-                    }
-
-                    if (isDragging) {
-                        // Keep bubble within screen bounds
-                        val newX = max(0, min(screenWidth - bubbleView.width, (initialX + dx).toInt()))
-                        val newY = max(0, min(screenHeight - bubbleView.height, (initialY + dy).toInt()))
-
-                        params.x = newX
-                        params.y = newY
-                        windowManager.updateViewLayout(bubbleView, params)
-                        delegate.onBubbleDragged(newX, newY)
-                    }
-                    true
-                }
-
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (isDragging) {
-                        windowManager.updateViewLayout(bubbleView, params)
-                    }
-                    isDragging = false
-                    true
-                }
-
-                else -> false
-            }
-        }
     }
 }

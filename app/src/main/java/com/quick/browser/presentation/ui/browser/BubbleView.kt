@@ -737,8 +737,9 @@ class BubbleView @JvmOverloads constructor(
             expandedContainer = uiManager.getExpandedContainer(),
             showUrlBar = showUrlBar,
             onEnd = {
-                // Show resize handles container but keep handles invisible until touched
+                // Show resize handles container and resize bar
                 uiManager.getResizeHandlesContainer().visibility = VISIBLE
+                uiManager.showResizeBar()
                 uiManager.hideResizeHandles()
 
                 // Make WebView visible and ensure content is loaded
@@ -930,15 +931,16 @@ class BubbleView @JvmOverloads constructor(
         // Exit read mode if active
         readModeManager.forceExitReadMode()
 
-        // Hide resize handles immediately
+        // Hide resize handles and resize bar immediately
         hideResizeHandles()
+        uiManager.hideResizeBar()
 
         // Keep WebView loaded but make it invisible immediately to prevent flash
         webViewContainer.visibility = INVISIBLE
         webViewContainer.alpha = 0f
 
         // Start the collapse animation with proper sequencing
-        bubbleAnimator.animateCollapseTobubble(
+        bubbleAnimator.animateCollapseToBubble(
             expandedContainer = uiManager.getExpandedContainer(),
             urlBarContainer = uiManager.getUrlBarContainer(),
             bubbleContainer = uiManager.getBubbleContainer(),
@@ -956,9 +958,10 @@ class BubbleView @JvmOverloads constructor(
      * Directly animates the bubble disappearing, regardless of its current state.
      */
     private fun closeBubbleWithAnimation() {
-        // Hide resize handles immediately to prevent them from showing during animation
+        // Hide resize handles and resize bar immediately to prevent them from showing during animation
         if (stateManager.isBubbleExpanded) {
             hideResizeHandles()
+            uiManager.hideResizeBar()
         }
 
         // Hide settings panel if visible
@@ -1137,6 +1140,10 @@ class BubbleView @JvmOverloads constructor(
 
     override fun getResizeHandlesContainer(): View {
         return uiManager.getResizeHandlesContainer()
+    }
+
+    override fun getResizeBar(): View {
+        return uiManager.getResizeBar()
     }
 
     override fun getContentContainer(): FrameLayout {
@@ -1366,8 +1373,9 @@ class BubbleView @JvmOverloads constructor(
         stateManager.setActive(false)
         uiManager.getExpandedContainer().visibility = GONE
 
-        // Hide resize handles when expanded container is hidden
+        // Hide resize handles and resize bar when expanded container is hidden
         uiManager.getResizeHandlesContainer().visibility = GONE
+        uiManager.hideResizeBar()
     }
 
     /**

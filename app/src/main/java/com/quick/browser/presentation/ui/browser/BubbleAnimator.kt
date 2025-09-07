@@ -63,7 +63,7 @@ class BubbleAnimator() {
      * Animate collapsing expanded container to bubble with smooth transition
      * This creates a gradual transition similar to expansion but in reverse
      */
-    fun animateCollapseTobubble(
+    fun animateCollapseToBubble(
         expandedContainer: View,
         urlBarContainer: View,
         bubbleContainer: View,
@@ -79,30 +79,38 @@ class BubbleAnimator() {
                 .build()
         }
 
-        // Phase 1: Start collapsing the expanded container
+        // Phase 1: Start collapsing the expanded container and URL bar together
         val collapseAnimSet = AnimatorSet()
-        val alphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
-        val scaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 1f, 0.3f)
-        val scaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 1f, 0.3f)
+        val expandedAlphaAnim = ObjectAnimator.ofFloat(expandedContainer, "alpha", 1f, 0f)
+        val expandedScaleXAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleX", 1f, 0.3f)
+        val expandedScaleYAnim = ObjectAnimator.ofFloat(expandedContainer, "scaleY", 1f, 0.3f)
         
-        collapseAnimSet.playTogether(alphaAnim, scaleXAnim, scaleYAnim)
+        val urlBarAlphaAnim = ObjectAnimator.ofFloat(urlBarContainer, "alpha", 1f, 0f)
+        val urlBarScaleXAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleX", 1f, 0.3f)
+        val urlBarScaleYAnim = ObjectAnimator.ofFloat(urlBarContainer, "scaleY", 1f, 0.3f)
+        
+        collapseAnimSet.playTogether(
+            expandedAlphaAnim, expandedScaleXAnim, expandedScaleYAnim,
+            urlBarAlphaAnim, urlBarScaleXAnim, urlBarScaleYAnim
+        )
         collapseAnimSet.duration = ANIMATION_DURATION_MEDIUM
         collapseAnimSet.interpolator = AccelerateInterpolator()
         
         collapseAnimSet.addListener(object : AnimatorListenerAdapter() {
-            override fun onAnimationStart(animation: Animator) {
-                // Hide URL bar immediately when animation starts to prevent flash
-                urlBarContainer.visibility = View.GONE
-            }
-            
             override fun onAnimationEnd(animation: Animator) {
-                // Hide expanded container completely
+                // Hide expanded container and URL bar completely
                 expandedContainer.visibility = View.GONE
+                urlBarContainer.visibility = View.GONE
                 
                 // Reset expanded container properties for next time
                 expandedContainer.scaleX = 1f
                 expandedContainer.scaleY = 1f
                 expandedContainer.alpha = 1f
+                
+                // Reset URL bar properties for next time
+                urlBarContainer.scaleX = 1f
+                urlBarContainer.scaleY = 1f
+                urlBarContainer.alpha = 1f
                 
                 // Phase 2: Show bubble container with scale-up animation
                 bubbleContainer.alpha = 0f

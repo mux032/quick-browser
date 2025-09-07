@@ -349,6 +349,20 @@ class BubbleUIManager(
     }
     
     /**
+     * Hide the resize bar
+     */
+    fun hideResizeBar() {
+        resizeBar.visibility = View.GONE
+    }
+    
+    /**
+     * Show the resize bar
+     */
+    fun showResizeBar() {
+        resizeBar.visibility = View.VISIBLE
+    }
+    
+    /**
      * Show toolbar
      */
     fun showToolbar() {
