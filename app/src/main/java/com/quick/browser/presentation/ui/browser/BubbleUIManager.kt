@@ -2,10 +2,7 @@ package com.quick.browser.presentation.ui.browser
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.view.ContextThemeWrapper
-import android.view.LayoutInflater
-import android.view.View
-import android.view.WindowManager
+import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -16,6 +13,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.quick.browser.R
 import com.quick.browser.utils.Logger
+import kotlin.math.hypot
 
 /**
  * BubbleUIManager handles all UI components and interactions for a single BubbleView.
@@ -64,6 +62,7 @@ class BubbleUIManager(
     private lateinit var btnClose: MaterialButton
     private lateinit var btnReadMode: MaterialButton
     private lateinit var btnSummarize: MaterialButton
+    private lateinit var btnMinimize: MaterialButton
     private lateinit var btnToolbarSettings: MaterialButton
     
     // Utility
@@ -134,6 +133,7 @@ class BubbleUIManager(
             btnClose = bubbleView.findViewById(R.id.btn_close) ?: throw IllegalStateException("btn_close not found")
             btnReadMode = bubbleView.findViewById(R.id.btn_read_mode) ?: throw IllegalStateException("btn_read_mode not found")
             btnSummarize = bubbleView.findViewById(R.id.btn_summarize) ?: throw IllegalStateException("btn_summarize not found")
+            btnMinimize = bubbleView.findViewById(R.id.btn_minimize) ?: throw IllegalStateException("btn_minimize not found")
             btnToolbarSettings = bubbleView.findViewById(R.id.btn_toolbar_settings) ?: throw IllegalStateException("btn_toolbar_settings not found")
             
             Logger.d(TAG, "UI components initialized successfully for bubble: $bubbleId")
@@ -168,6 +168,11 @@ class BubbleUIManager(
             uiListener?.onToggleSummaryMode()
         }
         
+        // Toolbar minimize button listener
+        btnMinimize.setOnClickListener { 
+            uiListener?.onMinimizeBubble()
+        }
+        
         // URL bar minimize button listener
         btnUrlBarMinimize.setOnClickListener { 
             uiListener?.onMinimizeBubble()
@@ -176,6 +181,56 @@ class BubbleUIManager(
         // Toolbar settings button listener
         btnToolbarSettings.setOnClickListener { 
             uiListener?.onSettingsButtonClicked()
+        }
+        
+        // URL bar icon touch listener for drag functionality
+        var isDragging = false
+        var startX = 0f
+        var startY = 0f
+        var lastX = 0f
+        var lastY = 0f
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+        
+        urlBarIcon.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = event.rawX
+                    startY = event.rawY
+                    lastX = startX
+                    lastY = startY
+                    isDragging = false
+                    true // Consume the event
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaX = event.rawX - startX
+                    val deltaY = event.rawY - startY
+                    
+                    // Check if movement exceeds touch slop to start dragging
+                    if (!isDragging && hypot(deltaX, deltaY) > touchSlop) {
+                        isDragging = true
+                    }
+                    
+                    // If dragging, move the bubble
+                    if (isDragging) {
+                        val moveX = event.rawX - lastX
+                        val moveY = event.rawY - lastY
+                        // Notify the bubble view to move the bubble
+                        bubbleView.handleFaviconDrag(moveX, moveY)
+                        lastX = event.rawX
+                        lastY = event.rawY
+                    }
+                    true // Consume the event
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // If it was just a click (not a drag), minimize the bubble
+                    if (!isDragging) {
+                        uiListener?.onMinimizeBubble()
+                    }
+                    isDragging = false
+                    true // Consume the event
+                }
+                else -> false
+            }
         }
         
         Logger.d(TAG, "Click listeners set up successfully for bubble: $bubbleId")
@@ -429,6 +484,7 @@ class BubbleUIManager(
     fun getResizeHandleBottomRight(): ImageView = resizeHandleBottomRight
     fun getResizeBar(): View = resizeBar
     
+    fun getBtnMinimize(): MaterialButton = btnMinimize
     fun getBtnToolbarSettings(): MaterialButton = btnToolbarSettings
     
     /**

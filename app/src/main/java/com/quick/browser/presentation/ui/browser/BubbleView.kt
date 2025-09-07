@@ -29,6 +29,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.WebView
 import android.widget.*
 import androidx.core.content.ContextCompat
@@ -120,6 +121,9 @@ class BubbleView @JvmOverloads constructor(
 
     // Add SwipeRefreshLayout property
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    
+    // WindowManager for handling window layout updates
+    private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
     companion object {
         private const val TAG = "BubbleView"
@@ -757,6 +761,10 @@ class BubbleView @JvmOverloads constructor(
 
         // Check if URL bar should be visible based on settings
         val showUrlBar = settingsService.isUrlBarVisible()
+        
+        // Show or hide the minimize button in the toolbar based on URL bar visibility
+        // When URL bar is hidden, show the minimize button in the toolbar
+        uiManager.getBtnMinimize().visibility = if (showUrlBar) View.GONE else View.VISIBLE
 
         // Start the expand animation with proper sequencing
         bubbleAnimator.animateExpandFromBubble(
@@ -1079,6 +1087,27 @@ class BubbleView @JvmOverloads constructor(
     }
 
     /**
+     * Handle favicon drag to move the bubble window
+     */
+    fun handleFaviconDrag(deltaX: Float, deltaY: Float) {
+        try {
+            val params = layoutParams as? WindowManager.LayoutParams
+            if (params != null) {
+                // Calculate new position
+                val newX = params.x + deltaX.toInt()
+                val newY = params.y + deltaY.toInt()
+                
+                // Update position
+                params.x = newX
+                params.y = newY
+                windowManager.updateViewLayout(this, params)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error handling favicon drag", e)
+        }
+    }
+
+    /**
      * Handle touch events for dragging the bubble and handling click events.
      *
      * This method delegates to BubbleTouchHandler for all touch handling logic.
@@ -1114,8 +1143,17 @@ class BubbleView @JvmOverloads constructor(
     // ======================================
 
     override fun onBubbleDragged(x: Int, y: Int) {
-        // Handle bubble drag position updates if needed
-        // This is called when the bubble position changes during drag
+        // Handle bubble drag position updates by updating the window layout
+        try {
+            val params = layoutParams as? WindowManager.LayoutParams
+            if (params != null) {
+                params.x = x
+                params.y = y
+                windowManager.updateViewLayout(this, params)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Error dragging bubble", e)
+        }
     }
 
     override fun onBubbleClicked() {
