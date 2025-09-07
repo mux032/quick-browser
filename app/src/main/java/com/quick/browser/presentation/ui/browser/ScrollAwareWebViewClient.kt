@@ -21,6 +21,7 @@ class ScrollAwareWebViewClient(
     private val onHtmlContentLoaded: (String) -> Unit,
     private val onScrollDown: () -> Unit,
     private val onScrollUp: () -> Unit,
+    private val onPageFinishedCallback: () -> Unit,
     settingsService: SettingsService,
     adBlockingService: AdBlockingService
 ) : WebViewClientEx(context, onPageUrlChanged, settingsService, adBlockingService) {
@@ -30,6 +31,14 @@ class ScrollAwareWebViewClient(
 
     override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
+        
+        // Notify the callback that the page has finished loading
+        // This will stop the swipe refresh indicator
+        try {
+            onPageFinishedCallback?.invoke()
+        } catch (e: Exception) {
+            Logger.e("ScrollAwareWebViewClient", "Error notifying page finished", e)
+        }
 
         // Capture HTML content for summarization in the background
         view?.let { webView ->

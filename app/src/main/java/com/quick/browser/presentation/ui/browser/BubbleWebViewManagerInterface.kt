@@ -55,4 +55,9 @@ interface BubbleWebViewManagerInterface {
      * @param progress The loading progress (0-100)
      */
     fun onWebViewProgressChanged(progress: Int)
+    
+    /**
+     * Called when the WebView page finishes loading
+     */
+    fun onWebViewPageFinished()
 }

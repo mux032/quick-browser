@@ -172,16 +172,23 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <!-- WebView for regular bubbles -->
-                        <WebView
-                            android:id="@+id/web_view"
+                        <!-- WebView for regular bubbles with swipe refresh -->
+                        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                            android:id="@+id/swipe_refresh_layout"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@android:color/white"
-                            android:hardwareAccelerated="true"
-                            android:scrollbars="vertical"
-                            android:scrollbarStyle="insideOverlay"
-                            android:visibility="gone" />
+                            android:visibility="gone">
+                            
+                            <WebView
+                                android:id="@+id/web_view"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@android:color/white"
+                                android:hardwareAccelerated="true"
+                                android:scrollbars="vertical"
+                                android:scrollbarStyle="insideOverlay" />
+                                
+                        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
                         
                         <!-- Summary container that will be shown when summarize is clicked -->
                         <androidx.core.widget.NestedScrollView

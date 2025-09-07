@@ -35,6 +35,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.*
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.button.MaterialButton
 import com.quick.browser.R
 import com.quick.browser.service.*
@@ -118,6 +119,7 @@ class BubbleView @JvmOverloads constructor(
     private lateinit var settingsPanelManager: BubbleSettingsPanel
 
     // Add SwipeRefreshLayout property
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     companion object {
         private const val TAG = "BubbleView"
@@ -170,6 +172,12 @@ class BubbleView @JvmOverloads constructor(
 
             // WebView container (managed separately due to WebViewManager requirements)
             webViewContainer = findViewById(R.id.web_view) ?: throw IllegalStateException("WebView not found in layout")
+            swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout) ?: throw IllegalStateException("SwipeRefreshLayout not found in layout")
+
+            // Set up SwipeRefreshLayout
+            swipeRefreshLayout.setOnRefreshListener {
+                webViewManager.reload()
+            }
 
             // Initialize and set arrow views
 
@@ -285,9 +293,22 @@ class BubbleView @JvmOverloads constructor(
      * Load a new URL in the WebView
      */
     private fun loadNewUrl(inputUrl: String) {
-        val formattedUrl = formatUrl(inputUrl)
+        var formattedUrl = inputUrl
+
+        // Check if it looks like a valid URL or domain
+        val isValidUrl = formattedUrl.startsWith("http://") || formattedUrl.startsWith("https://") || 
+                         (formattedUrl.contains(".") && !formattedUrl.contains(" ") && !formattedUrl.contains("\\"))
+
+        if (!isValidUrl) {
+            // Treat as search query
+            formattedUrl = "https://www.google.com/search?q=${android.net.Uri.encode(formattedUrl)}"
+        } else if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+            // Add https:// if no protocol is specified but it looks like a domain
+            formattedUrl = "https://$formattedUrl"
+        }
+
         url = formattedUrl
-        webViewContainer.loadUrl(formattedUrl)
+        webViewManager.loadUrl(formattedUrl)
         updateUrlBar()
 
         // Update read mode manager with new URL
@@ -370,8 +391,8 @@ class BubbleView @JvmOverloads constructor(
      * Set up the content container with appropriate visibility
      */
     private fun setupContent() {
-        // Show WebView for all bubbles
-        webViewContainer.visibility = VISIBLE
+        // Show SwipeRefreshLayout for all bubbles
+        swipeRefreshLayout.visibility = VISIBLE
 
         // Set up WebView using the WebViewManager
         setupWebViewManager()
@@ -395,6 +416,9 @@ class BubbleView @JvmOverloads constructor(
             
             // Connect WebView favicon updates to UI favicon updates
             webViewManager.setOnFaviconReceivedCallback { favicon -> onWebViewFaviconReceived(favicon) }
+            
+            // Connect WebView page finished to stop swipe refresh
+            webViewManager.setOnPageFinishedCallback { onWebViewPageFinished() }
 
             // Initialize settings panel manager with WebView
             setupSettingsPanelManager()
@@ -835,11 +859,11 @@ class BubbleView @JvmOverloads constructor(
 
         uiManager.getExpandedContainer().layoutParams = layoutParams
 
-        // Update WebView dimensions to match the container
-        val webViewParams = webViewContainer.layoutParams
-        webViewParams.width = layoutParams.width
-        webViewParams.height = layoutParams.height
-        webViewContainer.layoutParams = webViewParams
+        // Update SwipeRefreshLayout dimensions to match the container
+        val swipeLayoutParams = swipeRefreshLayout.layoutParams
+        swipeLayoutParams.width = layoutParams.width
+        swipeLayoutParams.height = layoutParams.height
+        swipeRefreshLayout.layoutParams = swipeLayoutParams
 
         // Update content container dimensions to match
         val contentParams = uiManager.getContentContainer().layoutParams
@@ -864,7 +888,7 @@ class BubbleView @JvmOverloads constructor(
 
         // Force layout update
         uiManager.getExpandedContainer().requestLayout()
-        webViewContainer.requestLayout()
+        swipeRefreshLayout.requestLayout()
         uiManager.getContentContainer().requestLayout()
     }
 
@@ -875,9 +899,10 @@ class BubbleView @JvmOverloads constructor(
         try {
             Logger.d(TAG, "Making WebView visible for bubble $bubbleId with URL: $url")
 
-            // Make WebView fully visible with animation
+            // Make SwipeRefreshLayout and WebView visible
+            swipeRefreshLayout.visibility = VISIBLE
             webViewContainer.visibility = VISIBLE
-            webViewContainer.animate()
+            swipeRefreshLayout.animate()
                 .alpha(1f)
                 .setDuration(200)
                 .start()
@@ -908,6 +933,7 @@ class BubbleView @JvmOverloads constructor(
             }
 
             // Force layout update to ensure content is visible
+            swipeRefreshLayout.requestLayout()
             webViewContainer.requestLayout()
 
             Logger.d(TAG, "WebView is now visible for bubble $bubbleId")
@@ -916,9 +942,7 @@ class BubbleView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Collapse the bubble to show only the icon
-     */
+    /**\n     * Collapse the bubble to show only the icon\n     */
     private fun collapseBubble() {
         // Disable input focus to prevent accidental keyboard
         uiManager.disableWindowFocus()
@@ -940,8 +964,8 @@ class BubbleView @JvmOverloads constructor(
         uiManager.hideResizeBar()
 
         // Keep WebView loaded but make it invisible immediately to prevent flash
-        webViewContainer.visibility = INVISIBLE
-        webViewContainer.alpha = 0f
+        swipeRefreshLayout.visibility = INVISIBLE
+        swipeRefreshLayout.alpha = 0f
 
         // Start the collapse animation with proper sequencing
         bubbleAnimator.animateCollapseToBubble(
@@ -979,8 +1003,8 @@ class BubbleView @JvmOverloads constructor(
 
         // Hide WebView immediately to prevent flash during animation
         if (stateManager.isBubbleExpanded) {
-            webViewContainer.visibility = INVISIBLE
-            webViewContainer.alpha = 0f
+            swipeRefreshLayout.visibility = INVISIBLE
+            swipeRefreshLayout.alpha = 0f
         }
 
         // Animate the entire bubble view disappearing directly
@@ -1155,7 +1179,7 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun getWebViewContainer(): View {
-        return webViewContainer
+        return swipeRefreshLayout
     }
 
     override fun updateDimensions(width: Int, height: Int) {
@@ -1395,14 +1419,14 @@ class BubbleView @JvmOverloads constructor(
                 Logger.d(TAG, "Authentication URL detected in loadUrlInWebView, opening in Custom Tab: $formattedUrl")
                 AuthenticationService.openInCustomTab(context, formattedUrl, bubbleId)
                 // Load a blank page in the WebView to avoid showing the authentication page
-                webViewContainer.loadUrl("about:blank")
+                webViewManager.loadUrl("about:blank")
             } else {
-                // Load the URL in the WebView
-                webViewContainer.loadUrl(formattedUrl)
+                // Load the URL in the WebView using WebViewManager
+                webViewManager.loadUrl(formattedUrl)
             }
         } else {
             Logger.d(TAG, "Invalid URL format in showWebView: $url")
-            webViewContainer.loadUrl("about:blank")
+            webViewManager.loadUrl("about:blank")
         }
     }
 
@@ -1579,6 +1603,13 @@ class BubbleView @JvmOverloads constructor(
 
     override fun onWebViewProgressChanged(progress: Int) {
         updateProgress(progress)
+    }
+    
+    override fun onWebViewPageFinished() {
+        // Stop the swipe refresh layout when page finishes loading
+        if (::swipeRefreshLayout.isInitialized) {
+            swipeRefreshLayout.isRefreshing = false
+        }
     }
 
     // ================== UIInteractionListener Implementation ==================
