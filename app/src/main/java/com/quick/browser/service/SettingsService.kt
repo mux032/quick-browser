@@ -84,6 +84,11 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
         const val READER_ALIGN_RIGHT = "right"
         const val READER_ALIGN_JUSTIFY = "justify"
 
+        // Accessibility settings
+        private const val KEY_AUTO_FONT_SIZE = "pref_auto_font_size"
+        private const val KEY_MANUAL_FONT_SIZE = "pref_manual_font_size"
+        private const val DEFAULT_MANUAL_FONT_SIZE = 16
+
 
     }
 
@@ -420,5 +425,29 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
 
     fun setReaderTextAlign(alignment: String) {
         preferences.edit().putString(KEY_READER_TEXT_ALIGN, alignment).apply()
+    }
+
+    // ============== ACCESSIBILITY SETTINGS ==============
+
+    /**
+     * Automatic font size settings
+     */
+    fun isAutoFontSizeEnabled(): Boolean {
+        return preferences.getBoolean(KEY_AUTO_FONT_SIZE, true)
+    }
+
+    fun setAutoFontSizeEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_AUTO_FONT_SIZE, enabled).apply()
+    }
+
+    /**
+     * Manual font size settings
+     */
+    fun getManualFontSize(): Int {
+        return preferences.getInt(KEY_MANUAL_FONT_SIZE, DEFAULT_MANUAL_FONT_SIZE)
+    }
+
+    fun setManualFontSize(size: Int) {
+        preferences.edit().putInt(KEY_MANUAL_FONT_SIZE, size).apply()
     }
 }

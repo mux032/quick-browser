@@ -119,6 +119,15 @@
     <string name="reader_align_justify">Justify</string>
     <string name="article_saved_success">Article saved for offline reading</string>
     <string name="article_save_failed">Failed to save article</string>
+    
+    <!-- Accessibility Settings -->
+    <string name="accessibility">Accessibility</string>
+    <string name="automatic_font_sizing">Automatic Font Sizing</string>
+    <string name="automatic_font_sizing_desc">Use system font size settings</string>
+    <string name="font_size">Font Size</string>
+    <string name="font_size_desc">Make text on web sites smaller or larger</string>
+    <string name="font_size_preview">Preview text size: %1$d</string>
+    <string name="font_size_sample_text">This is sample text. It is here to show how text will appear when you increase or decrease the size with this setting.</string>
     <string name="article_already_saved">Article already saved</string>
     <string name="article_extraction_failed">Failed to extract article content</string>
     <string name="original_page_saved_success">Original page saved for offline reading</string>
