@@ -17,6 +17,8 @@ package com.quick.browser.domain.model
  * @property saveHistory Whether to save browsing history
  * @property encryptData Whether to encrypt saved data
  * @property bubblePositionRight Whether the bubble should be positioned on the right side of the screen
+ * @property autoFontSize Whether to use system font size or manual control
+ * @property manualFontSize The manually set font size when auto font size is disabled
  */
 data class Settings(
     val id: Int = 1,
@@ -32,5 +34,7 @@ data class Settings(
     val animSpeed: Float = 1.0f,
     val saveHistory: Boolean = true,
     val encryptData: Boolean = true,
-    val bubblePositionRight: Boolean = false
+    val bubblePositionRight: Boolean = false,
+    val autoFontSize: Boolean = true,
+    val manualFontSize: Int = 16
 )

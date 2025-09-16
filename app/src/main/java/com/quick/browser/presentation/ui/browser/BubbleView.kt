@@ -1564,6 +1564,18 @@ class BubbleView @JvmOverloads constructor(
     // ============================================================================
 
     /**
+     * Update font size settings when the view is attached to the window
+     */
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        
+        // Update font size settings when the bubble is shown
+        onFontSizeSettingsUpdated()
+        
+        Logger.d(TAG, "BubbleView attached for bubble: $bubbleId")
+    }
+
+    /**
      * Clean up resources when the view is detached from the window
      */
     override fun onDetachedFromWindow() {
@@ -1644,10 +1656,13 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun onWebViewPageFinished() {
-        // Stop the swipe refresh layout when page finishes loading
-        if (::swipeRefreshLayout.isInitialized) {
-            swipeRefreshLayout.isRefreshing = false
-        }
+        // Stop swipe refresh when page finishes loading
+        swipeRefreshLayout.isRefreshing = false
+    }
+    
+    override fun onFontSizeSettingsUpdated() {
+        // Update font size settings in WebViewManager when settings change
+        webViewManager.updateFontSizeSettings()
     }
 
     // ================== UIInteractionListener Implementation ==================
