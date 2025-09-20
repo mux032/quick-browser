@@ -104,16 +104,19 @@ class BubbleView @JvmOverloads constructor(
     // Current favicon for the URL bar
     private var currentFavicon: Bitmap? = null
 
+    // Current mode tracking
+    private var isInChatMode = false
+
+    // Read Mode UI and State
+    private lateinit var btnReadMode: MaterialButton
+    private lateinit var readModeManager: BubbleReadModeManager
+
     // Summary/Summarization UI and State
     private lateinit var btnSummarize: MaterialButton // Changed from fabSummarize to btnSummarize
     private lateinit var summaryContainer: FrameLayout
     private lateinit var summaryContent: LinearLayout
     private lateinit var summaryProgress: ProgressBar
     private lateinit var summaryManager: BubbleSummaryManager
-
-    // Read Mode UI and State
-    private lateinit var btnReadMode: MaterialButton
-    private lateinit var readModeManager: BubbleReadModeManager
 
     // Settings panel
     private lateinit var settingsPanel: View
@@ -966,6 +969,11 @@ class BubbleView @JvmOverloads constructor(
 
         // Exit read mode if active
         readModeManager.forceExitReadMode()
+        
+        // Exit chat mode if active
+        if (isInChatMode) {
+            exitChatMode()
+        }
 
         // Hide resize handles and resize bar immediately
         hideResizeHandles()
@@ -1008,6 +1016,11 @@ class BubbleView @JvmOverloads constructor(
 
         // Exit read mode if active
         readModeManager.forceExitReadMode()
+        
+        // Exit chat mode if active
+        if (isInChatMode) {
+            exitChatMode()
+        }
 
         // Hide WebView immediately to prevent flash during animation
         if (stateManager.isBubbleExpanded) {
@@ -1564,18 +1577,6 @@ class BubbleView @JvmOverloads constructor(
     // ============================================================================
 
     /**
-     * Update font size settings when the view is attached to the window
-     */
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        
-        // Update font size settings when the bubble is shown
-        onFontSizeSettingsUpdated()
-        
-        Logger.d(TAG, "BubbleView attached for bubble: $bubbleId")
-    }
-
-    /**
      * Clean up resources when the view is detached from the window
      */
     override fun onDetachedFromWindow() {
@@ -1656,13 +1657,10 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun onWebViewPageFinished() {
-        // Stop swipe refresh when page finishes loading
-        swipeRefreshLayout.isRefreshing = false
-    }
-    
-    override fun onFontSizeSettingsUpdated() {
-        // Update font size settings in WebViewManager when settings change
-        webViewManager.updateFontSizeSettings()
+        // Stop the swipe refresh layout when page finishes loading
+        if (::swipeRefreshLayout.isInitialized) {
+            swipeRefreshLayout.isRefreshing = false
+        }
     }
 
     // ================== UIInteractionListener Implementation ==================
@@ -1683,6 +1681,11 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun onToggleReadMode() {
+        // If we're in chat mode, exit chat mode first
+        if (isInChatMode) {
+            exitChatMode()
+        }
+        
         settingsPanelManager.dismissIfVisible(settingsPanel)
         readModeManager.toggleReadMode()
         // Update settings panel to show/hide reader mode controls
@@ -1690,6 +1693,11 @@ class BubbleView @JvmOverloads constructor(
     }
 
     override fun onToggleSummaryMode() {
+        // If we're in chat mode, exit chat mode first
+        if (isInChatMode) {
+            exitChatMode()
+        }
+        
         settingsPanelManager.dismissIfVisible(settingsPanel)
         summaryManager.toggleSummaryMode()
     }
@@ -1724,8 +1732,225 @@ class BubbleView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Opens the LLM Chat UI in the expanded bubble container
+     */
+    private fun openLlmChatInBubble() {
+        try {
+            Logger.d(TAG, "Opening LLM Chat in bubble container for bubble $bubbleId")
+            
+            // First, make sure the bubble is expanded
+            if (!stateManager.isBubbleExpanded) {
+                toggleBubbleExpanded()
+            }
+            
+            // Hide the regular web view content
+            webViewContainer.visibility = GONE
+            
+            // Show the LLM chat UI in the content container
+            showLlmChatUi()
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to open LLM Chat in bubble", e)
+            android.widget.Toast.makeText(context, "Failed to open LLM Chat", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Shows the LLM Chat UI in the bubble's content container
+     */
+    private fun showLlmChatUi() {
+        try {
+            val contentContainer = uiManager.getContentContainer()
+            
+            // Clear any existing content
+            contentContainer.removeAllViews()
+            
+            // Inflate the bubble-specific LLM chat layout
+            val inflater = android.view.LayoutInflater.from(context)
+            val chatView = inflater.inflate(R.layout.bubble_llm_chat, contentContainer, false)
+            
+            // Find UI components
+            val recyclerViewChat = chatView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recycler_view_chat)
+            val editTextInput = chatView.findViewById<android.widget.EditText>(R.id.edit_text_input)
+            val buttonSend = chatView.findViewById<android.widget.Button>(R.id.button_send)
+            
+            // Set up RecyclerView
+            val messages = mutableListOf<com.quick.browser.presentation.ui.llmchat.ChatMessage>()
+            val chatAdapter = com.quick.browser.presentation.ui.llmchat.ChatAdapter(messages)
+            recyclerViewChat.adapter = chatAdapter
+            recyclerViewChat.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
+            
+            // Add welcome message
+            chatAdapter.addMessage(com.quick.browser.presentation.ui.llmchat.ChatMessage("Hello! I'm your AI assistant. How can I help you today?", com.quick.browser.presentation.ui.llmchat.ChatMessageType.MODEL))
+            chatAdapter.addMessage(com.quick.browser.presentation.ui.llmchat.ChatMessage("I'm currently browsing $url", com.quick.browser.presentation.ui.llmchat.ChatMessageType.USER))
+            
+            // Set up send button with simulated response
+            buttonSend.setOnClickListener {
+                val inputText = editTextInput.text.toString().trim()
+                if (inputText.isNotEmpty()) {
+                    // Add user message
+                    chatAdapter.addMessage(com.quick.browser.presentation.ui.llmchat.ChatMessage(inputText, com.quick.browser.presentation.ui.llmchat.ChatMessageType.USER))
+                    
+                    // Clear input
+                    editTextInput.text.clear()
+                    
+                    // Simulate AI response after a short delay
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        chatAdapter.addMessage(com.quick.browser.presentation.ui.llmchat.ChatMessage("I understand you're asking about '$inputText'. This is a simulated response.", com.quick.browser.presentation.ui.llmchat.ChatMessageType.MODEL))
+                        recyclerViewChat.scrollToPosition(messages.size - 1)
+                    }, 1000)
+                    
+                    // Scroll to bottom
+                    recyclerViewChat.scrollToPosition(messages.size - 1)
+                }
+            }
+            
+            // Add the chat view to the content container
+            contentContainer.addView(chatView)
+            contentContainer.visibility = android.view.View.VISIBLE
+            
+            // Hide the toolbar in chat mode
+            uiManager.getToolbarContainer().visibility = android.view.View.GONE
+            
+            // Set chat mode flag
+            isInChatMode = true
+            
+            Logger.d(TAG, "LLM Chat UI shown in bubble container for bubble $bubbleId")
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to show LLM Chat UI in bubble", e)
+            android.widget.Toast.makeText(context, "Failed to show LLM Chat UI: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    /**
+     * Exit chat mode and return to normal web view
+     */
+    private fun exitChatMode() {
+        try {
+            // Show the toolbar
+            uiManager.getToolbarContainer().visibility = android.view.View.VISIBLE
+            
+            // Clear chat content and show web view
+            val contentContainer = uiManager.getContentContainer()
+            contentContainer.removeAllViews()
+            contentContainer.visibility = android.view.View.GONE
+            
+            // Load content in expanded WebView
+            loadContentInExpandedWebView()
+            
+            // Reset chat mode flag
+            isInChatMode = false
+            
+            Logger.d(TAG, "Exited chat mode for bubble $bubbleId")
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to exit chat mode", e)
+        }
+    }
+
     override fun onUrlBarClicked() {
-        settingsPanelManager.dismissIfVisible(settingsPanel)
+        // This is handled by the URL bar's own click listener
+        Logger.d(TAG, "URL bar clicked for bubble $bubbleId")
+    }
+
+    override fun onLlmChatClicked() {
+        Logger.d(TAG, "LLM Chat button clicked for bubble $bubbleId")
+        
+        // First, get the current web page content
+        webViewContainer.evaluateJavascript(
+            """
+            (function() {
+                // Get the main content of the page
+                var content = "";
+                
+                // Try to get article content first
+                var article = document.querySelector('article') || 
+                             document.querySelector('.article') || 
+                             document.querySelector('.content') || 
+                             document.querySelector('.post') ||
+                             document.querySelector('main');
+                
+                if (article) {
+                    content = article.innerText || article.textContent;
+                } else {
+                    // Fallback to body content
+                    content = document.body.innerText || document.body.textContent;
+                }
+                
+                // Limit content length to prevent overwhelming the LLM
+                if (content.length > 10000) {
+                    content = content.substring(0, 10000) + "... (content truncated)";
+                }
+                
+                return content;
+            })()
+            """.trimIndent()
+        ) { result ->
+            val content = if (result != null && result != "null") {
+                // Remove quotes and escape characters
+                result.substring(1, result.length - 1)
+                    .replace("\\\"", "\"")
+                    .replace("\\n", "\n")
+                    .replace("\\\\", "\\")
+            } else {
+                "No content available"
+            }
+            
+            // Minimize the bubble
+            if (stateManager.isBubbleExpanded) {
+                toggleBubbleExpanded()
+            }
+            
+            // Open the LLM chat activity with the content
+            openLlmChatWithContent(content)
+        }
+    }
+    
+    /**
+     * Opens the LLM Chat activity with the provided content
+     */
+    private fun openLlmChatWithContent(content: String) {
+        try {
+            Logger.d(TAG, "Opening LLM Chat with content for bubble $bubbleId")
+            
+            // Create intent to launch LLM Chat Activity
+            val intent = Intent(context, com.quick.browser.presentation.ui.llmchat.LlmChatActivity::class.java).apply {
+                // Add the content as an extra
+                putExtra("WEB_PAGE_CONTENT", content)
+                putExtra("WEB_PAGE_URL", webViewManager.getCurrentUrl() ?: "Unknown URL")
+                
+                // Add the summarization prompt
+                putExtra("SUMMARIZATION_PROMPT", 
+                    "System\n" +
+                    "You are an expert content summarizer skilled at distilling long articles into clear, concise takeaways.\n\n" +
+                    "User\n" +
+                    "Here is the article content: {article_text}.\n\n" +
+                    "Task\n" +
+                    "A. Summarize the content into a clear, easy-to-read version.\n\n" +
+                    "B. Ensure the summary is faithful:\n" +
+                    "Do not add any new knowledge.\n" +
+                    "Only use what is explicitly present in the article.\n\n" +
+                    "C. Keep the language simple, structured, and understandable for a general audience.\n\n" +
+                    "Constraints & Style\n" +
+                    "Audience: Everyday readers (non-technical).\n" +
+                    "Format: Return output as Markdown bullets or short paragraphs.\n" +
+                    "Tone: Neutral, factual, and accessible.\n" +
+                    "Clarity: If jargon or acronyms appear, explain them in plain words.\n\n" +
+                    "Examples\n" +
+                    "If the article says \"GDP fell by 2%\", write \"The economy shrank by 2%\".\n" +
+                    "If it mentions \"AI (Artificial Intelligence)\", expand it once for clarity.\n\n" +
+                    "Evaluation Hook\n" +
+                    "At the end, include a short self-check:\n" +
+                    "'Did I avoid adding outside knowledge and stick only to what was provided?'"
+                )
+                
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to open LLM Chat with content", e)
+            android.widget.Toast.makeText(context, "Failed to open LLM Chat: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+        }
     }
     
     override fun onSaveArticle() {

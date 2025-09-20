@@ -60,6 +60,7 @@ class BubbleUIManager(
     
     // Action buttons
     private lateinit var btnClose: MaterialButton
+    private lateinit var btnLlmChat: MaterialButton
     private lateinit var btnReadMode: MaterialButton
     private lateinit var btnSummarize: MaterialButton
     private lateinit var btnMinimize: MaterialButton
@@ -81,6 +82,7 @@ class BubbleUIManager(
         fun onUrlSubmitted(url: String)
         fun onUrlBarFocusChanged(hasFocus: Boolean)
         fun onUrlBarClicked()
+        fun onLlmChatClicked()
     }
     
     private var uiListener: UIInteractionListener? = null
@@ -131,6 +133,7 @@ class BubbleUIManager(
             
             // Initialize action buttons
             btnClose = bubbleView.findViewById(R.id.btn_close) ?: throw IllegalStateException("btn_close not found")
+            btnLlmChat = bubbleView.findViewById(R.id.btn_llm_chat) ?: throw IllegalStateException("btn_llm_chat not found")
             btnReadMode = bubbleView.findViewById(R.id.btn_read_mode) ?: throw IllegalStateException("btn_read_mode not found")
             btnSummarize = bubbleView.findViewById(R.id.btn_summarize) ?: throw IllegalStateException("btn_summarize not found")
             btnMinimize = bubbleView.findViewById(R.id.btn_minimize) ?: throw IllegalStateException("btn_minimize not found")
@@ -155,15 +158,22 @@ class BubbleUIManager(
             uiListener?.onToggleBubbleExpanded()
         }
         
-        // Action button listeners
+        // Close button listener
         btnClose.setOnClickListener { 
             uiListener?.onCloseBubble()
         }
         
+        // LLM Chat button listener
+        btnLlmChat.setOnClickListener { 
+            uiListener?.onLlmChatClicked()
+        }
+        
+        // Read mode button listener
         btnReadMode.setOnClickListener { 
             uiListener?.onToggleReadMode()
         }
         
+        // Summarize button listener
         btnSummarize.setOnClickListener { 
             uiListener?.onToggleSummaryMode()
         }

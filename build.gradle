@@ -17,6 +17,7 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.dagger:hilt-android-gradle-plugin:2.56'
         classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.0.0-1.0.24"
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.4'
     }
 }
 
@@ -28,6 +29,7 @@ allprojects {
         maven { url "https://repo1.maven.org/maven2/" }
         maven { url "https://maven.aliyun.com/repository/central" }
         maven { url "https://maven.aliyun.com/repository/google" }
+        maven { url "https://jitpack.io" }
         mavenLocal()
     }
 }

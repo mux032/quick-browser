@@ -60,9 +60,4 @@ interface BubbleWebViewManagerInterface {
      * Called when the WebView page finishes loading
      */
     fun onWebViewPageFinished()
-    
-    /**
-     * Called when font size settings are updated
-     */
-    fun onFontSizeSettingsUpdated()
 }

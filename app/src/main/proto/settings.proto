@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package com.quick.browser.proto;
+
+option java_package = "com.quick.browser.proto";
+option java_multiple_files = true;
+
+enum Theme {
+  THEME_UNSPECIFIED = 0;
+
+  // Force to use light theme.
+  THEME_LIGHT = 1;
+
+  // Force to use dark theme.
+  THEME_DARK = 2;
+
+  // Use the system them setting on user's phone.
+  THEME_AUTO = 3;
+}
+
+message AccessTokenData {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_at_ms = 3;
+}
+
+message ImportedModel {
+  string file_name = 1;
+  int64 file_size = 2;
+
+  oneof config {
+    LlmConfig llm_config = 3;
+  }
+}
+
+message LlmConfig {
+  repeated string compatible_accelerators = 1;
+  int32 default_max_tokens = 2;
+  int32 default_topk = 3;
+  float default_topp = 4;
+  float default_temperature = 5;
+  bool support_image = 6;
+  bool support_audio = 7;
+}
+
+message Settings {
+  Theme theme = 1;
+  AccessTokenData access_token_data = 2;  // deprecated
+  repeated string text_input_history = 3;
+  repeated ImportedModel imported_model = 4;
+  bool is_tos_accepted = 5;
+}
+
+message UserData {
+  AccessTokenData access_token_data = 1;
+}

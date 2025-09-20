@@ -166,49 +166,10 @@ class BubbleWebViewManager(
 
             // Window settings
             setSupportMultipleWindows(false) // Disabled for security
-            
-            // Apply font size settings
-            applyFontSizeSettings()
         }
 
         // Configure performance settings
         configurePerformanceSettings(webView)
-    }
-
-    /**
-     * Apply font size settings to the WebView based on user preferences
-     */
-    private fun applyFontSizeSettings() {
-        val webView = this.webView ?: return
-        
-        // Check if automatic font sizing is enabled
-        if (settingsService.isAutoFontSizeEnabled()) {
-            // Use default system font size
-            webView.settings.textZoom = 100
-        } else {
-            // Use manual font size setting
-            val manualFontSize = settingsService.getManualFontSize()
-            // WebView textZoom is a percentage, where 100 is normal size
-            // We'll map our font size (8-30) to a reasonable zoom percentage (50-200)
-            val zoomPercentage = when {
-                manualFontSize <= 10 -> 50
-                manualFontSize <= 12 -> 75
-                manualFontSize <= 14 -> 90
-                manualFontSize <= 16 -> 100
-                manualFontSize <= 18 -> 110
-                manualFontSize <= 20 -> 125
-                manualFontSize <= 24 -> 150
-                else -> 200
-            }
-            webView.settings.textZoom = zoomPercentage
-        }
-    }
-
-    /**
-     * Update font size settings and apply them to the WebView
-     */
-    fun updateFontSizeSettings() {
-        applyFontSizeSettings()
     }
 
     /**

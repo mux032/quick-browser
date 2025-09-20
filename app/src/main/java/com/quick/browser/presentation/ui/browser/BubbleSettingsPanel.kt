@@ -199,7 +199,7 @@ class BubbleSettingsPanel(
         // Font size controls
         btnFontDecrease?.setOnClickListener {
             val currentSize = settingsService.getReaderFontSize()
-            val newSize = (currentSize - 1).coerceAtLeast(8)
+            val newSize = (currentSize - 2).coerceAtLeast(12)
             settingsService.setReaderFontSize(newSize)
             updateFontSizeDisplay()
             updateFontSizeButtons()
@@ -208,7 +208,7 @@ class BubbleSettingsPanel(
 
         btnFontIncrease?.setOnClickListener {
             val currentSize = settingsService.getReaderFontSize()
-            val newSize = (currentSize + 1).coerceAtMost(32)
+            val newSize = (currentSize + 2).coerceAtMost(32)
             settingsService.setReaderFontSize(newSize)
             updateFontSizeDisplay()
             updateFontSizeButtons()
@@ -460,8 +460,8 @@ class BubbleSettingsPanel(
         btnFontDecrease?.let { button ->
             button.setBackgroundColor(backgroundColor)
             button.setTextColor(textColor)
-            button.isEnabled = fontSize > 8
-            button.alpha = if (fontSize > 8) 1.0f else 0.5f
+            button.isEnabled = fontSize > 12
+            button.alpha = if (fontSize > 12) 1.0f else 0.5f
         }
 
         btnFontIncrease?.let { button ->
