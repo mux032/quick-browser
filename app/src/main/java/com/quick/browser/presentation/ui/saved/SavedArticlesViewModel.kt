@@ -2,6 +2,7 @@ package com.quick.browser.presentation.ui.saved
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.usecase.DeleteArticleUseCase
 import com.quick.browser.domain.usecase.GetSavedArticlesUseCase
@@ -20,7 +21,8 @@ import javax.inject.Inject
 class SavedArticlesViewModel @Inject constructor(
     private val getSavedArticlesUseCase: GetSavedArticlesUseCase,
     private val deleteArticleUseCase: DeleteArticleUseCase,
-    private val searchSavedArticlesUseCase: SearchSavedArticlesUseCase
+    private val searchSavedArticlesUseCase: SearchSavedArticlesUseCase,
+    private val webPageDao: WebPageDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SavedArticlesUiState())
@@ -85,5 +87,15 @@ class SavedArticlesViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    suspend fun getPreviewImageUrlForArticle(url: String): String? {
+        val webPage = webPageDao.getPageByUrl(url)
+        return webPage?.previewImageUrl
+    }
+
+    suspend fun getFaviconUrlForArticle(url: String): String? {
+        val webPage = webPageDao.getPageByUrl(url)
+        return webPage?.faviconUrl
     }
 }

@@ -112,7 +112,9 @@ class SavedArticlesActivity : AppCompatActivity() {
             onDeleteClick = { article ->
                 // Handle delete click
                 viewModel.deleteArticle(article)
-            }
+            },
+            viewModel = viewModel,
+            lifecycleOwner = this
         )
 
         recyclerView.layoutManager = LinearLayoutManager(this)
