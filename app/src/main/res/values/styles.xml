@@ -70,4 +70,13 @@
         <item name="cornerSizeBottomLeft">16dp</item>
         <item name="cornerSizeBottomRight">16dp</item>
     </style>
+
+    <!-- Expanded Container with only top corners rounded -->
+    <style name="ExpandedContainerTopRoundedCorners" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">16dp</item>
+        <item name="cornerSizeTopRight">16dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
 </resources>

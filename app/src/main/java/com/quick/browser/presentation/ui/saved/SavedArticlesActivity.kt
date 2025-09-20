@@ -14,11 +14,13 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.navigation.NavigationView
 import com.quick.browser.R
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.presentation.ui.reader.OfflineReaderActivity
@@ -36,6 +38,8 @@ class SavedArticlesActivity : AppCompatActivity() {
     private lateinit var searchView: SearchView
     private lateinit var searchCard: MaterialCardView
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navView: NavigationView
     private var isSearchBarExplicitlyOpened = false
 
     private val viewModel: SavedArticlesViewModel by viewModels()
@@ -44,7 +48,13 @@ class SavedArticlesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_saved_articles)
 
+        // Set up toolbar
         setupToolbar()
+        
+        // Set up drawer layout and navigation view
+        drawerLayout = findViewById(R.id.drawer_layout)
+        navView = findViewById(R.id.nav_view)
+
         setupRecyclerView()
         observeViewModel()
         
@@ -61,12 +71,15 @@ class SavedArticlesActivity : AppCompatActivity() {
         
         // Listen for keyboard visibility changes
         setupKeyboardVisibilityListener()
+        
+        // Set up side panel interactions
+        setupSidePanel()
     }
 
     private fun setupToolbar() {
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false) // Hide back button
         supportActionBar?.setTitle(R.string.saved_articles)
         
         // Ensure toolbar sits below the status bar on all devices
@@ -80,6 +93,12 @@ class SavedArticlesActivity : AppCompatActivity() {
         val searchButton = toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_search)
         searchButton?.setOnClickListener {
             showSearchBar()
+        }
+
+        // Set up burger menu button to open side panel
+        val menuButton = toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_menu)
+        menuButton?.setOnClickListener {
+            drawerLayout.openDrawer(navView)
         }
     }
 
@@ -255,6 +274,27 @@ class SavedArticlesActivity : AppCompatActivity() {
             searchView.setQuery("", false)
             // Show all saved articles
             observeViewModel()
+        }
+    }
+    
+    private fun setupSidePanel() {
+        // Set up close button in side panel
+        val closeButton = navView.findViewById<android.widget.ImageButton>(R.id.close_button)
+        closeButton.setOnClickListener {
+            drawerLayout.closeDrawer(navView)
+        }
+        
+        // Set up add folder button
+        val addFolderButton = navView.findViewById<android.widget.ImageButton>(R.id.add_folder_button)
+        addFolderButton.setOnClickListener {
+            // TODO: Implement add folder functionality
+        }
+        
+        // Set up all articles item
+        val allArticlesItem = navView.findViewById<android.widget.LinearLayout>(R.id.all_articles_item)
+        allArticlesItem.setOnClickListener {
+            // TODO: Implement show all articles functionality
+            drawerLayout.closeDrawer(navView)
         }
     }
     

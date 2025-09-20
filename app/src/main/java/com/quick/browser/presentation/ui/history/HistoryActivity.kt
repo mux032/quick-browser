@@ -70,7 +70,7 @@ class HistoryActivity : BaseActivity() {
         // Set up toolbar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false) // Hide back button
         supportActionBar?.setDisplayShowTitleEnabled(false) // Hide default title
 
         // Ensure toolbar sits below the status bar on all devices

@@ -41,10 +41,10 @@ class SettingsActivity : BaseActivity() {
         setContentView(R.layout.activity_settings)
 
         try {
-            // Set up toolbar
-            val toolbar = findViewById<Toolbar>(R.id.toolbar)
+            // Initialize toolbar
+            val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
             setSupportActionBar(toolbar)
-            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            supportActionBar?.setDisplayHomeAsUpEnabled(false) // Hide back button
             supportActionBar?.title = getString(R.string.settings)
 
             // Ensure toolbar sits below the status bar on all devices
