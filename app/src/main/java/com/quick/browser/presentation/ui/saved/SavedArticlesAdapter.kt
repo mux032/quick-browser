@@ -1,6 +1,7 @@
 package com.quick.browser.presentation.ui.saved
 
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.view.LayoutInflater
@@ -21,6 +22,7 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.quick.browser.R
 import com.quick.browser.domain.model.SavedArticle
+import com.quick.browser.domain.model.SavedArticlesViewStyle
 import com.quick.browser.utils.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +32,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Adapter for displaying saved articles in a RecyclerView
+ * Adapter for displaying saved articles in a RecyclerView with different view styles
  */
 class SavedArticlesAdapter(
     private val onItemClick: (SavedArticle) -> Unit,
@@ -39,9 +41,10 @@ class SavedArticlesAdapter(
     private val lifecycleOwner: LifecycleOwner
 ) : ListAdapter<SavedArticle, SavedArticlesAdapter.SavedArticleViewHolder>(SavedArticleDiffCallback()) {
 
+    private var currentViewStyle: SavedArticlesViewStyle = SavedArticlesViewStyle.CARD
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SavedArticleViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_saved_article, parent, false)
+        val view = SavedArticlesViewTypeHelper.inflateViewForViewStyle(parent, currentViewStyle)
         return SavedArticleViewHolder(view)
     }
 
@@ -49,40 +52,50 @@ class SavedArticlesAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun getItemViewType(position: Int): Int {
+        // Return view type based on current view style to enable proper view recycling
+        return currentViewStyle.ordinal
+    }
+
+    fun updateViewStyle(viewStyle: SavedArticlesViewStyle) {
+        currentViewStyle = viewStyle
+        notifyDataSetChanged()
+    }
+
     inner class SavedArticleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val titleTextView: TextView = itemView.findViewById(R.id.text_title)
-        private val siteNameTextView: TextView = itemView.findViewById(R.id.text_site_name)
-        private val savedDateTextView: TextView = itemView.findViewById(R.id.text_saved_date)
-        private val deleteButton: ImageView = itemView.findViewById(R.id.button_delete)
-        private val previewImage: ImageView = itemView.findViewById(R.id.preview_image)
-        private val faviconImage: ImageView = itemView.findViewById(R.id.favicon_image)
+        private val titleTextView: TextView? = itemView.findViewById(R.id.text_title)
+        private val siteNameTextView: TextView? = itemView.findViewById(R.id.text_site_name)
+        private val savedDateTextView: TextView? = itemView.findViewById(R.id.text_saved_date)
+        private val deleteButton: ImageView? = itemView.findViewById(R.id.button_delete)
+        private val previewImage: ImageView? = itemView.findViewById(R.id.preview_image)
+        private val faviconImage: ImageView? = itemView.findViewById(R.id.favicon_image)
 
         fun bind(article: SavedArticle) {
-            titleTextView.text = article.title
-            siteNameTextView.text = article.siteName ?: "Unknown Source"
+            titleTextView?.text = article.title
+            siteNameTextView?.text = article.siteName ?: "Unknown Source"
 
             // Format saved date to show only month and day
             val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
             val date = Date(article.savedDate)
-            savedDateTextView.text = dateFormat.format(date)
+            savedDateTextView?.text = dateFormat.format(date)
 
             // Load preview image and favicon using ViewModel
-            loadPreviewImage(article)
-            loadFavicon(article)
+            previewImage?.let { loadPreviewImage(article, it) }
+            faviconImage?.let { loadFavicon(article, it) }
 
             itemView.setOnClickListener {
                 onItemClick(article)
             }
 
-            deleteButton.setOnClickListener {
+            deleteButton?.setOnClickListener {
                 onDeleteClick(article)
             }
         }
 
-        private fun loadPreviewImage(article: SavedArticle) {
+        private fun loadPreviewImage(article: SavedArticle, imageView: ImageView) {
             // Reset image view properties
-            previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
-            previewImage.setBackgroundColor(Color.TRANSPARENT)
+            imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+            imageView.setBackgroundColor(Color.TRANSPARENT)
 
             // Use coroutine to fetch preview image URL from ViewModel
             lifecycleOwner.lifecycleScope.launch {
@@ -97,51 +110,26 @@ class SavedArticlesAdapter(
                                 .placeholder(R.drawable.ic_web_page)
                                 .error(R.drawable.ic_web_page)
                                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                                .addListener(object : RequestListener<Drawable> {
-                                    override fun onLoadFailed(
-                                        e: GlideException?,
-                                        model: Any?,
-                                        target: Target<Drawable>,
-                                        isFirstResource: Boolean
-                                    ): Boolean {
-                                        // Show fallback when loading fails
-                                        showFallbackPreview()
-                                        return true // We handled the error
-                                    }
-
-                                    override fun onResourceReady(
-                                        resource: Drawable,
-                                        model: Any,
-                                        target: Target<Drawable>,
-                                        dataSource: DataSource,
-                                        isFirstResource: Boolean
-                                    ): Boolean {
-                                        // Reset background when image is successfully loaded
-                                        previewImage.setBackgroundColor(Color.TRANSPARENT)
-                                        previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
-                                        return false
-                                    }
-                                })
-                                .into(previewImage)
+                                .into(imageView)
                         }
                     } else {
                         // Fallback to constructing URL or showing placeholder
-                        showFallbackPreview()
+                        showFallbackPreview(imageView)
                     }
                 } catch (e: Exception) {
                     Logger.e("SavedArticlesAdapter", "Error loading preview image", e)
-                    showFallbackPreview()
+                    showFallbackPreview(imageView)
                 }
             }
         }
 
-        private fun showFallbackPreview() {
-            previewImage.setImageResource(R.drawable.ic_web_page)
-            previewImage.scaleType = ImageView.ScaleType.CENTER_INSIDE
-            previewImage.setBackgroundColor(itemView.context.getColor(R.color.light_gray))
+        private fun showFallbackPreview(imageView: ImageView) {
+            imageView.setImageResource(R.drawable.ic_web_page)
+            imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
+            imageView.setBackgroundColor(itemView.context.getColor(R.color.light_gray))
         }
 
-        private fun loadFavicon(article: SavedArticle) {
+        private fun loadFavicon(article: SavedArticle, imageView: ImageView) {
             // Use coroutine to fetch favicon URL from ViewModel
             lifecycleOwner.lifecycleScope.launch {
                 try {
@@ -155,20 +143,20 @@ class SavedArticlesAdapter(
                                 .placeholder(R.drawable.ic_website)
                                 .error(R.drawable.ic_website)
                                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                                .into(faviconImage)
+                                .into(imageView)
                         }
                     } else {
                         // Fallback to constructing favicon URL or showing placeholder
-                        showFallbackFavicon(article)
+                        showFallbackFavicon(article, imageView)
                     }
                 } catch (e: Exception) {
                     Logger.e("SavedArticlesAdapter", "Error loading favicon", e)
-                    showFallbackFavicon(article)
+                    showFallbackFavicon(article, imageView)
                 }
             }
         }
 
-        private fun showFallbackFavicon(article: SavedArticle) {
+        private fun showFallbackFavicon(article: SavedArticle, imageView: ImageView) {
             // Try to construct favicon URL from domain
             try {
                 val uri = Uri.parse(article.url)
@@ -188,13 +176,13 @@ class SavedArticlesAdapter(
                         .placeholder(R.drawable.ic_website)
                         .error(R.drawable.ic_website)
                         .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                        .into(faviconImage)
+                        .into(imageView)
                 } else {
-                    faviconImage.setImageResource(R.drawable.ic_website)
+                    imageView.setImageResource(R.drawable.ic_website)
                 }
             } catch (e: Exception) {
                 Logger.e("SavedArticlesAdapter", "Error constructing favicon URL", e)
-                faviconImage.setImageResource(R.drawable.ic_website)
+                imageView.setImageResource(R.drawable.ic_website)
             }
         }
     }

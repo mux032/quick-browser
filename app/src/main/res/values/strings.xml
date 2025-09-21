@@ -206,4 +206,13 @@
     <string name="menu_delete_today">Delete Today</string>
     <string name="menu_delete_last_month">Delete Last Month</string>
     <string name="menu_delete_all">Delete All</string>
+    
+    <!-- Saved Articles View Style -->
+    <string name="saved_articles_view_style">Saved Articles View Style</string>
+    <string name="saved_articles_view_style_summary">Choose how saved articles are displayed</string>
+    <string name="card_view">Card View</string>
+    <string name="compact_card">Compact Card</string>
+    <string name="compact_view">Compact View</string>
+    <string name="super_compact">Super Compact</string>
+    <string name="search">Search</string>
 </resources>

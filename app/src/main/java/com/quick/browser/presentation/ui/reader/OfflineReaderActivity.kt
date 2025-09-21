@@ -41,6 +41,7 @@ class OfflineReaderActivity : AppCompatActivity() {
         const val EXTRA_ARTICLE_BYLINE = "article_byline"
         const val EXTRA_ARTICLE_SITE_NAME = "article_site_name"
         const val EXTRA_ARTICLE_PUBLISH_DATE = "article_publish_date"
+        const val EXTRA_ARTICLE_URL = "article_url"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,6 +87,14 @@ class OfflineReaderActivity : AppCompatActivity() {
     }
 
     private fun loadArticle() {
+        // Check if we're loading by URL (for saved articles)
+        val articleUrl = intent.getStringExtra(EXTRA_ARTICLE_URL)
+        if (articleUrl != null) {
+            loadSavedArticleByUrl(articleUrl)
+            return
+        }
+        
+        // Load article from intent extras (traditional approach)
         val title = intent.getStringExtra(EXTRA_ARTICLE_TITLE) ?: "Untitled"
         val content = intent.getStringExtra(EXTRA_ARTICLE_CONTENT) ?: ""
         val byline = intent.getStringExtra(EXTRA_ARTICLE_BYLINE)
@@ -100,6 +109,13 @@ class OfflineReaderActivity : AppCompatActivity() {
 
         val htmlContent = createStyledHtml(title, content, byline, siteName, publishDate)
         webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+    }
+
+    private fun loadSavedArticleByUrl(url: String) {
+        // TODO: Implement loading saved article by URL from database
+        // For now, show a toast and finish
+        Toast.makeText(this, "Loading saved article by URL not yet implemented", Toast.LENGTH_SHORT).show()
+        finish()
     }
 
     private fun createStyledHtml(

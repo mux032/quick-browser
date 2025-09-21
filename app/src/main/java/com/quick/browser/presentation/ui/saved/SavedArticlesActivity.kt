@@ -6,8 +6,10 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -23,15 +25,22 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.quick.browser.R
 import com.quick.browser.domain.model.SavedArticle
+import com.quick.browser.domain.model.SavedArticlesViewStyle
 import com.quick.browser.presentation.ui.reader.OfflineReaderActivity
+import com.quick.browser.service.SettingsService
+import com.quick.browser.utils.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Activity to display saved articles for offline reading
  */
 @AndroidEntryPoint
 class SavedArticlesActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var settingsService: SettingsService
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: SavedArticlesAdapter
@@ -41,6 +50,7 @@ class SavedArticlesActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
     private var isSearchBarExplicitlyOpened = false
+    private var currentViewStyle: SavedArticlesViewStyle = SavedArticlesViewStyle.CARD
 
     private val viewModel: SavedArticlesViewModel by viewModels()
 
@@ -74,6 +84,9 @@ class SavedArticlesActivity : AppCompatActivity() {
         
         // Set up side panel interactions
         setupSidePanel()
+        
+        // Load saved view style preference
+        loadSavedViewStyle()
     }
 
     private fun setupToolbar() {
@@ -130,39 +143,15 @@ class SavedArticlesActivity : AppCompatActivity() {
                     // Show loading indicator if needed
                 } else if (uiState.error != null) {
                     // Show error message
+                    Logger.e(TAG, "Error loading saved articles: ${uiState.error}")
                 } else {
-                    // Submit the articles to the adapter
+                    // Update adapter with saved articles
                     adapter.submitList(uiState.articles)
                 }
             }
         }
     }
 
-    private fun openArticleInReaderMode(article: SavedArticle) {
-        val intent = Intent(this, OfflineReaderActivity::class.java).apply {
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_TITLE, article.title)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_CONTENT, article.content)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_BYLINE, article.author)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_SITE_NAME, article.siteName)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_PUBLISH_DATE, article.publishDate)
-        }
-        startActivity(intent)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressed()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        return true
-    }
-    
     private fun setupSearchView() {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
@@ -174,37 +163,28 @@ class SavedArticlesActivity : AppCompatActivity() {
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText.isNullOrEmpty()) {
-                    // Show all saved articles
+                    // Show all saved articles when search query is empty
                     observeViewModel()
                 } else {
-                    // Search saved articles
+                    // Perform search with the query
                     viewModel.searchSavedArticles(newText)
                 }
                 return true
             }
         })
-        
-        // Handle close button click
+
+        // Handle search view close event
         searchView.setOnCloseListener {
-            closeSearchBar()
-            true
+            // Show all saved articles when search view is closed
+            observeViewModel()
+            false
         }
-        
-        // Also handle Enter key from the search view's text field
-        searchView.findViewById<androidx.appcompat.widget.SearchView.SearchAutoComplete>(
-            androidx.appcompat.R.id.search_src_text
-        ).setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                // Hide keyboard when Enter is pressed but keep search bar visible
-                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(searchView.windowToken, 0)
-                true
-            } else {
-                false
-            }
-        }
+
+        // Handle IME options (Enter key)
+        val searchEditText = searchView.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
+        searchEditText?.imeOptions = EditorInfo.IME_ACTION_SEARCH
     }
-    
+
     private fun setupSwipeRefresh() {
         swipeRefreshLayout.setOnRefreshListener {
             // Refresh the saved articles data
@@ -223,7 +203,7 @@ class SavedArticlesActivity : AppCompatActivity() {
             R.color.secondaryColor
         )
     }
-    
+
     private fun showSearchBar() {
         // Mark that the search bar was explicitly opened
         isSearchBarExplicitlyOpened = true
@@ -244,7 +224,7 @@ class SavedArticlesActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     private fun closeSearchBar() {
         // Reset the explicit open flag
         isSearchBarExplicitlyOpened = false
@@ -262,7 +242,7 @@ class SavedArticlesActivity : AppCompatActivity() {
         // Show all saved articles
         observeViewModel()
     }
-    
+
     private fun hideSearchBar() {
         // Hide keyboard
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
@@ -278,7 +258,7 @@ class SavedArticlesActivity : AppCompatActivity() {
             observeViewModel()
         }
     }
-    
+
     private fun setupSidePanel() {
         // Set up close button in side panel
         val closeButton = navView.findViewById<android.widget.ImageButton>(R.id.close_button)
@@ -298,8 +278,56 @@ class SavedArticlesActivity : AppCompatActivity() {
             // TODO: Implement show all articles functionality
             drawerLayout.closeDrawer(navView)
         }
+        
+        // Set up view style selection - we need to find the included layout first
+        val sidePanelInclude = navView.findViewById<View>(R.id.side_panel)
+        if (sidePanelInclude is ViewGroup) {
+            // Find the view style items within the included layout
+            val cardViewItem = sidePanelInclude.findViewById<android.widget.LinearLayout>(R.id.card_view_item)
+            val compactCardViewItem = sidePanelInclude.findViewById<android.widget.LinearLayout>(R.id.compact_card_item)
+            val compactViewItem = sidePanelInclude.findViewById<android.widget.LinearLayout>(R.id.compact_item)
+            val superCompactViewItem = sidePanelInclude.findViewById<android.widget.LinearLayout>(R.id.super_compact_item)
+            
+            cardViewItem.setOnClickListener {
+                updateViewStyle(SavedArticlesViewStyle.CARD)
+                drawerLayout.closeDrawer(navView)
+            }
+            
+            compactCardViewItem.setOnClickListener {
+                updateViewStyle(SavedArticlesViewStyle.COMPACT_CARD)
+                drawerLayout.closeDrawer(navView)
+            }
+            
+            compactViewItem.setOnClickListener {
+                updateViewStyle(SavedArticlesViewStyle.COMPACT)
+                drawerLayout.closeDrawer(navView)
+            }
+            
+            superCompactViewItem.setOnClickListener {
+                updateViewStyle(SavedArticlesViewStyle.SUPER_COMPACT)
+                drawerLayout.closeDrawer(navView)
+            }
+        }
     }
-    
+
+    private fun updateViewStyle(viewStyle: SavedArticlesViewStyle) {
+        currentViewStyle = viewStyle
+        adapter.updateViewStyle(viewStyle)
+        
+        // Save the preference
+        settingsService.setSavedArticlesViewStyle(viewStyle.name)
+    }
+
+    private fun loadSavedViewStyle() {
+        val savedStyleName = settingsService.getSavedArticlesViewStyle()
+        currentViewStyle = try {
+            SavedArticlesViewStyle.valueOf(savedStyleName)
+        } catch (e: IllegalArgumentException) {
+            SavedArticlesViewStyle.CARD // Default to card view
+        }
+        adapter.updateViewStyle(currentViewStyle)
+    }
+
     private fun setupKeyboardVisibilityListener() {
         // Listen for keyboard visibility changes
         window.decorView.viewTreeObserver.addOnGlobalLayoutListener {
@@ -327,7 +355,29 @@ class SavedArticlesActivity : AppCompatActivity() {
             }
         }
     }
-    
+
+    private fun openArticleInReaderMode(article: SavedArticle) {
+        val intent = Intent(this, OfflineReaderActivity::class.java).apply {
+            putExtra(OfflineReaderActivity.EXTRA_ARTICLE_URL, article.url)
+        }
+        startActivity(intent)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_saved_articles, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_search -> {
+                showSearchBar()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     override fun onBackPressed() {
         // If search bar is visible, close it instead of closing the activity
         if (searchCard.visibility == View.VISIBLE) {
@@ -335,5 +385,9 @@ class SavedArticlesActivity : AppCompatActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    companion object {
+        private const val TAG = "SavedArticlesActivity"
     }
 }

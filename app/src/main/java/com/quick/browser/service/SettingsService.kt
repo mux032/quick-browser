@@ -42,6 +42,7 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
         private const val KEY_NIGHT_MODE = "pref_night_mode"
         private const val KEY_LAST_SHARED_URL = "last_shared_url"
         private const val KEY_SHOW_URL_BAR = "pref_show_url_bar"
+        private const val KEY_SAVED_ARTICLES_VIEW_STYLE = "pref_saved_articles_view_style"
 
         // Reader mode settings keys
         private const val KEY_READER_FONT_SIZE = "pref_reader_font_size"
@@ -56,6 +57,7 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
         private const val DEFAULT_THEME_COLOR = "Blue"
         private const val DEFAULT_DYNAMIC_COLOR = true
         private const val DEFAULT_SHOW_URL_BAR = true
+        private const val DEFAULT_SAVED_ARTICLES_VIEW_STYLE = "CARD"
 
         // Reader mode default values
         private const val DEFAULT_READER_FONT_SIZE = 18
@@ -361,14 +363,17 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
     }
 
     /**
-     * Show URL bar settings
+     * Get the saved articles view style
      */
-    fun isUrlBarVisible(): Boolean {
-        return preferences.getBoolean(KEY_SHOW_URL_BAR, DEFAULT_SHOW_URL_BAR)
+    fun getSavedArticlesViewStyle(): String {
+        return preferences.getString(KEY_SAVED_ARTICLES_VIEW_STYLE, DEFAULT_SAVED_ARTICLES_VIEW_STYLE) ?: DEFAULT_SAVED_ARTICLES_VIEW_STYLE
     }
 
-    fun setUrlBarVisible(visible: Boolean) {
-        preferences.edit().putBoolean(KEY_SHOW_URL_BAR, visible).apply()
+    /**
+     * Set the saved articles view style
+     */
+    fun setSavedArticlesViewStyle(style: String) {
+        preferences.edit().putString(KEY_SAVED_ARTICLES_VIEW_STYLE, style).apply()
     }
 
     /**
@@ -449,5 +454,19 @@ class SettingsService(context: Context, private val encryptedPrefs: EncryptedPre
 
     fun setManualFontSize(size: Int) {
         preferences.edit().putInt(KEY_MANUAL_FONT_SIZE, size).apply()
+    }
+
+    /**
+     * Check if URL bar should be visible
+     */
+    fun isUrlBarVisible(): Boolean {
+        return preferences.getBoolean(KEY_SHOW_URL_BAR, DEFAULT_SHOW_URL_BAR)
+    }
+
+    /**
+     * Set URL bar visibility
+     */
+    fun setUrlBarVisible(visible: Boolean) {
+        preferences.edit().putBoolean(KEY_SHOW_URL_BAR, visible).apply()
     }
 }

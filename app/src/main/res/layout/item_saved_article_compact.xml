@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <!-- Preview Image on the left -->
+        <ImageView
+            android:id="@+id/preview_image"
+            android:layout_width="80dp"
+            android:layout_height="60dp"
+            android:scaleType="centerCrop"
+            android:background="@color/light_gray"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:src="@drawable/ic_web_page" />
+
+        <!-- Title to the right of image -->
+        <TextView
+            android:id="@+id/text_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/button_delete"
+            app:layout_constraintStart_toEndOf="@id/preview_image"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Sample Article Title That Might Be Long" />
+
+        <!-- Favicon and Website Info below title -->
+        <LinearLayout
+            android:id="@+id/website_info_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="@id/text_title"
+            app:layout_constraintEnd_toStartOf="@id/text_saved_date"
+            app:layout_constraintTop_toBottomOf="@id/text_title"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <!-- Favicon -->
+            <ImageView
+                android:id="@+id/favicon_image"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/favicon_background"
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                tools:src="@drawable/ic_website" />
+
+            <!-- Website Name -->
+            <TextView
+                android:id="@+id/text_site_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp"
+                tools:text="Example.com" />
+
+        </LinearLayout>
+
+        <!-- Saved Date at bottom right -->
+        <TextView
+            android:id="@+id/text_saved_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="Oct 15" />
+
+        <!-- Delete Button in top right corner -->
+        <ImageView
+            android:id="@+id/button_delete"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="2dp"
+            android:src="@drawable/ic_delete"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@android:color/darker_gray" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>
