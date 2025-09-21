@@ -15,10 +15,17 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.card.MaterialCardView
 import com.quick.browser.R
+import com.quick.browser.domain.repository.ArticleRepository
+import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.service.SettingsService
+import com.quick.browser.utils.Logger
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -29,6 +36,9 @@ class OfflineReaderActivity : AppCompatActivity() {
 
     @Inject
     lateinit var settingsService: SettingsService
+    
+    @Inject
+    lateinit var articleRepository: ArticleRepository
 
     private lateinit var webView: WebView
     private lateinit var searchView: SearchView
@@ -112,10 +122,38 @@ class OfflineReaderActivity : AppCompatActivity() {
     }
 
     private fun loadSavedArticleByUrl(url: String) {
-        // TODO: Implement loading saved article by URL from database
-        // For now, show a toast and finish
-        Toast.makeText(this, "Loading saved article by URL not yet implemented", Toast.LENGTH_SHORT).show()
-        finish()
+        // Use coroutine to fetch saved article from database
+        lifecycleScope.launch {
+            try {
+                // Get the saved article by URL from the repository
+                val savedArticle = articleRepository.getSavedArticleByUrl(url)
+                
+                if (savedArticle != null) {
+                    // Load the article content using the traditional approach
+                    val htmlContent = createStyledHtml(
+                        title = savedArticle.title,
+                        content = savedArticle.content,
+                        byline = savedArticle.author,
+                        siteName = savedArticle.siteName,
+                        publishDate = savedArticle.publishDate
+                    )
+                    withContext(Dispatchers.Main) {
+                        webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@OfflineReaderActivity, "Article not found", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                }
+            } catch (e: Exception) {
+                Logger.e("OfflineReaderActivity", "Error loading saved article by URL", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@OfflineReaderActivity, "Error loading article: ${e.message}", Toast.LENGTH_LONG).show()
+                    finish()
+                }
+            }
+        }
     }
 
     private fun createStyledHtml(

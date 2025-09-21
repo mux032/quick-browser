@@ -83,17 +83,19 @@ class SavedArticlesAdapter(
             previewImage?.let { loadPreviewImage(article, it) }
             faviconImage?.let { loadFavicon(article, it) }
 
+            // Always set click listener on the item view itself
             itemView.setOnClickListener {
                 onItemClick(article)
             }
 
+            // Set click listener for delete button if it exists
             deleteButton?.setOnClickListener {
                 onDeleteClick(article)
             }
         }
 
         private fun loadPreviewImage(article: SavedArticle, imageView: ImageView) {
-            // Reset image view properties
+            // Reset image view properties only if the view exists
             imageView.scaleType = ImageView.ScaleType.CENTER_CROP
             imageView.setBackgroundColor(Color.TRANSPARENT)
 
@@ -124,9 +126,13 @@ class SavedArticlesAdapter(
         }
 
         private fun showFallbackPreview(imageView: ImageView) {
-            imageView.setImageResource(R.drawable.ic_web_page)
-            imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
-            imageView.setBackgroundColor(itemView.context.getColor(R.color.light_gray))
+            try {
+                imageView.setImageResource(R.drawable.ic_web_page)
+                imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                imageView.setBackgroundColor(itemView.context.getColor(R.color.light_gray))
+            } catch (e: Exception) {
+                Logger.e("SavedArticlesAdapter", "Error showing fallback preview", e)
+            }
         }
 
         private fun loadFavicon(article: SavedArticle, imageView: ImageView) {
