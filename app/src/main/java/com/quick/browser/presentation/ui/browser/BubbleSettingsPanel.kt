@@ -45,7 +45,6 @@ class BubbleSettingsPanel(
     private var javascriptSwitch: SwitchMaterial? = null
     private var btnNavBack: MaterialButton? = null
     private var btnNavForward: MaterialButton? = null
-    private var btnSaveArticleIcon: MaterialButton? = null
     private var btnShareIcon: MaterialButton? = null
 
     // UI sections
@@ -112,7 +111,6 @@ class BubbleSettingsPanel(
         // Get new controls
         btnNavBack = settingsPanel.findViewById(R.id.btn_nav_back)
         btnNavForward = settingsPanel.findViewById(R.id.btn_nav_forward)
-        btnSaveArticleIcon = settingsPanel.findViewById(R.id.btn_save_article_icon)
         btnShareIcon = settingsPanel.findViewById(R.id.btn_share_icon)
 
         // Set up ad blocking switch
@@ -160,14 +158,6 @@ class BubbleSettingsPanel(
         }
 
         // Set up save article icon
-        btnSaveArticleIcon?.setOnClickListener {
-            listener?.onSaveOfflineRequested()
-            // Hide the settings panel after the action
-            settingsPanel.post {
-                hide(settingsPanel)
-            }
-        }
-
         // Set up share icon
         btnShareIcon?.setOnClickListener {
             listener?.onShareRequested()

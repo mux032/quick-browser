@@ -19,6 +19,7 @@ class ArticleSavingService(
      * Save an article for offline reading
      *
      * @param url The URL of the article to save
+     * @param tagId The ID of the tag to save the article to (0 for no tag)
      * @param scope The coroutine scope to launch the save operation
      * @param onSuccess Callback when save is successful
      * @param onError Callback when save fails
@@ -26,6 +27,7 @@ class ArticleSavingService(
      */
     suspend fun saveArticleForOfflineReading(
         url: String,
+        tagId: Long = 0, // 0 means no tag
         scope: CoroutineScope,
         onSuccess: () -> Unit = {},
         onError: (String) -> Unit = {}
@@ -41,7 +43,7 @@ class ArticleSavingService(
                 }
                 
                 // Attempt to save the article by extracting readable content
-                val success = repository.saveArticleByUrl(url)
+                val success = repository.saveArticleByUrl(url, tagId)
                 
                 withContext(Dispatchers.Main) {
                     if (success) {

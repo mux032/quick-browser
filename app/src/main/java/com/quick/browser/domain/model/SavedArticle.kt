@@ -11,6 +11,7 @@ package com.quick.browser.domain.model
  * @property siteName The name of the site where the article was published, if available
  * @property publishDate The date when the article was published, if available
  * @property excerpt A short excerpt or summary of the article, if available
+ * @property folderId The ID of the folder this article belongs to (0 for no folder)
  */
 data class SavedArticle(
     val url: String,
@@ -20,5 +21,6 @@ data class SavedArticle(
     val author: String? = null,
     val siteName: String? = null,
     val publishDate: String? = null,
-    val excerpt: String? = null
+    val excerpt: String? = null,
+    val tagId: Long = 0 // 0 means no tag
 )

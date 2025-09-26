@@ -6,4 +6,10 @@
     <!-- Bubble expanded container default dimensions -->
     <dimen name="bubble_expanded_default_width">360dp</dimen>
     <dimen name="bubble_expanded_default_height">440dp</dimen>
+    
+    <!-- Folder selection panel dimensions -->
+    <dimen name="folder_item_padding_horizontal">8dp</dimen>
+    <dimen name="folder_item_padding_vertical">8dp</dimen>
+    <dimen name="folder_icon_size">24dp</dimen>
+    <dimen name="folder_icon_margin_end">12dp</dimen>
 </resources>

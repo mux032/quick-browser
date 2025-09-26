@@ -18,6 +18,7 @@ import androidx.room.PrimaryKey
  * @property publishDate The date when the article was published
  * @property savedDate The timestamp when the article was saved
  * @property excerpt A short excerpt or summary of the article
+ * @property tagId The ID of the tag the article belongs to (0 for no tag)
  */
 @Entity(tableName = "saved_articles")
 data class SavedArticle(
@@ -29,5 +30,6 @@ data class SavedArticle(
     val siteName: String?,
     val publishDate: String?,
     val savedDate: Long,
-    val excerpt: String?
+    val excerpt: String?,
+    val tagId: Long = 0
 )

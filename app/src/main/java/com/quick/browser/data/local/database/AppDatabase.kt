@@ -5,12 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.quick.browser.data.SavedArticleDao
+import com.quick.browser.data.local.dao.SavedArticleDao
 import com.quick.browser.data.local.dao.SettingsDao
 import com.quick.browser.data.local.dao.WebPageDao
-import com.quick.browser.data.local.entity.SavedArticle
-import com.quick.browser.data.local.entity.Settings
-import com.quick.browser.data.local.entity.WebPage
+import com.quick.browser.data.local.entity.*
 
 /**
  * Room database for the QB app
@@ -19,7 +17,7 @@ import com.quick.browser.data.local.entity.WebPage
  * It includes entities for web pages, settings, and saved articles,
  * along with their respective DAOs for database access.
  */
-@Database(entities = [WebPage::class, Settings::class, SavedArticle::class], version = 1, exportSchema = false)
+@Database(entities = [WebPage::class, Settings::class, SavedArticle::class, Tag::class, ArticleTag::class], version = 5, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -44,6 +42,20 @@ abstract class AppDatabase : RoomDatabase() {
      */
     abstract fun savedArticleDao(): SavedArticleDao
 
+    /**
+     * Get the Tag DAO
+     *
+     * @return The TagDao instance
+     */
+    abstract fun tagDao(): com.quick.browser.data.local.dao.TagDao
+
+    /**
+     * Get the ArticleTag DAO
+     *
+     * @return The ArticleTagDao instance
+     */
+    abstract fun articleTagDao(): com.quick.browser.data.local.dao.ArticleTagDao
+
     companion object {
         private const val DATABASE_NAME = "quick_browser.db"
 
@@ -63,7 +75,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(false)
                     .build()
 
                 INSTANCE = instance

@@ -78,7 +78,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Side panel for folders -->
+    <!-- Side panel for tags -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
         android:layout_width="300dp"
@@ -89,7 +89,7 @@
 
         <include
             android:id="@+id/side_panel"
-            layout="@layout/layout_side_panel" />
+            layout="@layout/layout_side_panel_tags" />
 
     </com.google.android.material.navigation.NavigationView>
 

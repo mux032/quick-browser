@@ -26,15 +26,28 @@ import android.graphics.PorterDuff
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
-import android.widget.*
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.PopupMenu
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.*
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.button.MaterialButton
@@ -44,6 +57,8 @@ import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
 import com.quick.browser.utils.UrlUtils
 import com.quick.browser.utils.security.SecurityPolicyManager
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import kotlin.math.exp
 
 /**
@@ -67,6 +82,7 @@ class BubbleView @JvmOverloads constructor(
     private val adBlockingService: AdBlockingService,
     private val summarizationService: SummarizationService,
     private val offlineArticleSaver: OfflineArticleSaver,
+    private val tagRepository: com.quick.browser.domain.repository.TagRepository,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate,
@@ -537,7 +553,7 @@ class BubbleView @JvmOverloads constructor(
             override fun onSaveOfflineRequested() {
                 // Handle save for offline reading
                 Logger.d(TAG, "Save for offline reading requested for bubble $bubbleId")
-                saveArticleForOfflineReading()
+                saveArticleForOfflineReading(url)
             }
             
             override fun onShareRequested() {
@@ -667,10 +683,11 @@ class BubbleView @JvmOverloads constructor(
     // - reloadWebPageIfNeeded() - moved to BubbleWebViewManager
 
     /**
-     * Save the current article for offline reading
+     * Show tag selection menu when saving an article
+     * Displays a popup menu with existing tags for the user to select
      */
-    private fun saveArticleForOfflineReading() {
-        Logger.d(TAG, "Save article for offline reading requested")
+    private fun showTagSelectionMenu() {
+        Logger.d(TAG, "Show tag selection menu requested for bubble: $bubbleId")
         
         // Get the current URL
         val currentUrl = url
@@ -679,9 +696,142 @@ class BubbleView @JvmOverloads constructor(
             return
         }
         
+        // Load tags and show selection menu
+        (context as LifecycleOwner).lifecycleScope.launch {
+            try {
+                tagRepository.getAllTags().collectLatest { tags ->
+                    showTagSelectionPopupMenu(tags, currentUrl)
+                }
+            } catch (e: Exception) {
+                Logger.e(TAG, "Error loading tags for selection: $e")
+                Toast.makeText(context, "Error loading tags", Toast.LENGTH_SHORT).show()
+                
+                // Fall back to saving without tag
+                saveArticleForOfflineReading(currentUrl, 0)
+            }
+        }
+    }
+    
+    /**
+     * Show popup menu with tag options
+     *
+     * @param tags List of available tags
+     * @param url URL of article to save
+     */
+    private fun showTagSelectionPopupMenu(tags: List<com.quick.browser.domain.model.Tag>, url: String) {
+        val anchorView = uiManager.getBtnSaveArticle()
+        
+        // Create popup menu
+        val popupMenu = PopupMenu(context, anchorView)
+        
+        // Add "No tag" option
+        popupMenu.menu.add(Menu.NONE, 0, 0, "No tag")
+        
+        // Add all available tags
+        tags.forEachIndexed { index, tag ->
+            popupMenu.menu.add(Menu.NONE, tag.id.toInt(), index + 1, tag.name)
+        }
+        
+        // Add "Create new tag" option
+        popupMenu.menu.add(Menu.NONE, -1, tags.size + 1, "Create new tag...")
+        
+        // Set click listener
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId.toLong()) {
+                0L -> {
+                    // Save without tag
+                    saveArticleForOfflineReading(url, 0)
+                    true
+                }
+                -1L -> {
+                    // Create new tag
+                    showCreateTagDialog(url)
+                    true
+                }
+                else -> {
+                    // Save with selected tag
+                    saveArticleForOfflineReading(url, menuItem.itemId.toLong())
+                    true
+                }
+            }
+        }
+        
+        // Show the popup menu
+        popupMenu.show()
+    }
+    
+    /**
+     * Show dialog to create a new tag
+     *
+     * @param url URL of article to save
+     */
+    private fun showCreateTagDialog(url: String) {
+        val input = EditText(context)
+        input.hint = "Enter tag name"
+        
+        AlertDialog.Builder(context)
+            .setTitle("Create New Tag")
+            .setView(input)
+            .setPositiveButton("Create") { dialog, _ ->
+                val tagName = input.text.toString().trim()
+                if (tagName.isNotEmpty()) {
+                    createTagAndSaveArticle(tagName, url)
+                } else {
+                    Toast.makeText(context, "Tag name cannot be empty", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+            .show()
+    }
+    
+    /**
+     * Create a new tag and save the article with that tag
+     *
+     * @param tagName Name of the new tag
+     * @param url URL of article to save
+     */
+    private fun createTagAndSaveArticle(tagName: String, url: String) {
+        (context as LifecycleOwner).lifecycleScope.launch {
+            try {
+                val tag = tagRepository.createTag(tagName)
+                if (tag != null) {
+                    saveArticleForOfflineReading(url, tag.id)
+                    Toast.makeText(context, "Tag '$tagName' created and article saved", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Failed to create tag", Toast.LENGTH_SHORT).show()
+                    // Fall back to saving without tag
+                    saveArticleForOfflineReading(url, 0)
+                }
+            } catch (e: Exception) {
+                Logger.e(TAG, "Error creating tag: $e")
+                Toast.makeText(context, "Error creating tag: ${e.message}", Toast.LENGTH_SHORT).show()
+                // Fall back to saving without tag
+                saveArticleForOfflineReading(url, 0)
+            }
+        }
+    }
+    
+    /**
+     * Save article for offline reading with optional tag
+     *
+     * @param url URL of article to save
+     * @param tagId ID of tag to assign to article (0 for no tag)
+     */
+    private fun saveArticleForOfflineReading(url: String, tagId: Long = 0) {
+        Logger.d(TAG, "Save article for offline reading requested with tag ID: $tagId")
+        
+        if (url.isBlank()) {
+            Toast.makeText(context, "No URL to save", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         // Save the article using OfflineArticleSaver
         offlineArticleSaver.saveArticleForOfflineReading(
-            url = currentUrl,
+            url = url,
+            tagId = tagId,
             scope = (context as LifecycleOwner).lifecycleScope,
             onSuccess = {
                 Logger.d(TAG, "Article saved successfully for bubble $bubbleId")
@@ -1729,6 +1879,6 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun onSaveArticle() {
-        saveArticleForOfflineReading()
+        showTagSelectionMenu()
     }
 }

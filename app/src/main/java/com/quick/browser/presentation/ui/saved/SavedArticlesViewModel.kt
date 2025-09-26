@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.usecase.DeleteArticleUseCase
+import com.quick.browser.domain.usecase.GetSavedArticlesByTagUseCase
 import com.quick.browser.domain.usecase.GetSavedArticlesUseCase
 import com.quick.browser.domain.usecase.SearchSavedArticlesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SavedArticlesViewModel @Inject constructor(
     private val getSavedArticlesUseCase: GetSavedArticlesUseCase,
+    private val getSavedArticlesByTagUseCase: GetSavedArticlesByTagUseCase,
     private val deleteArticleUseCase: DeleteArticleUseCase,
     private val searchSavedArticlesUseCase: SearchSavedArticlesUseCase,
     private val webPageDao: WebPageDao
@@ -32,12 +34,32 @@ class SavedArticlesViewModel @Inject constructor(
         loadSavedArticles()
     }
 
-    private fun loadSavedArticles() {
+    fun loadSavedArticles() {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
                 // Collect the flow of saved articles from the use case
                 getSavedArticlesUseCase().collectLatest { articles ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        articles = articles
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Failed to load saved articles: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun loadArticlesForTag(tagId: Long) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                // Collect the flow of saved articles from the use case
+                getSavedArticlesByTagUseCase(tagId).collectLatest { articles ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         articles = articles

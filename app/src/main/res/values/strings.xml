@@ -10,8 +10,11 @@
     <string name="open_in_full_view">Open in full view</string>
     <string name="read_mode">Reader mode</string>
     <string name="save_article">Save article</string>
+    <string name="saved_articles">Saved articles</string>
     <string name="save_for_offline">Save for offline</string>
     <string name="page_saved_offline">Page saved for offline reading</string>
+    <string name="save_to_folder">Save to Folder</string>
+    <string name="create_new_folder">Create new folder</string>
     <string name="add_new_bubble">Add new bubble</string>
     <string name="no_bubbles">No open tabs</string>
     <string name="favicon">Website icon</string>
@@ -45,9 +48,6 @@
     <string name="speed_medium">Medium</string>
     <string name="speed_fast">Fast</string>
     <string name="speed_very_fast">Very Fast</string>
-    <string name="bubble_size">Bubble Size</string>
-    <string name="size_normal">Normal</string>
-    <string name="animation_speed">Animation Speed</string>
     <string name="speed_normal">Normal</string>
     <string name="bubble_position_right">Position on right side</string>
 
@@ -189,12 +189,9 @@
     <string name="history_title">History</string>
     <string name="close">Close</string>
     <string name="all_articles">All Articles</string>
-    <string name="folders">Folders</string>
-    <string name="add_folder">Add Folder</string>
-    <string name="saved_articles">Saved Articles</string>
-
-    <string name="back">Back</string>
-    <string name="forward">Forward</string>
+    <string name="tags">Tags</string>
+    <string name="add_tag">Add Tag</string>
+    <string name="no_folder">No Folder</string>
 
     <!-- Service -->
     <string name="bubble_service_channel_name">Browser Service</string>

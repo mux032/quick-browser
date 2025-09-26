@@ -1,6 +1,6 @@
 package com.quick.browser.data.repository
 
-import com.quick.browser.data.SavedArticleDao
+import com.quick.browser.data.local.dao.SavedArticleDao
 import com.quick.browser.data.local.entity.SavedArticle
 import com.quick.browser.domain.repository.ArticleRepository
 import com.quick.browser.service.ReadabilityService
@@ -20,7 +20,8 @@ import javax.inject.Inject
  */
 class ArticleRepositoryImpl @Inject constructor(
     private val savedArticleDao: SavedArticleDao,
-    private val readabilityService: ReadabilityService
+    private val readabilityService: ReadabilityService,
+    private val articleTagRepository: com.quick.browser.domain.repository.ArticleTagRepository
 ) : ArticleRepository {
     
     /**
@@ -30,6 +31,18 @@ class ArticleRepositoryImpl @Inject constructor(
      */
     override fun getAllSavedArticles(): Flow<List<com.quick.browser.domain.model.SavedArticle>> {
         return savedArticleDao.getAllSavedArticles().map { list ->
+            list.map { entityToDomain(it) }
+        }
+    }
+    
+    /**
+     * Get saved articles by tag ID as a flow
+     *
+     * @param tagId The ID of the tag to retrieve articles from
+     * @return A flow of lists of saved articles with the specified tag
+     */
+    override fun getSavedArticlesByFolderId(tagId: Long): Flow<List<com.quick.browser.domain.model.SavedArticle>> {
+        return savedArticleDao.getSavedArticlesByTagId(tagId).map { list ->
             list.map { entityToDomain(it) }
         }
     }
@@ -70,9 +83,10 @@ class ArticleRepositoryImpl @Inject constructor(
      * Save an article by extracting content from its URL
      *
      * @param url The URL of the article to save
+     * @param tagId The ID of the tag to save the article to (0 for no tag)
      * @return True if the article was saved successfully, false otherwise
      */
-    override suspend fun saveArticleByUrl(url: String): Boolean {
+    override suspend fun saveArticleByUrl(url: String, tagId: Long): Boolean {
         return try {
             // Extract content from URL using ReadabilityExtractor
             val readableContent = readabilityService.extractFromUrl(url)
@@ -87,11 +101,18 @@ class ArticleRepositoryImpl @Inject constructor(
                     author = readableContent.byline,
                     siteName = readableContent.siteName,
                     publishDate = readableContent.publishDate,
-                    excerpt = readableContent.excerpt
+                    excerpt = readableContent.excerpt,
+                    tagId = 0 // Set to 0 initially, we'll associate with tag separately
                 )
                 
                 // Save to database
                 savedArticleDao.insertSavedArticle(domainToEntity(savedArticle))
+                
+                // Associate article with tag if a tag ID is provided
+                if (tagId > 0) {
+                    articleTagRepository.addTagToArticle(url, tagId)
+                }
+                
                 true
             } else {
                 // Extraction failed, but we'll handle this in the caller
@@ -179,7 +200,8 @@ class ArticleRepositoryImpl @Inject constructor(
             author = entity.byline,
             siteName = entity.siteName,
             publishDate = entity.publishDate,
-            excerpt = entity.excerpt
+            excerpt = entity.excerpt,
+            tagId = entity.tagId
         )
     }
     
@@ -198,7 +220,8 @@ class ArticleRepositoryImpl @Inject constructor(
             byline = domain.author,
             siteName = domain.siteName,
             publishDate = domain.publishDate,
-            excerpt = domain.excerpt
+            excerpt = domain.excerpt,
+            tagId = domain.tagId
         )
     }
 }

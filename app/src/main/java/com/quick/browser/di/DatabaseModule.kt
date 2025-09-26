@@ -2,7 +2,8 @@ package com.quick.browser.di
 
 import android.content.Context
 import androidx.room.Room
-import com.quick.browser.data.SavedArticleDao
+import com.quick.browser.data.local.dao.SavedArticleDao
+// Removed FolderDao import - using TagDao instead
 import com.quick.browser.data.local.dao.SettingsDao
 import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.data.local.database.AppDatabase
@@ -72,5 +73,27 @@ object DatabaseModule {
     @Provides
     fun provideSavedArticleDao(database: AppDatabase): SavedArticleDao {
         return database.savedArticleDao()
+    }
+
+    /**
+     * Provide the TagDao instance
+     *
+     * @param database The AppDatabase instance
+     * @return The TagDao instance
+     */
+    @Provides
+    fun provideTagDao(database: AppDatabase): com.quick.browser.data.local.dao.TagDao {
+        return database.tagDao()
+    }
+
+    /**
+     * Provide the ArticleTagDao instance
+     *
+     * @param database The AppDatabase instance
+     * @return The ArticleTagDao instance
+     */
+    @Provides
+    fun provideArticleTagDao(database: AppDatabase): com.quick.browser.data.local.dao.ArticleTagDao {
+        return database.articleTagDao()
     }
 }

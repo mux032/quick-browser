@@ -1,271 +1,721 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:clipChildren="false"
-    android:clipToPadding="false">
+                                                     xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                     xmlns:tools="http://schemas.android.com/tools"
+                                                     android:layout_width="wrap_content"
+                                                     android:layout_height="wrap_content"
+                                                     android:clipChildren="false"
+                                                     android:clipToPadding="false">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:clipChildren="false"
-        android:clipToPadding="false">
-
-        <!-- Bubble Head -->
-        <FrameLayout
-            android:id="@+id/bubble_container"
-            android:layout_width="68dp"
-            android:layout_height="68dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:clipChildren="false"
             android:clipToPadding="false">
 
+        <!-- Bubble Head -->
+        <FrameLayout
+                android:id="@+id/bubble_container"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
             <!-- Progress Bar positioned around the bubble -->
             <ProgressBar
-                android:id="@+id/progress_circular"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:indeterminate="false"
-                android:max="100"
-                android:progress="65"
-                android:progressDrawable="@drawable/progress_circle" />
+                    android:id="@+id/progress_circular"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_gravity="center"
+                    android:background="@android:color/transparent"
+                    android:indeterminate="false"
+                    android:max="100"
+                    android:progress="65"
+                    android:progressDrawable="@drawable/progress_circle"/>
 
             <androidx.cardview.widget.CardView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="center"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="4dp">
-                
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="4dp">
+
                 <ImageView
-                    android:id="@+id/bubble_icon"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/bubble_background"
-                    android:contentDescription="@string/bubble_description"
-                    android:padding="0dp"
-                    android:scaleType="fitCenter"
-                    tools:src="@drawable/ic_globe" />
+                        android:id="@+id/bubble_icon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bubble_background"
+                        android:contentDescription="@string/bubble_description"
+                        android:padding="0dp"
+                        android:scaleType="fitCenter"
+                        tools:src="@drawable/ic_globe"/>
             </androidx.cardview.widget.CardView>
         </FrameLayout>
 
         <!-- Container for URL bar and expanded content with resize handles overlay -->
         <FrameLayout
-            android:id="@+id/expandable_content_wrapper"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="2dp"
-            android:clipChildren="false"
-            android:clipToPadding="false">
+                android:id="@+id/expandable_content_wrapper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="2dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
             <!-- Content container for URL bar and expanded content -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                 <!-- URL Bar - shown when bubble is expanded -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/url_bar_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginTop="0dp"
-                    android:layout_marginBottom="0dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="@android:color/white"
-                    app:strokeWidth="0.5dp"
-                    app:strokeColor="#E0E0E0"
-                    android:visibility="gone">
-                    
-                    <LinearLayout
+                        android:id="@+id/url_bar_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="2dp"
-                        android:paddingBottom="2dp">
-                        
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginTop="0dp"
+                        android:layout_marginBottom="0dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="@android:color/white"
+                        app:strokeWidth="0.5dp"
+                        app:strokeColor="#E0E0E0"
+                        android:visibility="gone">
+
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="8dp"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp">
+
                         <!-- Site icon -->
                         <ImageView
-                            android:id="@+id/url_bar_icon"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginEnd="10dp"
-                            android:src="@drawable/ic_globe"
-                            android:contentDescription="@string/site_icon" />
-                        
+                                android:id="@+id/url_bar_icon"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="10dp"
+                                android:src="@drawable/ic_globe"
+                                android:contentDescription="@string/site_icon"/>
+
                         <!-- URL text -->
                         <EditText
-                            android:id="@+id/url_bar_text"
-                            android:layout_width="0dp"
-                            android:layout_height="26dp"
-                            android:layout_weight="1"
-                            android:textSize="16sp"
-                            android:textColor="#000000"
-                            android:textColorHint="?android:attr/textColorSecondary"
-                            android:singleLine="true"
-                            android:ellipsize="middle"
-                            android:background="@drawable/pill_background_selector"
-                            android:hint="@string/enter_url_hint"
-                            android:inputType="textUri"
-                            android:imeOptions="actionGo"
-                            android:selectAllOnFocus="true"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true"
-                            android:clickable="true"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="2dp"
-                            android:paddingBottom="2dp"
-                            android:text="https://google.com" />
-                        
+                                android:id="@+id/url_bar_text"
+                                android:layout_width="0dp"
+                                android:layout_height="26dp"
+                                android:layout_weight="1"
+                                android:textSize="16sp"
+                                android:textColor="#000000"
+                                android:textColorHint="?android:attr/textColorSecondary"
+                                android:singleLine="true"
+                                android:ellipsize="middle"
+                                android:background="@drawable/pill_background_selector"
+                                android:hint="@string/enter_url_hint"
+                                android:inputType="textUri"
+                                android:imeOptions="actionGo"
+                                android:selectAllOnFocus="true"
+                                android:focusable="true"
+                                android:focusableInTouchMode="true"
+                                android:clickable="true"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="16dp"
+                                android:paddingTop="2dp"
+                                android:paddingBottom="2dp"
+                                android:text="https://google.com"/>
+
                         <!-- Minimize button -->
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_url_bar_minimize"
-                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                            android:layout_width="22dp"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="10dp"
-                            android:layout_marginEnd="0dp"
-                            android:minWidth="0dp"
-                            android:minHeight="0dp"
-                            android:padding="0dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            app:icon="@drawable/ic_minimize"
-                            app:iconSize="20dp"
-                            app:iconTint="@color/colorPrimary"
-                            android:contentDescription="@string/minimize_bubble" />
+                                android:id="@+id/btn_url_bar_minimize"
+                                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                                android:layout_width="22dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="10dp"
+                                android:layout_marginEnd="0dp"
+                                android:minWidth="0dp"
+                                android:minHeight="0dp"
+                                android:padding="0dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                app:icon="@drawable/ic_minimize"
+                                app:iconSize="20dp"
+                                app:iconTint="@color/colorPrimary"
+                                android:contentDescription="@string/minimize_bubble"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <!-- Expanded Bubble Content -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/expanded_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginBottom="8dp"
-                    app:shapeAppearanceOverlay="@style/ExpandedContainerBottomRoundedCorners"
-                    app:cardElevation="2dp"
-                    app:cardBackgroundColor="@android:color/white"
-                    app:strokeWidth="0.5dp"
-                    app:strokeColor="#E0E0E0"
-                    app:contentPadding="0dp"
-                    android:visibility="gone">
+                        android:id="@+id/expanded_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginBottom="8dp"
+                        app:shapeAppearanceOverlay="@style/ExpandedContainerBottomRoundedCorners"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@android:color/white"
+                        app:strokeWidth="0.5dp"
+                        app:strokeColor="#E0E0E0"
+                        app:contentPadding="0dp"
+                        android:visibility="gone">
 
                     <!-- Main Content Area -->
                     <FrameLayout
-                        android:id="@+id/content_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                            android:id="@+id/content_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
 
                         <!-- WebView for regular bubbles with swipe refresh -->
                         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                            android:id="@+id/swipe_refresh_layout"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:visibility="gone">
-                            
-                            <WebView
-                                android:id="@+id/web_view"
+                                android:id="@+id/swipe_refresh_layout"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:background="@android:color/white"
-                                android:hardwareAccelerated="true"
-                                android:scrollbars="vertical"
-                                android:scrollbarStyle="insideOverlay" />
-                                
+                                android:visibility="gone">
+
+                            <WebView
+                                    android:id="@+id/web_view"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:background="@android:color/white"
+                                    android:hardwareAccelerated="true"
+                                    android:scrollbars="vertical"
+                                    android:scrollbarStyle="insideOverlay"/>
+
                         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-                        
+
                         <!-- Summary container that will be shown when summarize is clicked -->
                         <androidx.core.widget.NestedScrollView
-                            android:id="@+id/summary_container"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:visibility="gone">
-                            
-                            <LinearLayout
-                                android:id="@+id/summary_content"
+                                android:id="@+id/summary_container"
                                 android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="16dp">
-                                
-                                <TextView
-                                    android:id="@+id/summary_title"
+                                android:layout_height="match_parent"
+                                android:visibility="gone">
+
+                            <LinearLayout
+                                    android:id="@+id/summary_content"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:textSize="20sp"
-                                    android:textStyle="bold"
-                                    android:layout_marginBottom="16dp"
-                                    android:text="@string/summary_title" />
-                                    
+                                    android:orientation="vertical"
+                                    android:padding="16dp">
+
+                                <TextView
+                                        android:id="@+id/summary_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:textSize="20sp"
+                                        android:textStyle="bold"
+                                        android:layout_marginBottom="16dp"
+                                        android:text="@string/summary_title"/>
+
                                 <ProgressBar
-                                    android:id="@+id/summary_progress"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:layout_marginTop="24dp"
-                                    android:layout_marginBottom="24dp" />
-                                    
+                                        android:id="@+id/summary_progress"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_gravity="center"
+                                        android:layout_marginTop="24dp"
+                                        android:layout_marginBottom="24dp"/>
+
                                 <!-- Summary points will be added here dynamically -->
-                                
+
                             </LinearLayout>
-                            
+
                         </androidx.core.widget.NestedScrollView>
 
                     </FrameLayout>
 
                     <!-- Feedback message -->
                     <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/save_message_container"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="6dp"
-                        android:visibility="gone">
-                        
-                        <LinearLayout
+                            android:id="@+id/save_message_container"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:padding="12dp">
-                            
-                            <ImageView
-                                android:id="@+id/save_message_icon"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_marginEnd="8dp"
-                                android:src="@drawable/ic_check"
-                                app:tint="?attr/colorPrimary" />
-                                
-                            <TextView
-                                android:id="@+id/save_message"
+                            android:layout_gravity="center"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="6dp"
+                            android:visibility="gone">
+
+                        <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="14sp" />
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:padding="12dp">
+
+                            <ImageView
+                                    android:id="@+id/save_message_icon"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="8dp"
+                                    android:src="@drawable/ic_check"
+                                    app:tint="?attr/colorPrimary"/>
+
+                            <TextView
+                                    android:id="@+id/save_message"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="14sp"/>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
                     <!-- Settings panel that appears above the toolbar -->
                     <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/settings_panel"
+                            android:id="@+id/settings_panel"
+                            android:layout_width="200dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:layout_marginBottom="60dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="12dp"
+                            app:cardBackgroundColor="@android:color/white"
+                            app:strokeWidth="0.5dp"
+                            app:strokeColor="#E0E0E0"
+                            android:visibility="gone"
+                            android:alpha="0"
+                            android:scaleX="0.8"
+                            android:scaleY="0.8">
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+
+                            <!-- Regular browser settings (visible when not in reader mode) -->
+                            <LinearLayout
+                                    android:id="@+id/browser_settings_section"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+
+                                <!-- Ad blocking toggle -->
+                                <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical"
+                                        android:layout_marginBottom="8dp">
+
+                                    <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="1"
+                                            android:text="@string/block_ads"
+                                            android:textColor="#000000"
+                                            android:textSize="13sp"/>
+
+                                    <com.google.android.material.switchmaterial.SwitchMaterial
+                                            android:id="@+id/ad_block_switch"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="16dp"/>
+                                </LinearLayout>
+
+                                <!-- JavaScript toggle -->
+                                <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical"
+                                        android:layout_marginBottom="8dp">
+
+                                    <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="1"
+                                            android:text="@string/enable_javascript"
+                                            android:textColor="#000000"
+                                            android:textSize="13sp"/>
+
+                                    <com.google.android.material.switchmaterial.SwitchMaterial
+                                            android:id="@+id/javascript_switch"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="16dp"/>
+                                </LinearLayout>
+
+                                <!-- Divider -->
+                                <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="#E0E0E0"
+                                        android:layout_marginTop="8dp"
+                                        android:layout_marginBottom="8dp"/>
+
+                                <!-- Quick actions (Nav/Save/Share) -->
+                                <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center"
+                                        android:padding="4dp">
+
+                                    <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_nav_back"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="40dp"
+                                            android:layout_weight="1"
+                                            android:layout_marginEnd="4dp"
+                                            app:icon="@drawable/ic_back_arrow"
+                                            app:iconGravity="textStart"
+                                            app:iconSize="24dp"
+                                            app:iconTint="@color/colorPrimary"/>
+
+                                    <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_nav_forward"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="40dp"
+                                            android:layout_weight="1"
+                                            android:layout_marginStart="4dp"
+                                            android:layout_marginEnd="4dp"
+                                            app:icon="@drawable/ic_forward_arrow"
+                                            app:iconGravity="textStart"
+                                            app:iconSize="24dp"
+                                            app:iconTint="@color/colorPrimary"/>
+
+                                    <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_save_article_icon"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="40dp"
+                                            android:layout_weight="1"
+                                            android:layout_marginStart="4dp"
+                                            android:layout_marginEnd="4dp"
+                                            app:icon="@drawable/ic_download"
+                                            app:iconGravity="textStart"
+                                            app:iconSize="24dp"
+                                            app:iconTint="@color/colorPrimary"/>
+
+                                    <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btn_share_icon"
+                                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="40dp"
+                                            android:layout_weight="1"
+                                            android:layout_marginStart="4dp"
+                                            app:icon="@drawable/ic_share"
+                                            app:iconGravity="textStart"
+                                            app:iconSize="24dp"
+                                            app:iconTint="@color/colorPrimary"/>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Reader mode settings (visible only in reader mode) -->
+                            <LinearLayout
+                                    android:id="@+id/reader_settings_section"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:visibility="gone">
+
+                                <!-- Settings Title -->
+                                <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reader_settings_title"
+                                        android:textColor="#000000"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        android:layout_marginBottom="12dp"
+                                        android:gravity="center"/>
+
+                                <!-- Font Size -->
+                                <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="vertical"
+                                        android:layout_marginBottom="12dp">
+
+                                    <TextView
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/reader_font_size"
+                                            android:textColor="#000000"
+                                            android:textSize="12sp"
+                                            android:layout_marginBottom="4dp"/>
+
+                                    <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:orientation="horizontal"
+                                            android:gravity="center">
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_font_decrease"
+                                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                                android:layout_width="32dp"
+                                                android:layout_height="32dp"
+                                                android:minWidth="0dp"
+                                                android:minHeight="0dp"
+                                                app:strokeColor="@color/button_stroke_color"
+                                                app:strokeWidth="1dp"
+                                                app:icon="@drawable/ic_chevron_left"
+                                                app:iconSize="18dp"
+                                                app:iconTint="@color/button_icon_color"
+                                                app:iconPadding="0dp"
+                                                app:iconGravity="textStart"
+                                                android:layout_marginEnd="8dp"/>
+
+                                        <TextView
+                                                android:id="@+id/font_size_display"
+                                                android:layout_width="0dp"
+                                                android:layout_height="wrap_content"
+                                                android:layout_weight="1"
+                                                android:text="18sp"
+                                                android:textColor="#000000"
+                                                android:textSize="12sp"
+                                                android:gravity="center"/>
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_font_increase"
+                                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                                android:layout_width="32dp"
+                                                android:layout_height="32dp"
+                                                android:minWidth="0dp"
+                                                android:minHeight="0dp"
+                                                app:strokeColor="@color/button_stroke_color"
+                                                app:strokeWidth="1dp"
+                                                app:icon="@drawable/ic_chevron_right"
+                                                app:iconSize="18dp"
+                                                app:iconTint="@color/button_icon_color"
+                                                app:iconPadding="0dp"
+                                                app:iconGravity="textStart"
+                                                android:layout_marginStart="8dp"/>
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                                <!-- Background Color -->
+                                <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="vertical"
+                                        android:layout_marginBottom="12dp">
+
+                                    <TextView
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/reader_background"
+                                            android:textColor="#000000"
+                                            android:textSize="12sp"
+                                            android:layout_marginBottom="4dp"/>
+
+                                    <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:orientation="horizontal"
+                                            android:gravity="center">
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_bg_white"
+                                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                                android:layout_width="0dp"
+                                                android:layout_height="32dp"
+                                                android:layout_weight="1"
+                                                android:minHeight="0dp"
+                                                android:layout_marginEnd="2dp"/>
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_bg_sepia"
+                                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                                android:layout_width="0dp"
+                                                android:layout_height="32dp"
+                                                android:layout_weight="1"
+                                                android:minHeight="0dp"
+                                                android:layout_marginHorizontal="2dp"/>
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_bg_dark"
+                                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                                android:layout_width="0dp"
+                                                android:layout_height="32dp"
+                                                android:layout_weight="1"
+                                                android:minHeight="0dp"
+                                                android:layout_marginStart="2dp"/>
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                                <!-- Text Alignment -->
+                                <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="vertical">
+
+                                    <TextView
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/reader_text_align"
+                                            android:textColor="#000000"
+                                            android:textSize="12sp"
+                                            android:layout_marginBottom="4dp"/>
+
+                                    <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:orientation="horizontal"
+                                            android:gravity="center">
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_align_left"
+                                                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                                                android:layout_width="0dp"
+                                                android:layout_height="32dp"
+                                                android:layout_weight="1"
+                                                android:minHeight="0dp"
+                                                app:strokeColor="@color/button_stroke_color"
+                                                app:strokeWidth="1dp"
+                                                app:icon="@drawable/ic_format_align_left"
+                                                app:iconSize="16dp"
+                                                app:iconPadding="0dp"
+                                                app:iconGravity="textStart"
+                                                android:layout_marginEnd="2dp"/>
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_align_center"
+                                                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                                                android:layout_width="0dp"
+                                                android:layout_height="32dp"
+                                                android:layout_weight="1"
+                                                android:minHeight="0dp"
+                                                app:strokeColor="@color/button_stroke_color"
+                                                app:strokeWidth="1dp"
+                                                app:icon="@drawable/ic_format_align_center"
+                                                app:iconSize="16dp"
+                                                app:iconPadding="0dp"
+                                                app:iconGravity="textStart"
+                                                android:layout_marginHorizontal="2dp"/>
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_align_right"
+                                                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                                                android:layout_width="0dp"
+                                                android:layout_height="32dp"
+                                                android:layout_weight="1"
+                                                android:minHeight="0dp"
+                                                app:strokeColor="@color/button_stroke_color"
+                                                app:strokeWidth="1dp"
+                                                app:icon="@drawable/ic_format_align_right"
+                                                app:iconSize="16dp"
+                                                app:iconPadding="0dp"
+                                                app:iconGravity="textStart"
+                                                android:layout_marginHorizontal="2dp"/>
+
+                                        <com.google.android.material.button.MaterialButton
+                                                android:id="@+id/btn_align_justify"
+                                                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                                                android:layout_width="0dp"
+                                                android:layout_height="32dp"
+                                                android:layout_weight="1"
+                                                android:minHeight="0dp"
+                                                app:strokeColor="@color/button_stroke_color"
+                                                app:strokeWidth="1dp"
+                                                app:icon="@drawable/ic_format_align_justify"
+                                                app:iconSize="16dp"
+                                                app:iconPadding="0dp"
+                                                app:iconGravity="textStart"
+                                                android:layout_marginStart="2dp"/>
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Pill-shaped toolbar at the bottom -->
+                    <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/toolbar_container"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:layout_marginBottom="16dp"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="6dp"
+                            app:cardBackgroundColor="@android:color/white"
+                            app:strokeWidth="0.5dp"
+                            app:strokeColor="#E0E0E0">
+
+                        <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp"
+                                android:background="?android:attr/selectableItemBackground">
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_close"
+                                    style="@style/Widget.QBrowser.Button.CircularIcon"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:contentDescription="@string/close_bubble"
+                                    app:icon="@drawable/ic_close"
+                                    app:iconTint="@color/crimson_red"
+                                    android:layout_marginEnd="2dp"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_read_mode"
+                                    style="@style/Widget.QBrowser.Button.CircularIcon"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:contentDescription="@string/read_mode"
+                                    app:icon="@drawable/ic_read_mode"
+                                    app:iconTint="@color/colorPrimary"
+                                    android:layout_marginEnd="2dp"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_summarize"
+                                    style="@style/Widget.QBrowser.Button.CircularIcon"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:contentDescription="@string/summarize"
+                                    app:icon="@drawable/ic_summarize"
+                                    app:iconTint="@color/colorPrimary"
+                                    android:layout_marginEnd="2dp"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_minimize"
+                                    style="@style/Widget.QBrowser.Button.CircularIcon"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:contentDescription="@string/minimize_bubble"
+                                    app:icon="@drawable/ic_minimize"
+                                    app:iconTint="@color/colorPrimary"
+                                    android:layout_marginEnd="2dp"
+                                    android:visibility="gone"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_save_article"
+                                    style="@style/Widget.QBrowser.Button.CircularIcon"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:contentDescription="@string/save_article"
+                                    app:icon="@drawable/ic_download"
+                                    app:iconTint="@color/colorPrimary"
+                                    android:layout_marginEnd="2dp"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_toolbar_settings"
+                                    style="@style/Widget.QBrowser.Button.CircularIcon"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:contentDescription="@string/settings"
+                                    app:icon="@drawable/ic_more_vert"
+                                    app:iconTint="@color/colorPrimary"
+                                    android:layout_marginEnd="2dp"/>
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Folder selection panel that appears above the toolbar -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/folder_selection_panel"
                         android:layout_width="200dp"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom|center_horizontal"
@@ -279,486 +729,142 @@
                         android:alpha="0"
                         android:scaleX="0.8"
                         android:scaleY="0.8">
-                        
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:padding="16dp">
-                            
-                            <!-- Regular browser settings (visible when not in reader mode) -->
+
+                            <!-- Title -->
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/save_to_folder"
+                                android:textColor="#000000"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="12dp"
+                                android:gravity="center" />
+
+                            <!-- Default option (no folder) -->
                             <LinearLayout
-                                android:id="@+id/browser_settings_section"
+                                android:id="@+id/folder_default_selection"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:padding="12dp"
+                                android:background="?android:attr/selectableItemBackground">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_article"
+                                    android:layout_marginEnd="16dp"
+                                    app:tint="?attr/colorOnSurface" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/no_folder"
+                                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                                    android:textColor="?attr/colorOnSurface" />
+
+                            </LinearLayout>
+
+                            <!-- Divider -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="#E0E0E0"
+                                android:layout_marginTop="4dp"
+                                android:layout_marginBottom="4dp" />
+
+                            <!-- Folders container -->
+                            <LinearLayout
+                                android:id="@+id/folder_selection_container"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical">
-                                
-                                <!-- Ad blocking toggle -->
-                                <LinearLayout
+
+                                <!-- Folder items will be added here dynamically -->
+
+                                <!-- Create new folder button -->
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_create_folder_selection"
+                                    style="@style/Widget.MaterialComponents.Button.TextButton"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical"
-                                    android:layout_marginBottom="8dp">
-                                    
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="1"
-                                        android:text="@string/block_ads"
-                                        android:textColor="#000000"
-                                        android:textSize="13sp" />
-                                        
-                                    <com.google.android.material.switchmaterial.SwitchMaterial
-                                        android:id="@+id/ad_block_switch"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginStart="16dp" />
-                                </LinearLayout>
-                                
-                                <!-- JavaScript toggle -->
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical"
-                                    android:layout_marginBottom="8dp">
-                                    
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="1"
-                                        android:text="@string/enable_javascript"
-                                        android:textColor="#000000"
-                                        android:textSize="13sp" />
-                                        
-                                    <com.google.android.material.switchmaterial.SwitchMaterial
-                                        android:id="@+id/javascript_switch"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginStart="16dp" />
-                                </LinearLayout>
-                                
-                                <!-- Divider -->
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="1dp"
-                                    android:background="#E0E0E0"
-                                    android:layout_marginTop="8dp"
-                                    android:layout_marginBottom="8dp" />
-                                
-                                <!-- Quick actions (Nav/Save/Share) -->
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center"
-                                    android:padding="4dp">
-                                    
-                                    <com.google.android.material.button.MaterialButton
-                                        android:id="@+id/btn_nav_back"
-                                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                                        android:layout_width="0dp"
-                                        android:layout_height="40dp"
-                                        android:layout_weight="1"
-                                        android:layout_marginEnd="4dp"
-                                        app:icon="@drawable/ic_back_arrow"
-                                        app:iconGravity="textStart"
-                                        app:iconSize="24dp"
-                                        app:iconTint="@color/colorPrimary" />
-                                    
-                                    <com.google.android.material.button.MaterialButton
-                                        android:id="@+id/btn_nav_forward"
-                                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                                        android:layout_width="0dp"
-                                        android:layout_height="40dp"
-                                        android:layout_weight="1"
-                                        android:layout_marginStart="4dp"
-                                        android:layout_marginEnd="4dp"
-                                        app:icon="@drawable/ic_forward_arrow"
-                                        app:iconGravity="textStart"
-                                        app:iconSize="24dp"
-                                        app:iconTint="@color/colorPrimary" />
-                                    
-                                    <com.google.android.material.button.MaterialButton
-                                        android:id="@+id/btn_save_article_icon"
-                                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                                        android:layout_width="0dp"
-                                        android:layout_height="40dp"
-                                        android:layout_weight="1"
-                                        android:layout_marginStart="4dp"
-                                        android:layout_marginEnd="4dp"
-                                        app:icon="@drawable/ic_download"
-                                        app:iconGravity="textStart"
-                                        app:iconSize="24dp"
-                                        app:iconTint="@color/colorPrimary" />
-                                    
-                                    <com.google.android.material.button.MaterialButton
-                                        android:id="@+id/btn_share_icon"
-                                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                                        android:layout_width="0dp"
-                                        android:layout_height="40dp"
-                                        android:layout_weight="1"
-                                        android:layout_marginStart="4dp"
-                                        app:icon="@drawable/ic_share"
-                                        app:iconGravity="textStart"
-                                        app:iconSize="24dp"
-                                        app:iconTint="@color/colorPrimary" />
-                                </LinearLayout>
+                                    android:text="@string/create_new_folder"
+                                    android:textColor="@color/colorPrimary"
+                                    app:icon="@drawable/ic_add"
+                                    app:iconGravity="textStart"
+                                    app:iconTint="@color/colorPrimary" />
+
                             </LinearLayout>
-                            
-                            <!-- Reader mode settings (visible only in reader mode) -->
-                            <LinearLayout
-                                android:id="@+id/reader_settings_section"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:visibility="gone">
-                                
-                                <!-- Settings Title -->
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/reader_settings_title"
-                                    android:textColor="#000000"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold"
-                                    android:layout_marginBottom="12dp"
-                                    android:gravity="center" />
-                                
-                                <!-- Font Size -->
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="vertical"
-                                    android:layout_marginBottom="12dp">
-                                    
-                                    <TextView
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:text="@string/reader_font_size"
-                                        android:textColor="#000000"
-                                        android:textSize="12sp"
-                                        android:layout_marginBottom="4dp" />
-                                    
-                                    <LinearLayout
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:orientation="horizontal"
-                                        android:gravity="center">
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_font_decrease"
-                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                            android:layout_width="32dp"
-                                            android:layout_height="32dp"
-                                            android:minWidth="0dp"
-                                            android:minHeight="0dp"
-                                            app:strokeColor="@color/button_stroke_color"
-                                            app:strokeWidth="1dp"
-                                            app:icon="@drawable/ic_chevron_left"
-                                            app:iconSize="18dp"
-                                            app:iconTint="@color/button_icon_color"
-                                            app:iconPadding="0dp"
-                                            app:iconGravity="textStart"
-                                            android:layout_marginEnd="8dp" />
-                                        
-                                        <TextView
-                                            android:id="@+id/font_size_display"
-                                            android:layout_width="0dp"
-                                            android:layout_height="wrap_content"
-                                            android:layout_weight="1"
-                                            android:text="18sp"
-                                            android:textColor="#000000"
-                                            android:textSize="12sp"
-                                            android:gravity="center" />
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_font_increase"
-                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                            android:layout_width="32dp"
-                                            android:layout_height="32dp"
-                                            android:minWidth="0dp"
-                                            android:minHeight="0dp"
-                                            app:strokeColor="@color/button_stroke_color"
-                                            app:strokeWidth="1dp"
-                                            app:icon="@drawable/ic_chevron_right"
-                                            app:iconSize="18dp"
-                                            app:iconTint="@color/button_icon_color"
-                                            app:iconPadding="0dp"
-                                            app:iconGravity="textStart"
-                                            android:layout_marginStart="8dp" />
-                                    </LinearLayout>
-                                </LinearLayout>
-                                
-                                <!-- Background Color -->
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="vertical"
-                                    android:layout_marginBottom="12dp">
-                                    
-                                    <TextView
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:text="@string/reader_background"
-                                        android:textColor="#000000"
-                                        android:textSize="12sp"
-                                        android:layout_marginBottom="4dp" />
-                                    
-                                    <LinearLayout
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:orientation="horizontal"
-                                        android:gravity="center">
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_bg_white"
-                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                            android:layout_width="0dp"
-                                            android:layout_height="32dp"
-                                            android:layout_weight="1"
-                                            android:minHeight="0dp"
-                                            android:layout_marginEnd="2dp" />
-
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_bg_sepia"
-                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                            android:layout_width="0dp"
-                                            android:layout_height="32dp"
-                                            android:layout_weight="1"
-                                            android:minHeight="0dp"
-                                            android:layout_marginHorizontal="2dp" />
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_bg_dark"
-                                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                            android:layout_width="0dp"
-                                            android:layout_height="32dp"
-                                            android:layout_weight="1"
-                                            android:minHeight="0dp"
-                                            android:layout_marginStart="2dp" />
-                                    </LinearLayout>
-                                </LinearLayout>
-                                
-                                <!-- Text Alignment -->
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="vertical">
-                                    
-                                    <TextView
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:text="@string/reader_text_align"
-                                        android:textColor="#000000"
-                                        android:textSize="12sp"
-                                        android:layout_marginBottom="4dp" />
-                                    
-                                    <LinearLayout
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:orientation="horizontal"
-                                        android:gravity="center">
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_align_left"
-                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                                            android:layout_width="0dp"
-                                            android:layout_height="32dp"
-                                            android:layout_weight="1"
-                                            android:minHeight="0dp"
-                                            app:strokeColor="@color/button_stroke_color"
-                                            app:strokeWidth="1dp"
-                                            app:icon="@drawable/ic_format_align_left"
-                                            app:iconSize="16dp"
-                                            app:iconPadding="0dp"
-                                            app:iconGravity="textStart"
-                                            android:layout_marginEnd="2dp" />
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_align_center"
-                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                                            android:layout_width="0dp"
-                                            android:layout_height="32dp"
-                                            android:layout_weight="1"
-                                            android:minHeight="0dp"
-                                            app:strokeColor="@color/button_stroke_color"
-                                            app:strokeWidth="1dp"
-                                            app:icon="@drawable/ic_format_align_center"
-                                            app:iconSize="16dp"
-                                            app:iconPadding="0dp"
-                                            app:iconGravity="textStart"
-                                            android:layout_marginHorizontal="2dp" />
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_align_right"
-                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                                            android:layout_width="0dp"
-                                            android:layout_height="32dp"
-                                            android:layout_weight="1"
-                                            android:minHeight="0dp"
-                                            app:strokeColor="@color/button_stroke_color"
-                                            app:strokeWidth="1dp"
-                                            app:icon="@drawable/ic_format_align_right"
-                                            app:iconSize="16dp"
-                                            app:iconPadding="0dp"
-                                            app:iconGravity="textStart"
-                                            android:layout_marginHorizontal="2dp" />
-                                        
-                                        <com.google.android.material.button.MaterialButton
-                                            android:id="@+id/btn_align_justify"
-                                            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                                            android:layout_width="0dp"
-                                            android:layout_height="32dp"
-                                            android:layout_weight="1"
-                                            android:minHeight="0dp"
-                                            app:strokeColor="@color/button_stroke_color"
-                                            app:strokeWidth="1dp"
-                                            app:icon="@drawable/ic_format_align_justify"
-                                            app:iconSize="16dp"
-                                            app:iconPadding="0dp"
-                                            app:iconGravity="textStart"
-                                            android:layout_marginStart="2dp" />
-                                    </LinearLayout>
-                                </LinearLayout>
-                                
-                            </LinearLayout>
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-                    
-                    <!-- Pill-shaped toolbar at the bottom -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/toolbar_container"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_gravity="bottom|center_horizontal"
-                        android:layout_marginBottom="16dp"
-                        app:cardCornerRadius="24dp"
-                        app:cardElevation="6dp"
-                        app:cardBackgroundColor="@android:color/white"
-                        app:strokeWidth="0.5dp"
-                        app:strokeColor="#E0E0E0">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:paddingStart="4dp"
-                            android:paddingEnd="4dp"
-                            android:background="?android:attr/selectableItemBackground">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_close"
-                                style="@style/Widget.QBrowser.Button.CircularIcon"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:contentDescription="@string/close_bubble"
-                                app:icon="@drawable/ic_close"
-                                app:iconTint="@color/crimson_red"
-                                android:layout_marginEnd="2dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_read_mode"
-                                style="@style/Widget.QBrowser.Button.CircularIcon"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:contentDescription="@string/read_mode"
-                                app:icon="@drawable/ic_read_mode"
-                                app:iconTint="@color/colorPrimary"
-                                android:layout_marginEnd="2dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_summarize"
-                                style="@style/Widget.QBrowser.Button.CircularIcon"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:contentDescription="@string/summarize"
-                                app:icon="@drawable/ic_summarize"
-                                app:iconTint="@color/colorPrimary"
-                                android:layout_marginEnd="2dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_minimize"
-                                style="@style/Widget.QBrowser.Button.CircularIcon"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:contentDescription="@string/minimize_bubble"
-                                app:icon="@drawable/ic_minimize"
-                                app:iconTint="@color/colorPrimary"
-                                android:layout_marginEnd="2dp"
-                                android:visibility="gone" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_toolbar_settings"
-                                style="@style/Widget.QBrowser.Button.CircularIcon"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:contentDescription="@string/settings"
-                                app:icon="@drawable/ic_more_vert"
-                                app:iconTint="@color/colorPrimary"
-                                android:layout_marginEnd="2dp" />
 
                         </LinearLayout>
+
                     </com.google.android.material.card.MaterialCardView>
 
                 </com.google.android.material.card.MaterialCardView>
-            
+
             </LinearLayout>
 
             <!-- Resize handles container - positioned above URL bar and expanded content -->
             <FrameLayout
-                android:id="@+id/resize_handles_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                android:visibility="gone">
-                
+                    android:id="@+id/resize_handles_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:visibility="gone">
+
                 <!-- Bottom Left Handle -->
                 <ImageView
-                    android:id="@+id/resize_handle_bottom_left"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="bottom|start"
-                    android:layout_marginStart="-3dp"
-                    android:layout_marginBottom="-3dp"
-                    android:src="@drawable/resize_corner_bottom_left"
-                    android:contentDescription="@string/resize_handle"
-                    android:elevation="16dp"
-                    android:scaleType="fitCenter"
-                    android:padding="0dp" />
-                    
+                        android:id="@+id/resize_handle_bottom_left"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="bottom|start"
+                        android:layout_marginStart="-3dp"
+                        android:layout_marginBottom="-3dp"
+                        android:src="@drawable/resize_corner_bottom_left"
+                        android:contentDescription="@string/resize_handle"
+                        android:elevation="16dp"
+                        android:scaleType="fitCenter"
+                        android:padding="0dp"/>
+
                 <!-- Bottom Right Handle -->
                 <ImageView
-                    android:id="@+id/resize_handle_bottom_right"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="bottom|end"
-                    android:layout_marginEnd="-3dp"
-                    android:layout_marginBottom="-3dp"
-                    android:src="@drawable/resize_corner_bottom_right"
-                    android:contentDescription="@string/resize_handle"
-                    android:elevation="16dp"
-                    android:scaleType="fitCenter"
-                    android:padding="0dp" />
-                    
+                        android:id="@+id/resize_handle_bottom_right"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_marginEnd="-3dp"
+                        android:layout_marginBottom="-3dp"
+                        android:src="@drawable/resize_corner_bottom_right"
+                        android:contentDescription="@string/resize_handle"
+                        android:elevation="16dp"
+                        android:scaleType="fitCenter"
+                        android:padding="0dp"/>
+
                 <!-- Horizontal resize bar at bottom center -->
                 <View
-                    android:id="@+id/resize_bar"
-                    android:layout_width="80dp"
-                    android:layout_height="4dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/resize_bar_background"
-                    android:elevation="0dp"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true" />
+                        android:id="@+id/resize_bar"
+                        android:layout_width="80dp"
+                        android:layout_height="4dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/resize_bar_background"
+                        android:elevation="0dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:clickable="true"
+                        android:focusable="true"/>
             </FrameLayout>
 
         </FrameLayout>
