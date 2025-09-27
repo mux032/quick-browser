@@ -38,39 +38,28 @@ interface TagRepository {
      * Create a new tag
      *
      * @param name The name of the tag to create
-     * @return The created tag or null if creation failed
+     * @return The created tag
      */
-    suspend fun createTag(name: String): Tag?
+    suspend fun createTag(name: String): Tag
 
     /**
      * Update an existing tag
      *
      * @param tag The tag to update
-     * @return True if the tag was updated successfully, false otherwise
      */
-    suspend fun updateTag(tag: Tag): Boolean
+    suspend fun updateTag(tag: Tag)
 
     /**
      * Delete a tag
      *
      * @param tag The tag to delete
-     * @return True if the tag was deleted successfully, false otherwise
      */
-    suspend fun deleteTag(tag: Tag): Boolean
+    suspend fun deleteTag(tag: Tag)
 
     /**
      * Delete a tag by its ID
      *
      * @param id The ID of the tag to delete
-     * @return True if the tag was deleted successfully, false otherwise
      */
-    suspend fun deleteTagById(id: Long): Boolean
-
-    /**
-     * Check if a tag with the given name already exists
-     *
-     * @param name The name to check
-     * @return True if a tag with the given name exists, false otherwise
-     */
-    suspend fun tagExists(name: String): Boolean
+    suspend fun deleteTagById(id: Long)
 }

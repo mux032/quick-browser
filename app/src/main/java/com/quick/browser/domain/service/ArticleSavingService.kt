@@ -2,6 +2,7 @@ package com.quick.browser.domain.service
 
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.repository.ArticleRepository
+import com.quick.browser.domain.repository.ArticleTagRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -12,7 +13,8 @@ import kotlinx.coroutines.withContext
  * This service contains the business logic for saving articles without UI concerns
  */
 class ArticleSavingService(
-    private val repository: ArticleRepository
+    private val repository: ArticleRepository,
+    private val articleTagRepository: ArticleTagRepository
 ) {
     
     /**
@@ -36,10 +38,14 @@ class ArticleSavingService(
             try {
                 // Check if article is already saved
                 if (repository.isArticleSaved(url)) {
-                    withContext(Dispatchers.Main) {
-                        onError("Article already saved")
+                    articleTagRepository.removeAllTagsFromArticle(url)
+                    if (tagId > 0) {
+                        articleTagRepository.addTagToArticle(url, tagId)
                     }
-                    return@withContext false
+                    withContext(Dispatchers.Main) {
+                        onSuccess()
+                    }
+                    return@withContext true
                 }
                 
                 // Attempt to save the article by extracting readable content

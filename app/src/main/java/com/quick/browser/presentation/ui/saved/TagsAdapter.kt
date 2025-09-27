@@ -1,13 +1,11 @@
 package com.quick.browser.presentation.ui.saved
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.quick.browser.R
+import com.quick.browser.databinding.ItemTagBinding
 import com.quick.browser.domain.model.Tag
 
 /**
@@ -18,20 +16,17 @@ class TagsAdapter(
 ) : ListAdapter<Tag, TagsAdapter.TagViewHolder>(TagDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_tag, parent, false)
-        return TagViewHolder(view)
+        val binding = ItemTagBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return TagViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: TagViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    inner class TagViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val tagNameTextView: TextView = itemView.findViewById(R.id.text_tag_name)
-
+    inner class TagViewHolder(private val binding: ItemTagBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(tag: Tag) {
-            tagNameTextView.text = tag.name
+            binding.textTagName.text = tag.name
 
             itemView.setOnClickListener {
                 onItemClick(tag)

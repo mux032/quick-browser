@@ -23,7 +23,7 @@ interface ArticleRepository {
      * @param tagId The ID of the tag to retrieve articles from
      * @return A flow of lists of saved articles with the specified tag
      */
-    fun getSavedArticlesByFolderId(tagId: Long): Flow<List<SavedArticle>>
+    fun getSavedArticlesByTagId(tagId: Long): Flow<List<SavedArticle>>
 
     /**
      * Search saved articles by title or content

@@ -4,11 +4,11 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Migration script to update the database schema from version 3 to version 4
+ * Migration script to update the database schema from version 1 to version 2
  *
  * This migration adds the tags and article_tags tables to support the new tagging system.
  */
-object Migration3To4 : Migration(3, 4) {
+object Migration1To2 : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
         // Create the tags table
         database.execSQL(
@@ -19,6 +19,13 @@ object Migration3To4 : Migration(3, 4) {
                 `createdAt` INTEGER NOT NULL,
                 `updatedAt` INTEGER NOT NULL
             )
+            """.trimIndent()
+        )
+
+        // Create a unique index on the name column of the tags table
+        database.execSQL(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS `index_tags_name` ON `tags` (`name`)
             """.trimIndent()
         )
         

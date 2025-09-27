@@ -14,6 +14,8 @@
     <string name="save_for_offline">Save for offline</string>
     <string name="page_saved_offline">Page saved for offline reading</string>
     <string name="save_to_folder">Save to Folder</string>
+    <string name="save_to_tag">Save to...</string>
+    <string name="default_tag">Default</string>
     <string name="create_new_folder">Create new folder</string>
     <string name="add_new_bubble">Add new bubble</string>
     <string name="no_bubbles">No open tabs</string>
@@ -191,6 +193,9 @@
     <string name="all_articles">All Articles</string>
     <string name="tags">Tags</string>
     <string name="add_tag">Add Tag</string>
+    <string name="tag_name">Tag Name</string>
+    <string name="create_new_tag">Create New Tag</string>
+    <string name="create">Create</string>
     <string name="no_folder">No Folder</string>
 
     <!-- Service -->

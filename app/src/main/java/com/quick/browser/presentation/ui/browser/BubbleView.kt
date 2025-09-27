@@ -18,7 +18,9 @@
 
 package com.quick.browser.presentation.ui.browser
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -44,6 +46,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import android.view.ContextThemeWrapper
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -57,9 +60,16 @@ import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
 import com.quick.browser.utils.UrlUtils
 import com.quick.browser.utils.security.SecurityPolicyManager
+import com.quick.browser.presentation.ui.browser.BubbleTagSelectionPanel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.exp
+
+fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 /**
  * Enhanced floating bubble view that displays web content in a draggable, expandable bubble.
@@ -134,6 +144,10 @@ class BubbleView @JvmOverloads constructor(
     // Settings panel
     private lateinit var settingsPanel: View
     private lateinit var settingsPanelManager: BubbleSettingsPanel
+
+    // Tag selection panel
+    private lateinit var tagSelectionPanel: View
+    private lateinit var tagSelectionPanelManager: BubbleTagSelectionPanel
 
     // Add SwipeRefreshLayout property
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -210,6 +224,20 @@ class BubbleView @JvmOverloads constructor(
 
             // Initialize settings panel manager
             settingsPanelManager = BubbleSettingsPanel(context, settingsService, bubbleAnimator)
+
+            // Initialize tag selection panel
+            tagSelectionPanel = findViewById(R.id.tag_selection_panel) ?: throw IllegalStateException("Tag selection panel not found in layout")
+            tagSelectionPanelManager = BubbleTagSelectionPanel(context, bubbleAnimator)
+            tagSelectionPanelManager.initialize(tagSelectionPanel)
+            tagSelectionPanelManager.setListener(object : BubbleTagSelectionPanel.TagSelectionListener {
+                override fun onTagSelected(tagId: Long) {
+                    saveArticleForOfflineReading(url, tagId)
+                }
+
+                override fun onCreateTag(tagName: String) {
+                    createTagAndSaveArticle(tagName, url)
+                }
+            })
 
             // Initialize summary manager
             summaryManager = BubbleSummaryManager(context, summarizationService, bubbleAnimator)
@@ -452,6 +480,7 @@ class BubbleView @JvmOverloads constructor(
             // Set up touch listener for WebView to handle settings dismissal
             webViewContainer.setOnTouchListener { _, event ->
                 settingsPanelManager.handleTouchEvent(event, settingsPanel)
+                tagSelectionPanelManager.handleTouchEvent(event)
                 false // Don't consume the event, let WebView handle it normally
             }
 
@@ -682,110 +711,7 @@ class BubbleView @JvmOverloads constructor(
     // - loadInitialUrl() - moved to BubbleWebViewManager
     // - reloadWebPageIfNeeded() - moved to BubbleWebViewManager
 
-    /**
-     * Show tag selection menu when saving an article
-     * Displays a popup menu with existing tags for the user to select
-     */
-    private fun showTagSelectionMenu() {
-        Logger.d(TAG, "Show tag selection menu requested for bubble: $bubbleId")
-        
-        // Get the current URL
-        val currentUrl = url
-        if (currentUrl.isBlank()) {
-            Toast.makeText(context, "No URL to save", Toast.LENGTH_SHORT).show()
-            return
-        }
-        
-        // Load tags and show selection menu
-        (context as LifecycleOwner).lifecycleScope.launch {
-            try {
-                tagRepository.getAllTags().collectLatest { tags ->
-                    showTagSelectionPopupMenu(tags, currentUrl)
-                }
-            } catch (e: Exception) {
-                Logger.e(TAG, "Error loading tags for selection: $e")
-                Toast.makeText(context, "Error loading tags", Toast.LENGTH_SHORT).show()
-                
-                // Fall back to saving without tag
-                saveArticleForOfflineReading(currentUrl, 0)
-            }
-        }
-    }
     
-    /**
-     * Show popup menu with tag options
-     *
-     * @param tags List of available tags
-     * @param url URL of article to save
-     */
-    private fun showTagSelectionPopupMenu(tags: List<com.quick.browser.domain.model.Tag>, url: String) {
-        val anchorView = uiManager.getBtnSaveArticle()
-        
-        // Create popup menu
-        val popupMenu = PopupMenu(context, anchorView)
-        
-        // Add "No tag" option
-        popupMenu.menu.add(Menu.NONE, 0, 0, "No tag")
-        
-        // Add all available tags
-        tags.forEachIndexed { index, tag ->
-            popupMenu.menu.add(Menu.NONE, tag.id.toInt(), index + 1, tag.name)
-        }
-        
-        // Add "Create new tag" option
-        popupMenu.menu.add(Menu.NONE, -1, tags.size + 1, "Create new tag...")
-        
-        // Set click listener
-        popupMenu.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId.toLong()) {
-                0L -> {
-                    // Save without tag
-                    saveArticleForOfflineReading(url, 0)
-                    true
-                }
-                -1L -> {
-                    // Create new tag
-                    showCreateTagDialog(url)
-                    true
-                }
-                else -> {
-                    // Save with selected tag
-                    saveArticleForOfflineReading(url, menuItem.itemId.toLong())
-                    true
-                }
-            }
-        }
-        
-        // Show the popup menu
-        popupMenu.show()
-    }
-    
-    /**
-     * Show dialog to create a new tag
-     *
-     * @param url URL of article to save
-     */
-    private fun showCreateTagDialog(url: String) {
-        val input = EditText(context)
-        input.hint = "Enter tag name"
-        
-        AlertDialog.Builder(context)
-            .setTitle("Create New Tag")
-            .setView(input)
-            .setPositiveButton("Create") { dialog, _ ->
-                val tagName = input.text.toString().trim()
-                if (tagName.isNotEmpty()) {
-                    createTagAndSaveArticle(tagName, url)
-                } else {
-                    Toast.makeText(context, "Tag name cannot be empty", Toast.LENGTH_SHORT).show()
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.cancel()
-            }
-            .show()
-    }
     
     /**
      * Create a new tag and save the article with that tag
@@ -1110,6 +1036,7 @@ class BubbleView @JvmOverloads constructor(
 
         // Hide settings panel if visible
         settingsPanelManager.dismissIfVisible(settingsPanel)
+        tagSelectionPanelManager.hide()
 
         // Exit summary mode if active
         summaryManager.forceExitSummaryMode()
@@ -1152,6 +1079,7 @@ class BubbleView @JvmOverloads constructor(
 
         // Hide settings panel if visible
         settingsPanelManager.dismissIfVisible(settingsPanel)
+        tagSelectionPanelManager.hide()
 
         // Exit summary mode if active
         summaryManager.forceExitSummaryMode()
@@ -1879,6 +1807,19 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun onSaveArticle() {
-        showTagSelectionMenu()
+        if (tagSelectionPanelManager.isVisible()) {
+            tagSelectionPanelManager.hide()
+        } else {
+            (context as LifecycleOwner).lifecycleScope.launch {
+                try {
+                    tagRepository.getAllTags().collectLatest { tags ->
+                        tagSelectionPanelManager.show(tags, uiManager.getBtnSaveArticle())
+                    }
+                } catch (e: Exception) {
+                    Logger.e(TAG, "Error loading tags for selection: $e")
+                    Toast.makeText(context, "Error loading tags", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

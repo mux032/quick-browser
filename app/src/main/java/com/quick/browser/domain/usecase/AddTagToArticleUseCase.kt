@@ -9,10 +9,10 @@ import javax.inject.Inject
 class AddTagToArticleUseCase @Inject constructor(
     private val articleTagRepository: ArticleTagRepository
 ) {
-    suspend operator fun invoke(articleUrl: String, tagId: Long): Result<Boolean> {
+    suspend operator fun invoke(articleUrl: String, tagId: Long): Result<Unit> {
         return try {
-            val result = articleTagRepository.addTagToArticle(articleUrl, tagId)
-            Result.success(result)
+            articleTagRepository.addTagToArticle(articleUrl, tagId)
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

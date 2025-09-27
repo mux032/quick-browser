@@ -10,5 +10,6 @@ data class SavedArticlesUiState(
     val articles: List<SavedArticle> = emptyList(),
     val tags: List<Tag> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val currentTag: Tag? = null
 )

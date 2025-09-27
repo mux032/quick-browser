@@ -5,15 +5,15 @@ import com.quick.browser.domain.repository.TagRepository
 import javax.inject.Inject
 
 /**
- * Use case for creating a new tag
+ * Use case for deleting a tag
  */
-class CreateTagUseCase @Inject constructor(
+class DeleteTagUseCase @Inject constructor(
     private val tagRepository: TagRepository
 ) {
-    suspend operator fun invoke(name: String): Result<Tag> {
+    suspend operator fun invoke(tag: Tag): Result<Unit> {
         return try {
-            val tag = tagRepository.createTag(name)
-            Result.success(tag)
+            tagRepository.deleteTag(tag)
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

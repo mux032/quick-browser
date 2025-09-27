@@ -1,9 +1,12 @@
 package com.quick.browser.presentation.ui.saved.viewmodel
 
+import android.database.sqlite.SQLiteConstraintException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quick.browser.domain.model.Tag
-import com.quick.browser.domain.repository.TagRepository
+import com.quick.browser.domain.usecase.CreateTagUseCase
+import com.quick.browser.domain.usecase.DeleteTagUseCase
+import com.quick.browser.domain.usecase.GetAllTagsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +23,9 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class TagViewModel @Inject constructor(
-    private val tagRepository: TagRepository
+    private val getAllTagsUseCase: GetAllTagsUseCase,
+    private val createTagUseCase: CreateTagUseCase,
+    private val deleteTagUseCase: DeleteTagUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TagUiState())
@@ -37,7 +42,7 @@ class TagViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                tagRepository.getAllTags().collectLatest { tags ->
+                getAllTagsUseCase().collectLatest { tags ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         tags = tags,
@@ -60,40 +65,18 @@ class TagViewModel @Inject constructor(
      */
     fun createTag(name: String) {
         viewModelScope.launch {
-            try {
-                // Validate tag name
-                if (name.isBlank()) {
-                    _uiState.value = _uiState.value.copy(
-                        error = "Tag name cannot be empty"
-                    )
-                    return@launch
-                }
+            if (name.isBlank()) {
+                _uiState.value = _uiState.value.copy(error = "Tag name cannot be empty")
+                return@launch
+            }
 
-                // Check if tag already exists
-                if (tagRepository.tagExists(name)) {
-                    _uiState.value = _uiState.value.copy(
-                        error = "A tag with this name already exists"
-                    )
-                    return@launch
+            createTagUseCase(name).onSuccess {
+                _uiState.value = _uiState.value.copy(successMessage = "Tag '$name' created successfully")
+            }.onFailure { exception ->
+                when (exception) {
+                    is SQLiteConstraintException -> _uiState.value = _uiState.value.copy(error = "A tag with this name already exists")
+                    else -> _uiState.value = _uiState.value.copy(error = "Error creating tag: ${exception.message}")
                 }
-
-                // Create the tag
-                val tag = tagRepository.createTag(name)
-                if (tag != null) {
-                    // Reload tags to reflect the new tag
-                    loadTags()
-                    _uiState.value = _uiState.value.copy(
-                        successMessage = "Tag '$name' created successfully"
-                    )
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        error = "Failed to create tag"
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Error creating tag: ${e.message}"
-                )
             }
         }
     }
@@ -105,52 +88,11 @@ class TagViewModel @Inject constructor(
      */
     fun deleteTag(tag: Tag) {
         viewModelScope.launch {
-            try {
-                val success = tagRepository.deleteTag(tag)
-                if (success) {
-                    // Reload tags to reflect the deletion
-                    loadTags()
-                    _uiState.value = _uiState.value.copy(
-                        successMessage = "Tag '${tag.name}' deleted successfully"
-                    )
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        error = "Failed to delete tag '${tag.name}'"
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Error deleting tag: ${e.message}"
-                )
+            deleteTagUseCase(tag).onSuccess {
+                _uiState.value = _uiState.value.copy(successMessage = "Tag '${tag.name}' deleted successfully")
+            }.onFailure { exception ->
+                _uiState.value = _uiState.value.copy(error = "Error deleting tag: ${exception.message}")
             }
-        }
-    }
-
-    /**
-     * Get a tag by its ID
-     *
-     * @param id The ID of the tag to retrieve
-     * @return The tag or null if not found
-     */
-    suspend fun getTagById(id: Long): Tag? {
-        return try {
-            tagRepository.getTagById(id)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Get a tag by its name
-     *
-     * @param name The name of the tag to retrieve
-     * @return The tag or null if not found
-     */
-    suspend fun getTagByName(name: String): Tag? {
-        return try {
-            tagRepository.getTagByName(name)
-        } catch (e: Exception) {
-            null
         }
     }
 

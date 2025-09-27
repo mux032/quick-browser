@@ -3,9 +3,11 @@ package com.quick.browser.data.repository
 import com.quick.browser.data.local.dao.ArticleTagDao
 import com.quick.browser.data.local.dao.SavedArticleDao
 import com.quick.browser.data.local.dao.TagDao
+import com.quick.browser.data.mapper.toDomain
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.model.Tag
 import com.quick.browser.domain.repository.ArticleTagRepository
+import com.quick.browser.utils.Logger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -34,9 +36,10 @@ class ArticleTagRepositoryImpl @Inject constructor(
      */
     override fun getTagsForArticle(articleUrl: String): Flow<List<Tag>> {
         return articleTagDao.getTagIdsForArticle(articleUrl).map { tagIds ->
-            tagIds.mapNotNull { tagId ->
-                val tagEntity = tagDao.getTagById(tagId)
-                tagEntity?.let { entityToDomain(it) }
+            if (tagIds.isEmpty()) {
+                emptyList()
+            } else {
+                tagDao.getTagsByIds(tagIds).map { it.toDomain() }
             }
         }
     }
@@ -49,7 +52,7 @@ class ArticleTagRepositoryImpl @Inject constructor(
      */
     override fun getArticlesForTag(tagId: Long): Flow<List<SavedArticle>> {
         return savedArticleDao.getSavedArticlesByTagId(tagId).map { list ->
-            list.map { entityToDomain(it) }
+            list.map { it.toDomain() }
         }
     }
 
@@ -58,19 +61,17 @@ class ArticleTagRepositoryImpl @Inject constructor(
      *
      * @param articleUrl The URL of the article
      * @param tagId The ID of the tag
-     * @return True if the association was created successfully, false otherwise
      */
-    override suspend fun addTagToArticle(articleUrl: String, tagId: Long): Boolean {
-        return try {
+    override suspend fun addTagToArticle(articleUrl: String, tagId: Long) {
+        try {
             val articleTagEntity = com.quick.browser.data.local.entity.ArticleTag(
                 articleUrl = articleUrl,
                 tagId = tagId
             )
             articleTagDao.insertArticleTag(articleTagEntity)
-            true
         } catch (e: Exception) {
-            e.printStackTrace()
-            false
+            Logger.e(TAG, "Failed to add tag to article", e)
+            throw e
         }
     }
 
@@ -79,19 +80,17 @@ class ArticleTagRepositoryImpl @Inject constructor(
      *
      * @param articleUrl The URL of the article
      * @param tagId The ID of the tag
-     * @return True if the association was removed successfully, false otherwise
      */
-    override suspend fun removeTagFromArticle(articleUrl: String, tagId: Long): Boolean {
-        return try {
+    override suspend fun removeTagFromArticle(articleUrl: String, tagId: Long) {
+        try {
             val articleTagEntity = com.quick.browser.data.local.entity.ArticleTag(
                 articleUrl = articleUrl,
                 tagId = tagId
             )
             articleTagDao.deleteArticleTag(articleTagEntity)
-            true
         } catch (e: Exception) {
-            e.printStackTrace()
-            false
+            Logger.e(TAG, "Failed to remove tag from article", e)
+            throw e
         }
     }
 
@@ -99,49 +98,17 @@ class ArticleTagRepositoryImpl @Inject constructor(
      * Remove all tags from an article
      *
      * @param articleUrl The URL of the article
-     * @return True if all associations were removed successfully, false otherwise
      */
-    override suspend fun removeAllTagsFromArticle(articleUrl: String): Boolean {
-        return try {
+    override suspend fun removeAllTagsFromArticle(articleUrl: String) {
+        try {
             articleTagDao.deleteArticleTagsForArticle(articleUrl)
-            true
         } catch (e: Exception) {
-            e.printStackTrace()
-            false
+            Logger.e(TAG, "Failed to remove all tags from article", e)
+            throw e
         }
     }
 
-    /**
-     * Convert a saved article entity to a domain model
-     *
-     * @param entity The entity to convert
-     * @return The domain model representation of the saved article
-     */
-    private fun entityToDomain(entity: com.quick.browser.data.local.entity.SavedArticle): SavedArticle {
-        return SavedArticle(
-            url = entity.url,
-            title = entity.title,
-            content = entity.content,
-            author = entity.byline,
-            siteName = entity.siteName,
-            publishDate = entity.publishDate,
-            savedDate = entity.savedDate,
-            excerpt = entity.excerpt
-        )
-    }
-
-    /**
-     * Convert a tag entity to a domain model
-     *
-     * @param entity The entity to convert
-     * @return The domain model representation of the tag
-     */
-    private fun entityToDomain(entity: com.quick.browser.data.local.entity.Tag): Tag {
-        return Tag(
-            id = entity.id,
-            name = entity.name,
-            createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt
-        )
+    companion object {
+        private const val TAG = "ArticleTagRepositoryImpl"
     }
 }

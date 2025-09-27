@@ -1,13 +1,13 @@
 package com.quick.browser.di
 
 import android.content.Context
+import com.quick.browser.di.AppConstants.ENCRYPTED_PREFS_NAME
 import com.quick.browser.domain.repository.ArticleRepository
 import com.quick.browser.domain.service.ArticleSavingService
 import com.quick.browser.domain.service.EncryptedPreferencesService
 import com.quick.browser.domain.service.ModelDownloadService
 import com.quick.browser.domain.service.SecurityPolicyService
 import com.quick.browser.service.AdBlockingService
-import com.quick.browser.service.SettingsService
 import com.quick.browser.service.SummarizationService
 import dagger.Module
 import dagger.Provides
@@ -35,26 +35,9 @@ object ServiceModule {
     @Provides
     @Singleton
     fun provideArticleSavingService(
-        articleRepository: ArticleRepository
-    ): ArticleSavingService {
-        return ArticleSavingService(articleRepository)
-    }
-    
-    /**
-     * Provide the SettingsService instance
-     *
-     * @param context The application context
-     * @param encryptedPreferencesService The encrypted preferences service dependency
-     * @return The SettingsService instance
-     */
-    @Provides
-    @Singleton
-    fun provideSettingsService(
-        @ApplicationContext context: Context,
-        encryptedPreferencesService: EncryptedPreferencesService
-    ): SettingsService {
-        return SettingsService(context, encryptedPreferencesService)
-    }
+        articleRepository: ArticleRepository,
+        articleTagRepository: com.quick.browser.domain.repository.ArticleTagRepository
+    ): ArticleSavingService = ArticleSavingService(articleRepository, articleTagRepository)
 
     /**
      * Provide the AdBlockingService instance
@@ -68,9 +51,7 @@ object ServiceModule {
     fun provideAdBlockingService(
         @ApplicationContext context: Context,
         encryptedPreferencesService: EncryptedPreferencesService
-    ): AdBlockingService {
-        return AdBlockingService(context, encryptedPreferencesService)
-    }
+    ): AdBlockingService = AdBlockingService(context, encryptedPreferencesService)
 
     /**
      * Provide the SummarizationService instance
@@ -80,10 +61,8 @@ object ServiceModule {
      */
     @Provides
     @Singleton
-    fun provideSummarizationService(@ApplicationContext context: Context): SummarizationService {
-        return SummarizationService(context)
-    }
-    
+    fun provideSummarizationService(@ApplicationContext context: Context): SummarizationService = SummarizationService(context)
+
     /**
      * Provide the EncryptedPreferencesService instance
      *
@@ -92,10 +71,8 @@ object ServiceModule {
      */
     @Provides
     @Singleton
-    fun provideEncryptedPreferencesService(@ApplicationContext context: Context): EncryptedPreferencesService {
-        return EncryptedPreferencesService(context, "quick_browser_prefs")
-    }
-    
+    fun provideEncryptedPreferencesService(@ApplicationContext context: Context): EncryptedPreferencesService = EncryptedPreferencesService(context, ENCRYPTED_PREFS_NAME)
+
     /**
      * Provide the ModelDownloadService instance
      *
@@ -104,10 +81,8 @@ object ServiceModule {
      */
     @Provides
     @Singleton
-    fun provideModelDownloadService(@ApplicationContext context: Context): ModelDownloadService {
-        return ModelDownloadService(context)
-    }
-    
+    fun provideModelDownloadService(@ApplicationContext context: Context): ModelDownloadService = ModelDownloadService(context)
+
     /**
      * Provide the SecurityPolicyService instance
      *
@@ -116,7 +91,5 @@ object ServiceModule {
      */
     @Provides
     @Singleton
-    fun provideSecurityPolicyService(@ApplicationContext context: Context): SecurityPolicyService {
-        return SecurityPolicyService(context)
-    }
+    fun provideSecurityPolicyService(@ApplicationContext context: Context): SecurityPolicyService = SecurityPolicyService(context)
 }

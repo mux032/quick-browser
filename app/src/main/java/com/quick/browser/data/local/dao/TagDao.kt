@@ -1,6 +1,5 @@
 package com.quick.browser.data.local.dao
 
-import androidx.lifecycle.LiveData
 import androidx.room.*
 import com.quick.browser.data.local.entity.Tag
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +31,15 @@ interface TagDao {
     suspend fun getTagById(id: Long): Tag?
 
     /**
+     * Get a list of tags by their IDs
+     *
+     * @param tagIds The list of tag IDs to retrieve
+     * @return A list of tags
+     */
+    @Query("SELECT * FROM tags WHERE id IN (:tagIds)")
+    suspend fun getTagsByIds(tagIds: List<Long>): List<Tag>
+
+    /**
      * Get a tag by its name
      *
      * @param name The name of the tag to retrieve
@@ -46,7 +54,7 @@ interface TagDao {
      * @param tag The tag to insert
      * @return The ID of the inserted tag
      */
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertTag(tag: Tag): Long
 
     /**
@@ -73,12 +81,5 @@ interface TagDao {
     @Query("DELETE FROM tags WHERE id = :id")
     suspend fun deleteTagById(id: Long)
 
-    /**
-     * Get the count of tags with a specific name
-     *
-     * @param name The name to check
-     * @return The count of tags with the specified name
-     */
-    @Query("SELECT COUNT(*) FROM tags WHERE name = :name")
-    suspend fun getTagCountByName(name: String): Int
+    
 }

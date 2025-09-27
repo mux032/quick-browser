@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.domain.model.SavedArticle
+import com.quick.browser.domain.model.Tag
 import com.quick.browser.domain.usecase.DeleteArticleUseCase
 import com.quick.browser.domain.usecase.GetSavedArticlesByTagUseCase
 import com.quick.browser.domain.usecase.GetSavedArticlesUseCase
@@ -31,19 +32,28 @@ class SavedArticlesViewModel @Inject constructor(
     val uiState: StateFlow<SavedArticlesUiState> = _uiState
 
     init {
-        loadSavedArticles()
+        loadArticles()
     }
 
-    fun loadSavedArticles() {
+    fun loadArticles() {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                // Collect the flow of saved articles from the use case
-                getSavedArticlesUseCase().collectLatest { articles ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        articles = articles
-                    )
+                val currentTag = _uiState.value.currentTag
+                if (currentTag == null) {
+                    getSavedArticlesUseCase().collectLatest { articles ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            articles = articles
+                        )
+                    }
+                } else {
+                    getSavedArticlesByTagUseCase(currentTag.id).collectLatest { articles ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            articles = articles
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -54,24 +64,9 @@ class SavedArticlesViewModel @Inject constructor(
         }
     }
 
-    fun loadArticlesForTag(tagId: Long) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true)
-                // Collect the flow of saved articles from the use case
-                getSavedArticlesByTagUseCase(tagId).collectLatest { articles ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        articles = articles
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to load saved articles: ${e.message}"
-                )
-            }
-        }
+    fun setCurrentTag(tag: Tag?) {
+        _uiState.value = _uiState.value.copy(currentTag = tag)
+        loadArticles()
     }
 
     fun searchSavedArticles(query: String) {

@@ -1,48 +1,37 @@
 package com.quick.browser.presentation.ui.saved
+
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Rect
-import android.graphics.drawable.ColorDrawable
-import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.card.MaterialCardView
-import com.google.android.material.navigation.NavigationView
 import com.quick.browser.R
-import com.quick.browser.domain.model.Tag
+import com.quick.browser.databinding.ActivitySavedArticlesBinding
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.model.SavedArticlesViewStyle
+import com.quick.browser.domain.service.ISettingsService
 import com.quick.browser.presentation.ui.reader.OfflineReaderActivity
-import com.quick.browser.presentation.ui.saved.SavedArticlesAdapter
-import com.quick.browser.presentation.ui.saved.SavedArticlesViewModel
 import com.quick.browser.presentation.ui.saved.viewmodel.TagViewModel
-import com.quick.browser.service.SettingsService
 import com.quick.browser.utils.Logger
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 /**
@@ -52,89 +41,74 @@ import javax.inject.Inject
 class SavedArticlesActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var settingsService: SettingsService
+    lateinit var settingsService: ISettingsService
 
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var binding: ActivitySavedArticlesBinding
     private lateinit var adapter: SavedArticlesAdapter
-    private lateinit var searchView: SearchView
-    private lateinit var searchCard: MaterialCardView
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var navView: NavigationView
-    private lateinit var tagsRecyclerView: RecyclerView
-        private lateinit var tagsAdapter: TagsAdapter
+    private lateinit var tagsAdapter: TagsAdapter
     private var isSearchBarExplicitlyOpened = false
-    private var currentViewStyle: SavedArticlesViewStyle = SavedArticlesViewStyle.CARD
-    private var currentTag: com.quick.browser.domain.model.Tag? = null // Track currently selected tag
 
     private val viewModel: SavedArticlesViewModel by viewModels()
     private val tagViewModel: TagViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_QBrowser)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_saved_articles)
+        binding = ActivitySavedArticlesBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.colorPrimary)
 
         // Set up toolbar
         setupToolbar()
-        
-        // Set up drawer layout and navigation view
-        drawerLayout = findViewById(R.id.drawer_layout)
-        navView = findViewById(R.id.nav_view)
 
         setupRecyclerView()
         setupTagsRecyclerView()
         observeViewModel()
         observeTagViewModel()
-        
-        // Initialize views
-        searchView = findViewById(R.id.search_view)
-        searchCard = findViewById(R.id.search_card)
-        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
-        
+
         // Set up search functionality
         setupSearchView()
-        
+
         // Set up swipe refresh
         setupSwipeRefresh()
-        
+
         // Listen for keyboard visibility changes
         setupKeyboardVisibilityListener()
-        
+
         // Set up side panel interactions
         setupSidePanel()
-        
+
         // Load saved view style preference
         loadSavedViewStyle()
+
+        // Handle back press
+        setupOnBackPressed()
     }
 
     private fun setupToolbar() {
-        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(false) // Hide back button
         supportActionBar?.setTitle(R.string.saved_articles)
-        
+
         // Ensure toolbar sits below the status bar on all devices
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { v, insets ->
             val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             v.updatePadding(top = statusBarHeight)
             insets
         }
-        
+
         // Set up custom toolbar buttons
-        val searchButton = toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_search)
-        searchButton?.setOnClickListener {
+        binding.toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_search)?.setOnClickListener {
             showSearchBar()
         }
 
         // Set up burger menu button to open side panel
-        val menuButton = toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_menu)
-        menuButton?.setOnClickListener {
-            drawerLayout.openDrawer(navView)
+        binding.toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_menu)?.setOnClickListener {
+            binding.drawerLayout.openDrawer(binding.navView)
         }
     }
 
     private fun setupRecyclerView() {
-        recyclerView = findViewById(R.id.recycler_view_saved_articles)
         adapter = SavedArticlesAdapter(
             onItemClick = { article ->
                 // Handle article click - open in reader mode
@@ -148,84 +122,74 @@ class SavedArticlesActivity : AppCompatActivity() {
             lifecycleOwner = this
         )
 
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
+        binding.recyclerViewSavedArticles.layoutManager = LinearLayoutManager(this)
+        binding.recyclerViewSavedArticles.adapter = adapter
     }
 
     private fun setupTagsRecyclerView() {
-        tagsRecyclerView = navView.findViewById(R.id.tags_recycler_view)
         tagsAdapter = TagsAdapter(
             onItemClick = { tag ->
                 // Set current tag and load articles for this tag
-                currentTag = tag
-                viewModel.loadArticlesForTag(tag.id)
-                drawerLayout.closeDrawer(navView)
-                // Update toolbar title to show tag name
-                supportActionBar?.title = tag.name
+                viewModel.setCurrentTag(tag)
+                binding.drawerLayout.closeDrawer(binding.navView)
             }
         )
 
-        tagsRecyclerView.layoutManager = LinearLayoutManager(this)
-        tagsRecyclerView.adapter = tagsAdapter
+        binding.sidePanel.tagsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@SavedArticlesActivity)
+            adapter = tagsAdapter
+        }
     }
 
     private fun observeViewModel() {
         // Observe the UI state from the ViewModel
-        lifecycleScope.launch {
-            viewModel.uiState.collect { uiState ->
-                // Check if the UI state is Loading, Success, or Error
-                if (uiState.isLoading) {
-                    // Show loading indicator if needed
-                } else if (uiState.error != null) {
-                    // Show error message
-                    Logger.e(TAG, "Error loading saved articles: ${uiState.error}")
-                } else {
-                    // Update adapter with saved articles
-                    adapter.submitList(uiState.articles)
-                }
+        viewModel.uiState.onEach { uiState ->
+            // Check if the UI state is Loading, Success, or Error
+            if (uiState.isLoading) {
+                // Show loading indicator if needed
+            } else if (uiState.error != null) {
+                // Show error message
+                Logger.e(TAG, "Error loading saved articles: ${uiState.error}")
+            } else {
+                // Update adapter with saved articles
+                adapter.submitList(uiState.articles)
+                supportActionBar?.title = uiState.currentTag?.name ?: getString(R.string.saved_articles)
             }
-        }
+        }.launchIn(lifecycleScope)
     }
 
     private fun observeTagViewModel() {
         // Observe tags
-        lifecycleScope.launch {
-            tagViewModel.uiState.collect { uiState ->
-                // Update tags list
-                tagsAdapter.submitList(uiState.tags)
-                
-                // Check if there's an error to display
-                if (uiState.error != null) {
-                    Toast.makeText(this@SavedArticlesActivity, uiState.error, Toast.LENGTH_SHORT).show()
-                    tagViewModel.clearMessages()
-                }
-                
-                // Check if there's a success message to display
-                if (uiState.successMessage != null) {
-                    Toast.makeText(this@SavedArticlesActivity, uiState.successMessage, Toast.LENGTH_SHORT).show()
-                    tagViewModel.clearMessages()
-                }
+        tagViewModel.uiState.onEach { uiState ->
+            // Update tags list
+            tagsAdapter.submitList(uiState.tags)
+
+            // Check if there's an error to display
+            if (uiState.error != null) {
+                Toast.makeText(this@SavedArticlesActivity, uiState.error, Toast.LENGTH_SHORT).show()
+                tagViewModel.clearMessages()
             }
-        }
+
+            // Check if there's a success message to display
+            if (uiState.successMessage != null) {
+                Toast.makeText(this@SavedArticlesActivity, uiState.successMessage, Toast.LENGTH_SHORT).show()
+                tagViewModel.clearMessages()
+            }
+        }.launchIn(lifecycleScope)
     }
 
     private fun setupSearchView() {
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 // Hide keyboard when Enter is pressed but keep search bar visible
                 val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(searchView.windowToken, 0)
+                imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText.isNullOrEmpty()) {
-                    // Show all saved articles when search query is empty
-                    if (currentTag == null) {
-                        viewModel.loadSavedArticles() // Use the correct method to load all articles
-                    } else {
-                        viewModel.loadArticlesForTag(currentTag!!.id)
-                    }
+                    viewModel.loadArticles()
                 } else {
                     // Perform search with the query
                     viewModel.searchSavedArticles(newText)
@@ -235,38 +199,27 @@ class SavedArticlesActivity : AppCompatActivity() {
         })
 
         // Handle search view close event
-        searchView.setOnCloseListener {
-            // Show all saved articles when search view is closed
-            if (currentTag == null) {
-                viewModel.loadSavedArticles() // Use the correct method to load all articles
-            } else {
-                viewModel.loadArticlesForTag(currentTag!!.id)
-            }
+        binding.searchView.setOnCloseListener {
+            viewModel.loadArticles()
             false
         }
 
         // Handle IME options (Enter key)
-        val searchEditText = searchView.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
+        val searchEditText = binding.searchView.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
         searchEditText?.imeOptions = EditorInfo.IME_ACTION_SEARCH
     }
 
     private fun setupSwipeRefresh() {
-        swipeRefreshLayout.setOnRefreshListener {
-            // Refresh the saved articles data
-            if (currentTag == null) {
-                viewModel.loadSavedArticles() // Use the correct method to load all articles
-            } else {
-                viewModel.loadArticlesForTag(currentTag!!.id)
-            }
-
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadArticles()
             // Stop the refresh animation after a short delay
-            swipeRefreshLayout.postDelayed({
-                swipeRefreshLayout.isRefreshing = false
+            binding.swipeRefreshLayout.postDelayed({
+                binding.swipeRefreshLayout.isRefreshing = false
             }, 1000)
         }
 
         // Set refresh colors
-        swipeRefreshLayout.setColorSchemeResources(
+        binding.swipeRefreshLayout.setColorSchemeResources(
             R.color.colorPrimary,
             R.color.colorAccent,
             R.color.secondaryColor
@@ -276,20 +229,20 @@ class SavedArticlesActivity : AppCompatActivity() {
     private fun showSearchBar() {
         // Mark that the search bar was explicitly opened
         isSearchBarExplicitlyOpened = true
-        
+
         // Show the search card
-        searchCard.visibility = View.VISIBLE
-        
+        binding.searchCard.visibility = View.VISIBLE
+
         // Post the focus and keyboard show to ensure the view is properly laid out
-        searchCard.post {
+        binding.searchCard.post {
             // Focus on the search view and show keyboard
-            searchView.requestFocus()
-            searchView.isIconified = false
-            
+            binding.searchView.requestFocus()
+            binding.searchView.isIconified = false
+
             // Show keyboard with a delay to ensure proper layout
-            searchView.post {
+            binding.searchView.post {
                 val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
+                imm.showSoftInput(binding.searchView, InputMethodManager.SHOW_IMPLICIT)
             }
         }
     }
@@ -297,82 +250,48 @@ class SavedArticlesActivity : AppCompatActivity() {
     private fun closeSearchBar() {
         // Reset the explicit open flag
         isSearchBarExplicitlyOpened = false
-        
+
         // Hide the search card
-        searchCard.visibility = View.GONE
-        
+        binding.searchCard.visibility = View.GONE
+
         // Clear search query
-        searchView.setQuery("", false)
-        
+        binding.searchView.setQuery("", false)
+
         // Hide keyboard
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(searchView.windowToken, 0)
-        
-        // Show all saved articles or articles in current folder
-        if (currentTag == null) {
-            viewModel.loadSavedArticles() // Use the correct method to load all articles
-        } else {
-            viewModel.loadArticlesForTag(currentTag!!.id)
-        }
+        imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
+
+        viewModel.loadArticles()
     }
 
     private fun hideSearchBar() {
         // Hide keyboard
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(searchView.windowToken, 0)
-        
+        imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
+
         // Only hide the search bar if it's not focused (user explicitly closed it) or if it wasn't explicitly opened
-        if ((!searchView.hasFocus() && !isSearchBarExplicitlyOpened) || searchView.query.isNullOrEmpty()) {
-            searchCard.visibility = View.GONE
+        if ((!binding.searchView.hasFocus() && !isSearchBarExplicitlyOpened) || binding.searchView.query.isNullOrEmpty()) {
+            binding.searchCard.visibility = View.GONE
             isSearchBarExplicitlyOpened = false
             // Clear search query
-            searchView.setQuery("", false)
-            // Show all saved articles or articles in current folder
-            if (currentTag == null) {
-                viewModel.loadSavedArticles() // Use the correct method to load all articles
-            } else {
-                viewModel.loadArticlesForTag(currentTag!!.id)
-            }
+            binding.searchView.setQuery("", false)
+            viewModel.loadArticles()
         }
     }
 
     private fun showAddTagDialog() {
-        // Create an AlertDialog to get tag name from user
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Create New Tag")
-        
-        // Set up the input field
-        val input = EditText(this)
-        input.hint = "Enter tag name"
-        builder.setView(input)
-        
-        // Set up the buttons
-        builder.setPositiveButton("Create") { dialog, _ ->
-            val tagName = input.text.toString().trim()
-            if (tagName.isNotEmpty()) {
-                tagViewModel.createTag(tagName)
-            }
-            dialog.dismiss()
-        }
-        
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.cancel()
-        }
-        
-        builder.show()
+        AddTagDialogFragment().show(supportFragmentManager, "AddTagDialogFragment")
     }
 
     private fun updateViewStyle(viewStyle: SavedArticlesViewStyle) {
-        currentViewStyle = viewStyle
         adapter.updateViewStyle(viewStyle)
-        
         // Save the preference
         settingsService.setSavedArticlesViewStyle(viewStyle.name)
     }
 
     private fun loadSavedViewStyle() {
         val savedStyleName = settingsService.getSavedArticlesViewStyle()
-        currentViewStyle = try {
+        val currentViewStyle = try {
             SavedArticlesViewStyle.valueOf(savedStyleName)
         } catch (e: IllegalArgumentException) {
             SavedArticlesViewStyle.CARD // Default to card view
@@ -387,9 +306,9 @@ class SavedArticlesActivity : AppCompatActivity() {
             window.decorView.getWindowVisibleDisplayFrame(rect)
             val screenHeight = window.decorView.height
             val keypadHeight = screenHeight - rect.bottom
-            
+
             // Update search card bottom margin to position it above keyboard
-            val layoutParams = searchCard.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            val layoutParams = binding.searchCard.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
             layoutParams.bottomMargin = if (keypadHeight > screenHeight * 0.15) {
                 // Keyboard is visible, position above it
                 keypadHeight + 32 // Add some padding
@@ -397,12 +316,12 @@ class SavedArticlesActivity : AppCompatActivity() {
                 // Keyboard is hidden, use default margin
                 32
             }
-            searchCard.layoutParams = layoutParams
-            
+            binding.searchCard.layoutParams = layoutParams
+
             // If keyboard is hidden AND search view is not focused AND search bar wasn't explicitly opened, hide it
-            if (keypadHeight < screenHeight * 0.15 && !searchView.hasFocus() && !isSearchBarExplicitlyOpened) {
-                if (searchCard.visibility == View.VISIBLE && searchView.query.isNullOrEmpty()) {
-                    searchCard.visibility = View.GONE
+            if (keypadHeight < screenHeight * 0.15 && !binding.searchView.hasFocus() && !isSearchBarExplicitlyOpened) {
+                if (binding.searchCard.visibility == View.VISIBLE && binding.searchView.query.isNullOrEmpty()) {
+                    binding.searchCard.visibility = View.GONE
                 }
             }
         }
@@ -430,74 +349,64 @@ class SavedArticlesActivity : AppCompatActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        // If search bar is visible, close it instead of closing the activity
-        if (searchCard.visibility == View.VISIBLE) {
-            closeSearchBar()
-        } else if (drawerLayout.isDrawerOpen(navView)) {
-            // If drawer is open, close it
-            drawerLayout.closeDrawer(navView)
-        } else if (currentTag != null) {
-            // If we're viewing a folder, go back to all articles
-            currentTag = null
-            viewModel.loadSavedArticles() // Use the correct method to load all articles
-            supportActionBar?.title = getString(R.string.saved_articles)
-        } else {
-            super.onBackPressed()
-        }
+    private fun setupOnBackPressed() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // If search bar is visible, close it instead of closing the activity
+                if (binding.searchCard.visibility == View.VISIBLE) {
+                    closeSearchBar()
+                } else if (binding.drawerLayout.isDrawerOpen(binding.navView)) {
+                    // If drawer is open, close it
+                    binding.drawerLayout.closeDrawer(binding.navView)
+                } else if (viewModel.uiState.value.currentTag != null) {
+                    // If we're viewing a folder, go back to all articles
+                    viewModel.setCurrentTag(null)
+                } else {
+                    // If none of the above, perform the default back press action
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 
     private fun setupSidePanel() {
         // Set up close button in side panel
-        val closeButton = navView.findViewById<android.widget.ImageButton>(R.id.close_button)
-        closeButton.setOnClickListener {
-            drawerLayout.closeDrawer(navView)
+        binding.sidePanel.closeButton.setOnClickListener {
+            binding.drawerLayout.closeDrawer(binding.navView)
         }
-        
+
         // Set up add tag button
-        val addTagButton = navView.findViewById<android.widget.ImageButton>(R.id.add_tag_button)
-        addTagButton.setOnClickListener {
+        binding.sidePanel.addTagButton.setOnClickListener {
             showAddTagDialog()
         }
-        
+
         // Set up all articles item
-        val allArticlesItem = navView.findViewById<android.widget.LinearLayout>(R.id.all_articles_item)
-        allArticlesItem.setOnClickListener {
+        binding.sidePanel.allArticlesItem.setOnClickListener {
             // Show all articles
-            currentTag = null
-            viewModel.loadSavedArticles() // Use the correct method to load all articles
-            supportActionBar?.title = getString(R.string.saved_articles)
-            drawerLayout.closeDrawer(navView)
+            viewModel.setCurrentTag(null)
+            binding.drawerLayout.closeDrawer(binding.navView)
         }
-        
-        // Set up view style selection - we need to find the included layout first
-        val sidePanelInclude = navView.findViewById<View>(R.id.side_panel)
-        if (sidePanelInclude is ViewGroup) {
-            // Find the view style items within the included layout
-            val cardViewItem = sidePanelInclude.findViewById<LinearLayout>(R.id.card_view_item)
-            val compactCardViewItem = sidePanelInclude.findViewById<LinearLayout>(R.id.compact_card_item)
-            val compactViewItem = sidePanelInclude.findViewById<LinearLayout>(R.id.compact_item)
-            val superCompactViewItem = sidePanelInclude.findViewById<LinearLayout>(R.id.super_compact_item)
-            
-            cardViewItem.setOnClickListener {
-                updateViewStyle(SavedArticlesViewStyle.CARD)
-                drawerLayout.closeDrawer(navView)
-            }
-            
-            compactCardViewItem.setOnClickListener {
-                updateViewStyle(SavedArticlesViewStyle.COMPACT_CARD)
-                drawerLayout.closeDrawer(navView)
-            }
-            
-            compactViewItem.setOnClickListener {
-                updateViewStyle(SavedArticlesViewStyle.COMPACT)
-                drawerLayout.closeDrawer(navView)
-            }
-            
-            superCompactViewItem.setOnClickListener {
-                updateViewStyle(SavedArticlesViewStyle.SUPER_COMPACT)
-                drawerLayout.closeDrawer(navView)
-            }
+
+        // Set up view style selection
+        binding.sidePanel.cardViewItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.CARD)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        binding.sidePanel.compactCardItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.COMPACT_CARD)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        binding.sidePanel.compactItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.COMPACT)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        binding.sidePanel.superCompactItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.SUPER_COMPACT)
+            binding.drawerLayout.closeDrawer(binding.navView)
         }
     }
 

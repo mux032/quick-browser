@@ -33,24 +33,21 @@ interface ArticleTagRepository {
      *
      * @param articleUrl The URL of the article
      * @param tagId The ID of the tag
-     * @return True if the association was created successfully, false otherwise
      */
-    suspend fun addTagToArticle(articleUrl: String, tagId: Long): Boolean
+    suspend fun addTagToArticle(articleUrl: String, tagId: Long)
 
     /**
      * Remove a tag from an article
      *
      * @param articleUrl The URL of the article
      * @param tagId The ID of the tag
-     * @return True if the association was removed successfully, false otherwise
      */
-    suspend fun removeTagFromArticle(articleUrl: String, tagId: Long): Boolean
+    suspend fun removeTagFromArticle(articleUrl: String, tagId: Long)
 
     /**
      * Remove all tags from an article
      *
      * @param articleUrl The URL of the article
-     * @return True if all associations were removed successfully, false otherwise
      */
-    suspend fun removeAllTagsFromArticle(articleUrl: String): Boolean
+    suspend fun removeAllTagsFromArticle(articleUrl: String)
 }
