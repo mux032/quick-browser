@@ -23,4 +23,13 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textColor="?attr/colorOnSurface" />
 
+    <ImageButton
+        android:id="@+id/button_tag_menu"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_more_vert"
+        android:contentDescription="@string/tag_options"
+        app:tint="?attr/colorOnSurface" />
+
 </LinearLayout>

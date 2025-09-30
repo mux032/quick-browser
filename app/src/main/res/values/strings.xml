@@ -94,6 +94,11 @@
     <string name="no_history_found">No browsing history found</string>
     <string name="clear_history">Clear history</string>
     <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="rename_tag">Rename Tag</string>
+    <string name="delete_tag">Delete Tag</string>
+    <string name="delete_tag_confirmation">Are you sure you want to delete the tag \"%1$s\"? All articles associated with this tag will remain but will not be associated with any tag.</string>
+    <string name="tag_name_cannot_be_empty">Tag name cannot be empty</string>
     <string name="clear_history_confirmation">Clear History?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
@@ -194,6 +199,7 @@
     <string name="tags">Tags</string>
     <string name="add_tag">Add Tag</string>
     <string name="tag_name">Tag Name</string>
+    <string name="tag_options">Tag options</string>
     <string name="create_new_tag">Create New Tag</string>
     <string name="create">Create</string>
     <string name="no_folder">No Folder</string>

@@ -7,6 +7,7 @@ import com.quick.browser.domain.model.Tag
 import com.quick.browser.domain.usecase.CreateTagUseCase
 import com.quick.browser.domain.usecase.DeleteTagUseCase
 import com.quick.browser.domain.usecase.GetAllTagsUseCase
+import com.quick.browser.domain.usecase.RenameTagUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,8 @@ import javax.inject.Inject
 class TagViewModel @Inject constructor(
     private val getAllTagsUseCase: GetAllTagsUseCase,
     private val createTagUseCase: CreateTagUseCase,
-    private val deleteTagUseCase: DeleteTagUseCase
+    private val deleteTagUseCase: DeleteTagUseCase,
+    private val renameTagUseCase: RenameTagUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TagUiState())
@@ -92,6 +94,30 @@ class TagViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(successMessage = "Tag '${tag.name}' deleted successfully")
             }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(error = "Error deleting tag: ${exception.message}")
+            }
+        }
+    }
+
+    /**
+     * Rename a tag
+     *
+     * @param tag The tag to rename
+     * @param newName The new name for the tag
+     */
+    fun renameTag(tag: Tag, newName: String) {
+        viewModelScope.launch {
+            if (newName.isBlank()) {
+                _uiState.value = _uiState.value.copy(error = "Tag name cannot be empty")
+                return@launch
+            }
+
+            renameTagUseCase(tag, newName).onSuccess { updatedTag ->
+                _uiState.value = _uiState.value.copy(successMessage = "Tag '${tag.name}' renamed to '$newName' successfully")
+            }.onFailure { exception ->
+                when (exception) {
+                    is SQLiteConstraintException -> _uiState.value = _uiState.value.copy(error = "A tag with this name already exists")
+                    else -> _uiState.value = _uiState.value.copy(error = "Error renaming tag: ${exception.message}")
+                }
             }
         }
     }

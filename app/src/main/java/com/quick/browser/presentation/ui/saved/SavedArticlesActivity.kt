@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
@@ -33,6 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
+import androidx.core.view.isVisible
 
 /**
  * Activity to display saved articles for offline reading
@@ -132,6 +132,14 @@ class SavedArticlesActivity : AppCompatActivity() {
                 // Set current tag and load articles for this tag
                 viewModel.setCurrentTag(tag)
                 binding.drawerLayout.closeDrawer(binding.navView)
+            },
+            onDeleteTag = { tag ->
+                // Delete the tag
+                tagViewModel.deleteTag(tag)
+            },
+            onRenameTag = { tag, newName ->
+                // Rename the tag
+                tagViewModel.renameTag(tag, newName)
             }
         )
 
@@ -293,7 +301,7 @@ class SavedArticlesActivity : AppCompatActivity() {
         val savedStyleName = settingsService.getSavedArticlesViewStyle()
         val currentViewStyle = try {
             SavedArticlesViewStyle.valueOf(savedStyleName)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             SavedArticlesViewStyle.CARD // Default to card view
         }
         adapter.updateViewStyle(currentViewStyle)
@@ -320,7 +328,7 @@ class SavedArticlesActivity : AppCompatActivity() {
 
             // If keyboard is hidden AND search view is not focused AND search bar wasn't explicitly opened, hide it
             if (keypadHeight < screenHeight * 0.15 && !binding.searchView.hasFocus() && !isSearchBarExplicitlyOpened) {
-                if (binding.searchCard.visibility == View.VISIBLE && binding.searchView.query.isNullOrEmpty()) {
+                if (binding.searchCard.isVisible && binding.searchView.query.isNullOrEmpty()) {
                     binding.searchCard.visibility = View.GONE
                 }
             }
@@ -340,20 +348,14 @@ class SavedArticlesActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_search -> {
-                showSearchBar()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+        return super.onOptionsItemSelected(item)
     }
 
     private fun setupOnBackPressed() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // If search bar is visible, close it instead of closing the activity
-                if (binding.searchCard.visibility == View.VISIBLE) {
+                if (binding.searchCard.isVisible) {
                     closeSearchBar()
                 } else if (binding.drawerLayout.isDrawerOpen(binding.navView)) {
                     // If drawer is open, close it
