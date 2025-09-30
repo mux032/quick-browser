@@ -102,7 +102,7 @@ class BubbleTagSelectionPanel(
 
         val inflater = LayoutInflater.from(android.view.ContextThemeWrapper(context, R.style.Theme_QBrowser))
         for (tag in tags) {
-            val tagView = inflater.inflate(R.layout.item_tag, tagsContainer, false) as LinearLayout
+            val tagView = inflater.inflate(R.layout.item_tag_bubble, tagsContainer, false) as LinearLayout
             val tagName = tagView.findViewById<TextView>(R.id.text_tag_name)
             tagName.text = tag.name
             tagView.setOnClickListener {
