@@ -30,4 +30,5 @@ data class SavedArticle(
     val publishDate: String?,
     val savedDate: Long,
     val excerpt: String?
+    
 )

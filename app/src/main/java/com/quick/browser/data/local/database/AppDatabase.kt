@@ -1,16 +1,14 @@
 package com.quick.browser.data.local.database
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.quick.browser.data.SavedArticleDao
+import com.quick.browser.data.local.dao.ArticleTagDao
+import com.quick.browser.data.local.dao.SavedArticleDao
 import com.quick.browser.data.local.dao.SettingsDao
+import com.quick.browser.data.local.dao.TagDao
 import com.quick.browser.data.local.dao.WebPageDao
-import com.quick.browser.data.local.entity.SavedArticle
-import com.quick.browser.data.local.entity.Settings
-import com.quick.browser.data.local.entity.WebPage
+import com.quick.browser.data.local.entity.*
 
 /**
  * Room database for the QB app
@@ -19,7 +17,7 @@ import com.quick.browser.data.local.entity.WebPage
  * It includes entities for web pages, settings, and saved articles,
  * along with their respective DAOs for database access.
  */
-@Database(entities = [WebPage::class, Settings::class, SavedArticle::class], version = 1, exportSchema = false)
+@Database(entities = [WebPage::class, Settings::class, SavedArticle::class, Tag::class, ArticleTag::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -44,31 +42,18 @@ abstract class AppDatabase : RoomDatabase() {
      */
     abstract fun savedArticleDao(): SavedArticleDao
 
-    companion object {
-        private const val DATABASE_NAME = "quick_browser.db"
+    /**
+     * Get the Tag DAO
+     *
+     * @return The TagDao instance
+     */
+    abstract fun tagDao(): TagDao
 
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
+    /**
+     * Get the ArticleTag DAO
+     *
+     * @return The ArticleTagDao instance
+     */
+    abstract fun articleTagDao(): ArticleTagDao
 
-        /**
-         * Get the singleton instance of the AppDatabase
-         *
-         * @param context The application context
-         * @return The singleton instance of the AppDatabase
-         */
-        fun getInstance(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    DATABASE_NAME
-                )
-                    .fallbackToDestructiveMigration()
-                    .build()
-
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
 }

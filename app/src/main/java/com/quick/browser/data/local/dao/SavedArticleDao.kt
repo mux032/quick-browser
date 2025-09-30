@@ -1,7 +1,8 @@
-package com.quick.browser.data
+package com.quick.browser.data.local.dao
 
 import androidx.room.*
 import com.quick.browser.data.local.entity.SavedArticle
+import com.quick.browser.data.local.entity.ArticleTag
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -71,4 +72,16 @@ interface SavedArticleDao {
      */
     @Query("SELECT COUNT(*) FROM saved_articles WHERE url = :url")
     suspend fun isArticleSaved(url: String): Int
+
+    /**
+     * Get all saved articles for a specific tag
+     *
+     * @param tagId The ID of the tag
+     * @return A Flow of lists of saved articles with the specified tag
+     */
+    @Query("SELECT sa.* FROM saved_articles sa " +
+           "INNER JOIN article_tags at ON sa.url = at.articleUrl " +
+           "WHERE at.tagId = :tagId " +
+           "ORDER BY sa.savedDate DESC")
+    fun getSavedArticlesByTagId(tagId: Long): Flow<List<SavedArticle>>
 }

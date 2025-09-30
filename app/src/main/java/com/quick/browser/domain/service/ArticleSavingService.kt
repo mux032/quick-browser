@@ -2,6 +2,7 @@ package com.quick.browser.domain.service
 
 import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.repository.ArticleRepository
+import com.quick.browser.domain.repository.ArticleTagRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -12,13 +13,15 @@ import kotlinx.coroutines.withContext
  * This service contains the business logic for saving articles without UI concerns
  */
 class ArticleSavingService(
-    private val repository: ArticleRepository
+    private val repository: ArticleRepository,
+    private val articleTagRepository: ArticleTagRepository
 ) {
     
     /**
      * Save an article for offline reading
      *
      * @param url The URL of the article to save
+     * @param tagId The ID of the tag to save the article to (0 for no tag)
      * @param scope The coroutine scope to launch the save operation
      * @param onSuccess Callback when save is successful
      * @param onError Callback when save fails
@@ -26,6 +29,7 @@ class ArticleSavingService(
      */
     suspend fun saveArticleForOfflineReading(
         url: String,
+        tagId: Long = 0, // 0 means no tag
         scope: CoroutineScope,
         onSuccess: () -> Unit = {},
         onError: (String) -> Unit = {}
@@ -34,14 +38,18 @@ class ArticleSavingService(
             try {
                 // Check if article is already saved
                 if (repository.isArticleSaved(url)) {
-                    withContext(Dispatchers.Main) {
-                        onError("Article already saved")
+                    articleTagRepository.removeAllTagsFromArticle(url)
+                    if (tagId > 0) {
+                        articleTagRepository.addTagToArticle(url, tagId)
                     }
-                    return@withContext false
+                    withContext(Dispatchers.Main) {
+                        onSuccess()
+                    }
+                    return@withContext true
                 }
                 
                 // Attempt to save the article by extracting readable content
-                val success = repository.saveArticleByUrl(url)
+                val success = repository.saveArticleByUrl(url, tagId)
                 
                 withContext(Dispatchers.Main) {
                     if (success) {

@@ -2,12 +2,17 @@ package com.quick.browser.domain.service
 
 import android.content.Context
 import com.quick.browser.data.local.EncryptedPreferences
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 /**
  * Service for handling encrypted preferences operations
  * This service provides a clean interface for encrypted data storage
  */
-class EncryptedPreferencesService(context: Context, preferencesName: String) {
+class EncryptedPreferencesService @Inject constructor(
+    @ApplicationContext context: Context, 
+    preferencesName: String
+) : IEncryptedPreferencesService {
     
     private val encryptedPreferences = EncryptedPreferences.getInstance(context, preferencesName)
     
@@ -17,7 +22,7 @@ class EncryptedPreferencesService(context: Context, preferencesName: String) {
      * @param key The preference key
      * @param value The value to store
      */
-    fun putString(key: String, value: String?) {
+    override fun putString(key: String, value: String) {
         encryptedPreferences.putString(key, value)
     }
     
@@ -28,7 +33,7 @@ class EncryptedPreferencesService(context: Context, preferencesName: String) {
      * @param defaultValue The default value to return if key not found
      * @return The decrypted value or default value
      */
-    fun getString(key: String, defaultValue: String?): String? {
+    override fun getString(key: String, defaultValue: String?): String? {
         return encryptedPreferences.getString(key, defaultValue)
     }
     
@@ -100,7 +105,7 @@ class EncryptedPreferencesService(context: Context, preferencesName: String) {
      *
      * @param key The preference key to remove
      */
-    fun remove(key: String) {
+    override fun remove(key: String) {
         encryptedPreferences.remove(key)
     }
     

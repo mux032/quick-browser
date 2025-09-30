@@ -42,6 +42,15 @@
         <item name="android:popupBackground">?attr/colorSurface</item>
         <item name="android:textColor">?android:attr/textColorPrimary</item>
     </style>
+
+    <style name="ShapeAppearance.QBrowser.PopupMenu" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="PopupMenu.QBrowser.Styled" parent="PopupMenu.QBrowser">
+        <item name="shapeAppearance">@style/ShapeAppearance.QBrowser.PopupMenu</item>
+    </style>
     
     <!-- Circular toolbar button style -->
     <style name="Widget.QBrowser.Button.CircularIcon" parent="Widget.MaterialComponents.Button.TextButton.Icon">
@@ -69,5 +78,14 @@
         <item name="cornerSizeTopRight">0dp</item>
         <item name="cornerSizeBottomLeft">16dp</item>
         <item name="cornerSizeBottomRight">16dp</item>
+    </style>
+
+    <!-- Expanded Container with only top corners rounded -->
+    <style name="ExpandedContainerTopRoundedCorners" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">16dp</item>
+        <item name="cornerSizeTopRight">16dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
     </style>
 </resources>

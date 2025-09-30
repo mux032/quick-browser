@@ -18,6 +18,14 @@ interface ArticleRepository {
     fun getAllSavedArticles(): Flow<List<SavedArticle>>
 
     /**
+     * Get saved articles by tag ID as a flow
+     *
+     * @param tagId The ID of the tag to retrieve articles from
+     * @return A flow of lists of saved articles with the specified tag
+     */
+    fun getSavedArticlesByTagId(tagId: Long): Flow<List<SavedArticle>>
+
+    /**
      * Search saved articles by title or content
      *
      * @param query The search query
@@ -44,9 +52,10 @@ interface ArticleRepository {
      * Save an article by its URL
      *
      * @param url The URL of the article to save
+     * @param tagId The ID of the tag to save the article to (0 for no tag)
      * @return True if the article was saved successfully, false otherwise
      */
-    suspend fun saveArticleByUrl(url: String): Boolean
+    suspend fun saveArticleByUrl(url: String, tagId: Long = 0): Boolean
 
     /**
      * Save an original page as an article

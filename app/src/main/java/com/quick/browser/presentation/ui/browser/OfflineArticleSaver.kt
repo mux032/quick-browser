@@ -23,12 +23,14 @@ class OfflineArticleSaver @Inject constructor(
      * Save an article for offline reading with UI feedback
      *
      * @param url The URL of the article to save
+     * @param tagId The ID of the tag to save the article to (0 for no tag)
      * @param scope The coroutine scope to launch the save operation
      * @param onSuccess Callback when save is successful
      * @param onError Callback when save fails
      */
     fun saveArticleForOfflineReading(
         url: String,
+        tagId: Long = 0, // 0 means no tag
         scope: CoroutineScope,
         onSuccess: () -> Unit = {},
         onError: (String) -> Unit = {}
@@ -36,6 +38,7 @@ class OfflineArticleSaver @Inject constructor(
         scope.launch {
             val success = articleSavingService.saveArticleForOfflineReading(
                 url = url,
+                tagId = tagId,
                 scope = this,
                 onSuccess = {
                     Toast.makeText(

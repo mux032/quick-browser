@@ -21,4 +21,5 @@ data class SavedArticle(
     val siteName: String? = null,
     val publishDate: String? = null,
     val excerpt: String? = null
+    
 )

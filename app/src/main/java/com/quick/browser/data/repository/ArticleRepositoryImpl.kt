@@ -1,9 +1,13 @@
 package com.quick.browser.data.repository
 
-import com.quick.browser.data.SavedArticleDao
-import com.quick.browser.data.local.entity.SavedArticle
+import com.quick.browser.data.local.dao.SavedArticleDao
+import com.quick.browser.data.mapper.toDomain
+import com.quick.browser.data.mapper.toEntity
+import com.quick.browser.domain.model.SavedArticle
 import com.quick.browser.domain.repository.ArticleRepository
+import com.quick.browser.domain.repository.ArticleTagRepository
 import com.quick.browser.service.ReadabilityService
+import com.quick.browser.utils.Logger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -20,66 +24,80 @@ import javax.inject.Inject
  */
 class ArticleRepositoryImpl @Inject constructor(
     private val savedArticleDao: SavedArticleDao,
-    private val readabilityService: ReadabilityService
+    private val readabilityService: ReadabilityService,
+    private val articleTagRepository: ArticleTagRepository
 ) : ArticleRepository {
-    
+
     /**
      * Get all saved articles as a flow
      *
      * @return A flow of lists of saved articles
      */
-    override fun getAllSavedArticles(): Flow<List<com.quick.browser.domain.model.SavedArticle>> {
+    override fun getAllSavedArticles(): Flow<List<SavedArticle>> {
         return savedArticleDao.getAllSavedArticles().map { list ->
-            list.map { entityToDomain(it) }
+            list.map { it.toDomain() }
         }
     }
-    
+
+    /**
+     * Get saved articles by tag ID as a flow
+     *
+     * @param tagId The ID of the tag to retrieve articles from
+     * @return A flow of lists of saved articles with the specified tag
+     */
+    override fun getSavedArticlesByTagId(tagId: Long): Flow<List<SavedArticle>> {
+        return savedArticleDao.getSavedArticlesByTagId(tagId).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     /**
      * Search saved articles by title or content
      *
      * @param query The search query
      * @return A flow of lists of saved articles matching the query
      */
-    override fun searchSavedArticles(query: String): Flow<List<com.quick.browser.domain.model.SavedArticle>> {
+    override fun searchSavedArticles(query: String): Flow<List<SavedArticle>> {
         return savedArticleDao.searchSavedArticles(query).map { list ->
-            list.map { entityToDomain(it) }
+            list.map { it.toDomain() }
         }
     }
-    
+
     /**
      * Get a saved article by its URL
      *
      * @param url The URL of the article to retrieve
      * @return The saved article or null if not found
      */
-    override suspend fun getSavedArticleByUrl(url: String): com.quick.browser.domain.model.SavedArticle? {
+    override suspend fun getSavedArticleByUrl(url: String): SavedArticle? {
         val entity = savedArticleDao.getSavedArticleByUrl(url)
-        return entity?.let { entityToDomain(it) }
+        return entity?.toDomain()
     }
-    
+
     /**
      * Save an article
      *
      * @param article The article to save
      */
-    override suspend fun saveArticle(article: com.quick.browser.domain.model.SavedArticle) {
-        savedArticleDao.insertSavedArticle(domainToEntity(article))
+    override suspend fun saveArticle(article: SavedArticle) {
+        savedArticleDao.insertSavedArticle(article.toEntity())
     }
-    
+
     /**
      * Save an article by extracting content from its URL
      *
      * @param url The URL of the article to save
+     * @param tagId The ID of the tag to save the article to (0 for no tag)
      * @return True if the article was saved successfully, false otherwise
      */
-    override suspend fun saveArticleByUrl(url: String): Boolean {
+    override suspend fun saveArticleByUrl(url: String, tagId: Long): Boolean {
         return try {
             // Extract content from URL using ReadabilityExtractor
             val readableContent = readabilityService.extractFromUrl(url)
-            
+
             if (readableContent != null) {
                 // Create saved article with extracted content
-                val savedArticle = com.quick.browser.domain.model.SavedArticle(
+                val savedArticle = SavedArticle(
                     url = url,
                     title = readableContent.title,
                     content = readableContent.content,
@@ -89,9 +107,15 @@ class ArticleRepositoryImpl @Inject constructor(
                     publishDate = readableContent.publishDate,
                     excerpt = readableContent.excerpt
                 )
-                
+
                 // Save to database
-                savedArticleDao.insertSavedArticle(domainToEntity(savedArticle))
+                savedArticleDao.insertSavedArticle(savedArticle.toEntity())
+
+                // Associate article with tag if a tag ID is provided
+                if (tagId > 0) {
+                    articleTagRepository.addTagToArticle(url, tagId)
+                }
+
                 true
             } else {
                 // Extraction failed, but we'll handle this in the caller
@@ -99,11 +123,11 @@ class ArticleRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             // Log the error but don't crash
-            e.printStackTrace()
+            Logger.e(TAG, "Failed to save article by URL", e)
             false
         }
     }
-    
+
     /**
      * Save an original page as an article
      *
@@ -115,7 +139,7 @@ class ArticleRepositoryImpl @Inject constructor(
     override suspend fun saveOriginalPageAsArticle(url: String, title: String, content: String): Boolean {
         return try {
             // Create saved article with original page content
-            val savedArticle = com.quick.browser.domain.model.SavedArticle(
+            val savedArticle = SavedArticle(
                 url = url,
                 title = title.ifEmpty { url },
                 content = content,
@@ -125,26 +149,26 @@ class ArticleRepositoryImpl @Inject constructor(
                 publishDate = null,
                 excerpt = null
             )
-            
+
             // Save to database
-            savedArticleDao.insertSavedArticle(domainToEntity(savedArticle))
+            savedArticleDao.insertSavedArticle(savedArticle.toEntity())
             true
         } catch (e: Exception) {
             // Log the error but don't crash
-            e.printStackTrace()
+            Logger.e(TAG, "Failed to save original page as article", e)
             false
         }
     }
-    
+
     /**
      * Delete a saved article
      *
      * @param article The article to delete
      */
-    override suspend fun deleteArticle(article: com.quick.browser.domain.model.SavedArticle) {
-        savedArticleDao.deleteSavedArticle(domainToEntity(article))
+    override suspend fun deleteArticle(article: SavedArticle) {
+        savedArticleDao.deleteSavedArticle(article.toEntity())
     }
-    
+
     /**
      * Delete a saved article by its URL
      *
@@ -153,7 +177,7 @@ class ArticleRepositoryImpl @Inject constructor(
     override suspend fun deleteArticleByUrl(url: String) {
         savedArticleDao.deleteSavedArticleByUrl(url)
     }
-    
+
     /**
      * Check if an article is saved
      *
@@ -163,42 +187,8 @@ class ArticleRepositoryImpl @Inject constructor(
     override suspend fun isArticleSaved(url: String): Boolean {
         return savedArticleDao.isArticleSaved(url) > 0
     }
-    
-    /**
-     * Convert a saved article entity to a domain model
-     *
-     * @param entity The saved article entity to convert
-     * @return The domain model representation of the saved article
-     */
-    private fun entityToDomain(entity: SavedArticle): com.quick.browser.domain.model.SavedArticle {
-        return com.quick.browser.domain.model.SavedArticle(
-            url = entity.url,
-            title = entity.title,
-            content = entity.content,
-            savedDate = entity.savedDate,
-            author = entity.byline,
-            siteName = entity.siteName,
-            publishDate = entity.publishDate,
-            excerpt = entity.excerpt
-        )
-    }
-    
-    /**
-     * Convert a domain model to a saved article entity
-     *
-     * @param domain The domain model to convert
-     * @return The entity representation of the saved article
-     */
-    private fun domainToEntity(domain: com.quick.browser.domain.model.SavedArticle): SavedArticle {
-        return SavedArticle(
-            url = domain.url,
-            title = domain.title,
-            content = domain.content,
-            savedDate = domain.savedDate,
-            byline = domain.author,
-            siteName = domain.siteName,
-            publishDate = domain.publishDate,
-            excerpt = domain.excerpt
-        )
+
+    companion object {
+        private const val TAG = "ArticleRepositoryImpl"
     }
 }

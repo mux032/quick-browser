@@ -9,17 +9,18 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.quick.browser.R
-import com.quick.browser.presentation.ui.components.BaseActivity
+import com.quick.browser.databinding.ActivityMainBinding
 import com.quick.browser.presentation.ui.history.HistoryActivity
 import com.quick.browser.presentation.ui.saved.SavedArticlesActivity
 import com.quick.browser.presentation.ui.settings.SettingsActivity
@@ -30,18 +31,16 @@ import com.quick.browser.utils.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : BaseActivity() {
+class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "MainActivity"
     }
 
+    private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
-
-    private lateinit var addressBar: EditText
-    private lateinit var menuButton: ImageButton
-    private lateinit var toolbar: androidx.appcompat.widget.Toolbar
 
     // Activity result launcher for history activity
     private val historyActivityLauncher = registerForActivityResult(
@@ -97,23 +96,21 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_QBrowser)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.colorPrimary)
 
         // Set status bar icon color to dark for better visibility on light background
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
         }
 
-        // Initialize views
-        addressBar = findViewById(R.id.address_bar)
-        menuButton = findViewById(R.id.menu_button)
-        toolbar = findViewById(R.id.toolbar)
-
         setupAddressBar()
         setupMenuButton()
         setupKeyboardVisibilityListener()
-        
+
         // Handle incoming intent if it's a link sharing intent
         if (isLinkSharingIntent(intent)) {
             Logger.d(TAG, "Link sharing intent detected in onCreate, handling without UI")
@@ -121,6 +118,8 @@ class MainActivity : BaseActivity() {
         } else {
             handleMainAppIntent()
         }
+
+        setupOnBackPressed()
     }
 
     private fun openHistoryActivity() {
@@ -130,9 +129,9 @@ class MainActivity : BaseActivity() {
 
     private fun setupAddressBar() {
         // Handle enter key press in address bar
-        addressBar.setOnEditorActionListener { _, actionId, _ ->
+        binding.addressBar.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
-                val url = addressBar.text.toString().trim()
+                val url = binding.addressBar.text.toString().trim()
                 if (url.isNotEmpty()) {
                     handleUrlInput(url)
                 } else {
@@ -143,29 +142,29 @@ class MainActivity : BaseActivity() {
                 false
             }
         }
-        
+
         // Handle address bar focus change
-        addressBar.setOnFocusChangeListener { _, hasFocus ->
+        binding.addressBar.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 // Show keyboard
-                addressBar.post {
+                binding.addressBar.post {
                     val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                    imm.showSoftInput(addressBar, InputMethodManager.SHOW_IMPLICIT)
+                    imm.showSoftInput(binding.addressBar, InputMethodManager.SHOW_IMPLICIT)
                 }
             }
         }
     }
 
     private fun setupMenuButton() {
-        menuButton.setOnClickListener {
+        binding.menuButton.setOnClickListener {
             showPopupMenu()
         }
     }
 
     private fun showPopupMenu() {
-        val popupMenu = PopupMenu(this, menuButton)
+        val popupMenu = PopupMenu(this, binding.menuButton)
         popupMenu.menuInflater.inflate(R.menu.main_menu, popupMenu.menu)
-        
+
         // Force icons to show in popup menu
         try {
             val field = popupMenu.javaClass.getDeclaredField("mPopup")
@@ -177,7 +176,7 @@ class MainActivity : BaseActivity() {
         } catch (e: Exception) {
             Logger.e(TAG, "Error forcing icons to show in popup menu", e)
         }
-        
+
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_settings -> {
@@ -214,8 +213,8 @@ class MainActivity : BaseActivity() {
         var url = inputUrl
 
         // Check if it looks like a valid URL or domain
-        val isValidUrl = url.startsWith("http://") || url.startsWith("https://") || 
-                         (url.contains(".") && !url.contains(" ") && !url.contains("\\"))
+        val isValidUrl = url.startsWith("http://") || url.startsWith("https://") ||
+            (url.contains(".") && !url.contains(" ") && !url.contains("\\"))
 
         if (!isValidUrl) {
             // Treat as search query
@@ -226,11 +225,11 @@ class MainActivity : BaseActivity() {
         }
 
         // Clear the address bar
-        addressBar.text.clear()
+        binding.addressBar.text.clear()
 
         // Hide keyboard
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(addressBar.windowToken, 0)
+        imm.hideSoftInputFromWindow(binding.addressBar.windowToken, 0)
 
         // Open URL in bubble
         startBubbleServiceWithUrl(url)
@@ -240,10 +239,6 @@ class MainActivity : BaseActivity() {
 
         Logger.d(TAG, "Opening URL in bubble: $url")
     }
-
-
-
-    
 
     override fun onNewIntent(intent: Intent?) {
         Logger.d(TAG, "onNewIntent called with intent: ${intent?.action}")
@@ -268,7 +263,7 @@ class MainActivity : BaseActivity() {
             handleLinkSharingIntent(intent)
             return
         }
-        
+
         // Handle main app intent for other cases
         handleMainAppIntent()
     }
@@ -345,7 +340,7 @@ class MainActivity : BaseActivity() {
                     Logger.d(TAG, "No URL found in ACTION_VIEW intent")
                 }
             }
-            
+
             else -> {
                 Logger.d(TAG, "Unsupported intent action: ${intent.action}")
             }
@@ -447,26 +442,26 @@ class MainActivity : BaseActivity() {
             val keypadHeight = screenHeight - rect.bottom
 
             // Update toolbar position based on keyboard visibility
-            val layoutParams = toolbar.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            val layoutParams = binding.toolbar.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
             if (keypadHeight > screenHeight * 0.15) {
                 // Keyboard is visible, position toolbar above it
                 layoutParams.bottomMargin = keypadHeight
                 // Hide menu button when keyboard is visible
-                menuButton.visibility = View.GONE
+                binding.menuButton.visibility = View.GONE
             } else {
                 // Keyboard is hidden, toolbar sits at bottom of screen
                 layoutParams.bottomMargin = 0
                 // Show menu button when keyboard is hidden
-                menuButton.visibility = View.VISIBLE
+                binding.menuButton.visibility = View.VISIBLE
             }
-            toolbar.layoutParams = layoutParams
+            binding.toolbar.layoutParams = layoutParams
         }
-        
+
         // Set up touch listener to hide keyboard when clicking outside
         window.decorView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 val view = currentFocus
-                if (view is EditText) {
+                if (view is android.widget.EditText) {
                     val outRect = Rect()
                     view.getGlobalVisibleRect(outRect)
                     if (!outRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
@@ -482,7 +477,7 @@ class MainActivity : BaseActivity() {
 
     // Store the URL that needs to be opened after permission is granted
     private var pendingUrl: String? = null
-    
+
     override fun onResume() {
         super.onResume()
         Logger.d(TAG, "onResume called")
@@ -500,5 +495,13 @@ class MainActivity : BaseActivity() {
                 Logger.d(TAG, "Overlay permission still not granted")
             }
         }
+    }
+
+    private fun setupOnBackPressed() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finish()
+            }
+        })
     }
 }

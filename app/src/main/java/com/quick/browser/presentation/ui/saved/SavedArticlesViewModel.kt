@@ -2,8 +2,11 @@ package com.quick.browser.presentation.ui.saved
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.domain.model.SavedArticle
+import com.quick.browser.domain.model.Tag
 import com.quick.browser.domain.usecase.DeleteArticleUseCase
+import com.quick.browser.domain.usecase.GetSavedArticlesByTagUseCase
 import com.quick.browser.domain.usecase.GetSavedArticlesUseCase
 import com.quick.browser.domain.usecase.SearchSavedArticlesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,27 +22,38 @@ import javax.inject.Inject
 @HiltViewModel
 class SavedArticlesViewModel @Inject constructor(
     private val getSavedArticlesUseCase: GetSavedArticlesUseCase,
+    private val getSavedArticlesByTagUseCase: GetSavedArticlesByTagUseCase,
     private val deleteArticleUseCase: DeleteArticleUseCase,
-    private val searchSavedArticlesUseCase: SearchSavedArticlesUseCase
+    private val searchSavedArticlesUseCase: SearchSavedArticlesUseCase,
+    private val webPageDao: WebPageDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SavedArticlesUiState())
     val uiState: StateFlow<SavedArticlesUiState> = _uiState
 
     init {
-        loadSavedArticles()
+        loadArticles()
     }
 
-    private fun loadSavedArticles() {
+    fun loadArticles() {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                // Collect the flow of saved articles from the use case
-                getSavedArticlesUseCase().collectLatest { articles ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        articles = articles
-                    )
+                val currentTag = _uiState.value.currentTag
+                if (currentTag == null) {
+                    getSavedArticlesUseCase().collectLatest { articles ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            articles = articles
+                        )
+                    }
+                } else {
+                    getSavedArticlesByTagUseCase(currentTag.id).collectLatest { articles ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            articles = articles
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -48,6 +62,11 @@ class SavedArticlesViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun setCurrentTag(tag: Tag?) {
+        _uiState.value = _uiState.value.copy(currentTag = tag)
+        loadArticles()
     }
 
     fun searchSavedArticles(query: String) {
@@ -85,5 +104,15 @@ class SavedArticlesViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    suspend fun getPreviewImageUrlForArticle(url: String): String? {
+        val webPage = webPageDao.getPageByUrl(url)
+        return webPage?.previewImageUrl
+    }
+
+    suspend fun getFaviconUrlForArticle(url: String): String? {
+        val webPage = webPageDao.getPageByUrl(url)
+        return webPage?.faviconUrl
     }
 }

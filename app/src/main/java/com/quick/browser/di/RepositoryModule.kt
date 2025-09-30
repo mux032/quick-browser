@@ -1,13 +1,19 @@
 package com.quick.browser.di
 
+// Removed FolderRepositoryImpl import - using TagRepositoryImpl instead
+// Removed FolderRepository import - using TagRepository instead
 import com.quick.browser.data.repository.ArticleRepositoryImpl
 import com.quick.browser.data.repository.BubbleRepositoryImpl
 import com.quick.browser.data.repository.HistoryRepositoryImpl
 import com.quick.browser.data.repository.SettingsRepositoryImpl
+import com.quick.browser.data.repository.TagRepositoryImpl
+import com.quick.browser.data.repository.ArticleTagRepositoryImpl
 import com.quick.browser.domain.repository.ArticleRepository
 import com.quick.browser.domain.repository.BubbleRepository
 import com.quick.browser.domain.repository.HistoryRepository
 import com.quick.browser.domain.repository.SettingsRepository
+import com.quick.browser.domain.repository.TagRepository
+import com.quick.browser.domain.repository.ArticleTagRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -66,4 +72,26 @@ abstract class RepositoryModule {
     abstract fun bindArticleRepository(
         articleRepositoryImpl: ArticleRepositoryImpl
     ): ArticleRepository
+
+    /**
+     * Bind TagRepositoryImpl to TagRepository interface
+     *
+     * @param tagRepositoryImpl The concrete implementation
+     * @return The TagRepository interface
+     */
+    @Binds
+    abstract fun bindTagRepository(
+        tagRepositoryImpl: TagRepositoryImpl
+    ): TagRepository
+
+    /**
+     * Bind ArticleTagRepositoryImpl to ArticleTagRepository interface
+     *
+     * @param articleTagRepositoryImpl The concrete implementation
+     * @return The ArticleTagRepository interface
+     */
+    @Binds
+    abstract fun bindArticleTagRepository(
+        articleTagRepositoryImpl: ArticleTagRepositoryImpl
+    ): ArticleTagRepository
 }

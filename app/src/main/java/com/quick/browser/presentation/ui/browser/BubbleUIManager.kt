@@ -63,6 +63,7 @@ class BubbleUIManager(
     private lateinit var btnReadMode: MaterialButton
     private lateinit var btnSummarize: MaterialButton
     private lateinit var btnMinimize: MaterialButton
+    private lateinit var btnSaveArticle: MaterialButton
     private lateinit var btnToolbarSettings: MaterialButton
     
     // Utility
@@ -134,6 +135,7 @@ class BubbleUIManager(
             btnReadMode = bubbleView.findViewById(R.id.btn_read_mode) ?: throw IllegalStateException("btn_read_mode not found")
             btnSummarize = bubbleView.findViewById(R.id.btn_summarize) ?: throw IllegalStateException("btn_summarize not found")
             btnMinimize = bubbleView.findViewById(R.id.btn_minimize) ?: throw IllegalStateException("btn_minimize not found")
+            btnSaveArticle = bubbleView.findViewById(R.id.btn_save_article) ?: throw IllegalStateException("btn_save_article not found")
             btnToolbarSettings = bubbleView.findViewById(R.id.btn_toolbar_settings) ?: throw IllegalStateException("btn_toolbar_settings not found")
             
             Logger.d(TAG, "UI components initialized successfully for bubble: $bubbleId")
@@ -166,6 +168,11 @@ class BubbleUIManager(
         
         btnSummarize.setOnClickListener { 
             uiListener?.onToggleSummaryMode()
+        }
+        
+        // Toolbar save article button listener
+        btnSaveArticle.setOnClickListener { 
+            uiListener?.onSaveArticle()
         }
         
         // Toolbar minimize button listener
@@ -485,6 +492,7 @@ class BubbleUIManager(
     fun getResizeBar(): View = resizeBar
     
     fun getBtnMinimize(): MaterialButton = btnMinimize
+    fun getBtnSaveArticle(): MaterialButton = btnSaveArticle
     fun getBtnToolbarSettings(): MaterialButton = btnToolbarSettings
     
     /**

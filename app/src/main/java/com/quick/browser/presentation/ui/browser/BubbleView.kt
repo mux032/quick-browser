@@ -18,7 +18,9 @@
 
 package com.quick.browser.presentation.ui.browser
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -26,15 +28,29 @@ import android.graphics.PorterDuff
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
-import android.widget.*
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.PopupMenu
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import android.view.ContextThemeWrapper
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.*
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.button.MaterialButton
@@ -44,7 +60,16 @@ import com.quick.browser.utils.Constants
 import com.quick.browser.utils.Logger
 import com.quick.browser.utils.UrlUtils
 import com.quick.browser.utils.security.SecurityPolicyManager
+import com.quick.browser.presentation.ui.browser.BubbleTagSelectionPanel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import kotlin.math.exp
+
+fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 /**
  * Enhanced floating bubble view that displays web content in a draggable, expandable bubble.
@@ -67,6 +92,7 @@ class BubbleView @JvmOverloads constructor(
     private val adBlockingService: AdBlockingService,
     private val summarizationService: SummarizationService,
     private val offlineArticleSaver: OfflineArticleSaver,
+    private val tagRepository: com.quick.browser.domain.repository.TagRepository,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr), BubbleTouchHandler.BubbleTouchDelegate,
@@ -118,6 +144,10 @@ class BubbleView @JvmOverloads constructor(
     // Settings panel
     private lateinit var settingsPanel: View
     private lateinit var settingsPanelManager: BubbleSettingsPanel
+
+    // Tag selection panel
+    private lateinit var tagSelectionPanel: View
+    private lateinit var tagSelectionPanelManager: BubbleTagSelectionPanel
 
     // Add SwipeRefreshLayout property
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -194,6 +224,20 @@ class BubbleView @JvmOverloads constructor(
 
             // Initialize settings panel manager
             settingsPanelManager = BubbleSettingsPanel(context, settingsService, bubbleAnimator)
+
+            // Initialize tag selection panel
+            tagSelectionPanel = findViewById(R.id.tag_selection_panel) ?: throw IllegalStateException("Tag selection panel not found in layout")
+            tagSelectionPanelManager = BubbleTagSelectionPanel(context, bubbleAnimator)
+            tagSelectionPanelManager.initialize(tagSelectionPanel)
+            tagSelectionPanelManager.setListener(object : BubbleTagSelectionPanel.TagSelectionListener {
+                override fun onTagSelected(tagId: Long) {
+                    saveArticleForOfflineReading(url, tagId)
+                }
+
+                override fun onCreateTag(tagName: String) {
+                    createTagAndSaveArticle(tagName, url)
+                }
+            })
 
             // Initialize summary manager
             summaryManager = BubbleSummaryManager(context, summarizationService, bubbleAnimator)
@@ -436,6 +480,7 @@ class BubbleView @JvmOverloads constructor(
             // Set up touch listener for WebView to handle settings dismissal
             webViewContainer.setOnTouchListener { _, event ->
                 settingsPanelManager.handleTouchEvent(event, settingsPanel)
+                tagSelectionPanelManager.handleTouchEvent(event)
                 false // Don't consume the event, let WebView handle it normally
             }
 
@@ -537,7 +582,7 @@ class BubbleView @JvmOverloads constructor(
             override fun onSaveOfflineRequested() {
                 // Handle save for offline reading
                 Logger.d(TAG, "Save for offline reading requested for bubble $bubbleId")
-                saveArticleForOfflineReading()
+                saveArticleForOfflineReading(url)
             }
             
             override fun onShareRequested() {
@@ -666,22 +711,53 @@ class BubbleView @JvmOverloads constructor(
     // - loadInitialUrl() - moved to BubbleWebViewManager
     // - reloadWebPageIfNeeded() - moved to BubbleWebViewManager
 
+    
+    
     /**
-     * Save the current article for offline reading
+     * Create a new tag and save the article with that tag
+     *
+     * @param tagName Name of the new tag
+     * @param url URL of article to save
      */
-    private fun saveArticleForOfflineReading() {
-        Logger.d(TAG, "Save article for offline reading requested")
+    private fun createTagAndSaveArticle(tagName: String, url: String) {
+        (context as LifecycleOwner).lifecycleScope.launch {
+            try {
+                val tag = tagRepository.createTag(tagName)
+                if (tag != null) {
+                    saveArticleForOfflineReading(url, tag.id)
+                    Toast.makeText(context, "Tag '$tagName' created and article saved", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Failed to create tag", Toast.LENGTH_SHORT).show()
+                    // Fall back to saving without tag
+                    saveArticleForOfflineReading(url, 0)
+                }
+            } catch (e: Exception) {
+                Logger.e(TAG, "Error creating tag: $e")
+                Toast.makeText(context, "Error creating tag: ${e.message}", Toast.LENGTH_SHORT).show()
+                // Fall back to saving without tag
+                saveArticleForOfflineReading(url, 0)
+            }
+        }
+    }
+    
+    /**
+     * Save article for offline reading with optional tag
+     *
+     * @param url URL of article to save
+     * @param tagId ID of tag to assign to article (0 for no tag)
+     */
+    private fun saveArticleForOfflineReading(url: String, tagId: Long = 0) {
+        Logger.d(TAG, "Save article for offline reading requested with tag ID: $tagId")
         
-        // Get the current URL
-        val currentUrl = url
-        if (currentUrl.isBlank()) {
+        if (url.isBlank()) {
             Toast.makeText(context, "No URL to save", Toast.LENGTH_SHORT).show()
             return
         }
         
         // Save the article using OfflineArticleSaver
         offlineArticleSaver.saveArticleForOfflineReading(
-            url = currentUrl,
+            url = url,
+            tagId = tagId,
             scope = (context as LifecycleOwner).lifecycleScope,
             onSuccess = {
                 Logger.d(TAG, "Article saved successfully for bubble $bubbleId")
@@ -960,6 +1036,7 @@ class BubbleView @JvmOverloads constructor(
 
         // Hide settings panel if visible
         settingsPanelManager.dismissIfVisible(settingsPanel)
+        tagSelectionPanelManager.hide()
 
         // Exit summary mode if active
         summaryManager.forceExitSummaryMode()
@@ -1002,6 +1079,7 @@ class BubbleView @JvmOverloads constructor(
 
         // Hide settings panel if visible
         settingsPanelManager.dismissIfVisible(settingsPanel)
+        tagSelectionPanelManager.hide()
 
         // Exit summary mode if active
         summaryManager.forceExitSummaryMode()
@@ -1729,6 +1807,19 @@ class BubbleView @JvmOverloads constructor(
     }
     
     override fun onSaveArticle() {
-        saveArticleForOfflineReading()
+        if (tagSelectionPanelManager.isVisible()) {
+            tagSelectionPanelManager.hide()
+        } else {
+            (context as LifecycleOwner).lifecycleScope.launch {
+                try {
+                    tagRepository.getAllTags().collectLatest { tags ->
+                        tagSelectionPanelManager.show(tags, uiManager.getBtnSaveArticle())
+                    }
+                } catch (e: Exception) {
+                    Logger.e(TAG, "Error loading tags for selection: $e")
+                    Toast.makeText(context, "Error loading tags", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

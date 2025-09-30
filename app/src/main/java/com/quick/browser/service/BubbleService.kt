@@ -41,6 +41,9 @@ class BubbleService : LifecycleService() {
     lateinit var historyRepository: com.quick.browser.domain.repository.HistoryRepository
 
     @Inject
+    lateinit var tagRepository: com.quick.browser.domain.repository.TagRepository
+
+    @Inject
     lateinit var settingsService: SettingsService
 
     @Inject
@@ -143,7 +146,8 @@ class BubbleService : LifecycleService() {
                 settingsService = settingsService,
                 adBlockingService = adBlockingService,
                 summarizationService = summarizationService,
-                offlineArticleSaver = offlineArticleSaver
+                offlineArticleSaver = offlineArticleSaver,
+                tagRepository = tagRepository
             )
 
             intentProcessor =

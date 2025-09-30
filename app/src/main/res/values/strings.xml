@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Quick Browser</string>
+    <string name="app_name_main">uick Browser</string>
 
     <!-- Bubble UI -->
     <string name="bubble_description">Web page bubble</string>
@@ -9,8 +10,13 @@
     <string name="open_in_full_view">Open in full view</string>
     <string name="read_mode">Reader mode</string>
     <string name="save_article">Save article</string>
+    <string name="saved_articles">Saved articles</string>
     <string name="save_for_offline">Save for offline</string>
     <string name="page_saved_offline">Page saved for offline reading</string>
+    <string name="save_to_folder">Save to Folder</string>
+    <string name="save_to_tag">Save to...</string>
+    <string name="default_tag">Default</string>
+    <string name="create_new_folder">Create new folder</string>
     <string name="add_new_bubble">Add new bubble</string>
     <string name="no_bubbles">No open tabs</string>
     <string name="favicon">Website icon</string>
@@ -44,9 +50,6 @@
     <string name="speed_medium">Medium</string>
     <string name="speed_fast">Fast</string>
     <string name="speed_very_fast">Very Fast</string>
-    <string name="bubble_size">Bubble Size</string>
-    <string name="size_normal">Normal</string>
-    <string name="animation_speed">Animation Speed</string>
     <string name="speed_normal">Normal</string>
     <string name="bubble_position_right">Position on right side</string>
 
@@ -91,6 +94,11 @@
     <string name="no_history_found">No browsing history found</string>
     <string name="clear_history">Clear history</string>
     <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="rename_tag">Rename Tag</string>
+    <string name="delete_tag">Delete Tag</string>
+    <string name="delete_tag_confirmation">Are you sure you want to delete the tag \"%1$s\"? All articles associated with this tag will remain but will not be associated with any tag.</string>
+    <string name="tag_name_cannot_be_empty">Tag name cannot be empty</string>
     <string name="clear_history_confirmation">Clear History?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
@@ -186,10 +194,15 @@
     <string name="settings">Settings</string>
     <string name="history">History</string>
     <string name="history_title">History</string>
-    <string name="saved_articles">Saved Articles</string>
-
-    <string name="back">Back</string>
-    <string name="forward">Forward</string>
+    <string name="close">Close</string>
+    <string name="all_articles">All Articles</string>
+    <string name="tags">Tags</string>
+    <string name="add_tag">Add Tag</string>
+    <string name="tag_name">Tag Name</string>
+    <string name="tag_options">Tag options</string>
+    <string name="create_new_tag">Create New Tag</string>
+    <string name="create">Create</string>
+    <string name="no_folder">No Folder</string>
 
     <!-- Service -->
     <string name="bubble_service_channel_name">Browser Service</string>
@@ -201,4 +214,13 @@
     <string name="menu_delete_today">Delete Today</string>
     <string name="menu_delete_last_month">Delete Last Month</string>
     <string name="menu_delete_all">Delete All</string>
+    
+    <!-- Saved Articles View Style -->
+    <string name="saved_articles_view_style">Saved Articles View Style</string>
+    <string name="saved_articles_view_style_summary">Choose how saved articles are displayed</string>
+    <string name="card_view">Card View</string>
+    <string name="compact_card">Compact Card</string>
+    <string name="compact_view">Compact View</string>
+    <string name="super_compact">Super Compact</string>
+    <string name="search">Search</string>
 </resources>

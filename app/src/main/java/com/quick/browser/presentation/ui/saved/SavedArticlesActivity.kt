@@ -8,22 +8,31 @@ import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.card.MaterialCardView
 import com.quick.browser.R
+import com.quick.browser.databinding.ActivitySavedArticlesBinding
 import com.quick.browser.domain.model.SavedArticle
+import com.quick.browser.domain.model.SavedArticlesViewStyle
+import com.quick.browser.domain.service.ISettingsService
 import com.quick.browser.presentation.ui.reader.OfflineReaderActivity
+import com.quick.browser.presentation.ui.saved.viewmodel.TagViewModel
+import com.quick.browser.utils.Logger
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import javax.inject.Inject
+import androidx.core.view.isVisible
 
 /**
  * Activity to display saved articles for offline reading
@@ -31,60 +40,75 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class SavedArticlesActivity : AppCompatActivity() {
 
-    private lateinit var recyclerView: RecyclerView
+    @Inject
+    lateinit var settingsService: ISettingsService
+
+    private lateinit var binding: ActivitySavedArticlesBinding
     private lateinit var adapter: SavedArticlesAdapter
-    private lateinit var searchView: SearchView
-    private lateinit var searchCard: MaterialCardView
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var tagsAdapter: TagsAdapter
     private var isSearchBarExplicitlyOpened = false
 
     private val viewModel: SavedArticlesViewModel by viewModels()
+    private val tagViewModel: TagViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_QBrowser)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_saved_articles)
+        binding = ActivitySavedArticlesBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.colorPrimary)
 
+        // Set up toolbar
         setupToolbar()
+
         setupRecyclerView()
+        setupTagsRecyclerView()
         observeViewModel()
-        
-        // Initialize views
-        searchView = findViewById(R.id.search_view)
-        searchCard = findViewById(R.id.search_card)
-        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
-        
+        observeTagViewModel()
+
         // Set up search functionality
         setupSearchView()
-        
+
         // Set up swipe refresh
         setupSwipeRefresh()
-        
+
         // Listen for keyboard visibility changes
         setupKeyboardVisibilityListener()
+
+        // Set up side panel interactions
+        setupSidePanel()
+
+        // Load saved view style preference
+        loadSavedViewStyle()
+
+        // Handle back press
+        setupOnBackPressed()
     }
 
     private fun setupToolbar() {
-        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false) // Hide back button
         supportActionBar?.setTitle(R.string.saved_articles)
-        
+
         // Ensure toolbar sits below the status bar on all devices
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { v, insets ->
             val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             v.updatePadding(top = statusBarHeight)
             insets
         }
-        
+
         // Set up custom toolbar buttons
-        val searchButton = toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_search)
-        searchButton?.setOnClickListener {
+        binding.toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_search)?.setOnClickListener {
             showSearchBar()
+        }
+
+        // Set up burger menu button to open side panel
+        binding.toolbar.findViewById<android.widget.ImageButton>(R.id.toolbar_menu)?.setOnClickListener {
+            binding.drawerLayout.openDrawer(binding.navView)
         }
     }
 
     private fun setupRecyclerView() {
-        recyclerView = findViewById(R.id.recycler_view_saved_articles)
         adapter = SavedArticlesAdapter(
             onItemClick = { article ->
                 // Handle article click - open in reader mode
@@ -93,171 +117,196 @@ class SavedArticlesActivity : AppCompatActivity() {
             onDeleteClick = { article ->
                 // Handle delete click
                 viewModel.deleteArticle(article)
+            },
+            viewModel = viewModel,
+            lifecycleOwner = this
+        )
+
+        binding.recyclerViewSavedArticles.layoutManager = LinearLayoutManager(this)
+        binding.recyclerViewSavedArticles.adapter = adapter
+    }
+
+    private fun setupTagsRecyclerView() {
+        tagsAdapter = TagsAdapter(
+            onItemClick = { tag ->
+                // Set current tag and load articles for this tag
+                viewModel.setCurrentTag(tag)
+                binding.drawerLayout.closeDrawer(binding.navView)
+            },
+            onDeleteTag = { tag ->
+                // Delete the tag
+                tagViewModel.deleteTag(tag)
+            },
+            onRenameTag = { tag, newName ->
+                // Rename the tag
+                tagViewModel.renameTag(tag, newName)
             }
         )
 
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
+        binding.sidePanel.tagsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@SavedArticlesActivity)
+            adapter = tagsAdapter
+        }
     }
 
     private fun observeViewModel() {
         // Observe the UI state from the ViewModel
-        lifecycleScope.launch {
-            viewModel.uiState.collect { uiState ->
-                // Check if the UI state is Loading, Success, or Error
-                if (uiState.isLoading) {
-                    // Show loading indicator if needed
-                } else if (uiState.error != null) {
-                    // Show error message
-                } else {
-                    // Submit the articles to the adapter
-                    adapter.submitList(uiState.articles)
-                }
+        viewModel.uiState.onEach { uiState ->
+            // Check if the UI state is Loading, Success, or Error
+            if (uiState.isLoading) {
+                // Show loading indicator if needed
+            } else if (uiState.error != null) {
+                // Show error message
+                Logger.e(TAG, "Error loading saved articles: ${uiState.error}")
+            } else {
+                // Update adapter with saved articles
+                adapter.submitList(uiState.articles)
+                supportActionBar?.title = uiState.currentTag?.name ?: getString(R.string.saved_articles)
             }
-        }
+        }.launchIn(lifecycleScope)
     }
 
-    private fun openArticleInReaderMode(article: SavedArticle) {
-        val intent = Intent(this, OfflineReaderActivity::class.java).apply {
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_TITLE, article.title)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_CONTENT, article.content)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_BYLINE, article.author)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_SITE_NAME, article.siteName)
-            putExtra(OfflineReaderActivity.Companion.EXTRA_ARTICLE_PUBLISH_DATE, article.publishDate)
-        }
-        startActivity(intent)
-    }
+    private fun observeTagViewModel() {
+        // Observe tags
+        tagViewModel.uiState.onEach { uiState ->
+            // Update tags list
+            tagsAdapter.submitList(uiState.tags)
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressed()
-                true
+            // Check if there's an error to display
+            if (uiState.error != null) {
+                Toast.makeText(this@SavedArticlesActivity, uiState.error, Toast.LENGTH_SHORT).show()
+                tagViewModel.clearMessages()
             }
-            else -> super.onOptionsItemSelected(item)
-        }
+
+            // Check if there's a success message to display
+            if (uiState.successMessage != null) {
+                Toast.makeText(this@SavedArticlesActivity, uiState.successMessage, Toast.LENGTH_SHORT).show()
+                tagViewModel.clearMessages()
+            }
+        }.launchIn(lifecycleScope)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        return true
-    }
-    
     private fun setupSearchView() {
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 // Hide keyboard when Enter is pressed but keep search bar visible
                 val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(searchView.windowToken, 0)
+                imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText.isNullOrEmpty()) {
-                    // Show all saved articles
-                    observeViewModel()
+                    viewModel.loadArticles()
                 } else {
-                    // Search saved articles
+                    // Perform search with the query
                     viewModel.searchSavedArticles(newText)
                 }
                 return true
             }
         })
-        
-        // Handle close button click
-        searchView.setOnCloseListener {
-            closeSearchBar()
-            true
-        }
-        
-        // Also handle Enter key from the search view's text field
-        searchView.findViewById<androidx.appcompat.widget.SearchView.SearchAutoComplete>(
-            androidx.appcompat.R.id.search_src_text
-        ).setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                // Hide keyboard when Enter is pressed but keep search bar visible
-                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(searchView.windowToken, 0)
-                true
-            } else {
-                false
-            }
-        }
-    }
-    
-    private fun setupSwipeRefresh() {
-        swipeRefreshLayout.setOnRefreshListener {
-            // Refresh the saved articles data
-            observeViewModel()
 
+        // Handle search view close event
+        binding.searchView.setOnCloseListener {
+            viewModel.loadArticles()
+            false
+        }
+
+        // Handle IME options (Enter key)
+        val searchEditText = binding.searchView.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
+        searchEditText?.imeOptions = EditorInfo.IME_ACTION_SEARCH
+    }
+
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadArticles()
             // Stop the refresh animation after a short delay
-            swipeRefreshLayout.postDelayed({
-                swipeRefreshLayout.isRefreshing = false
+            binding.swipeRefreshLayout.postDelayed({
+                binding.swipeRefreshLayout.isRefreshing = false
             }, 1000)
         }
 
         // Set refresh colors
-        swipeRefreshLayout.setColorSchemeResources(
+        binding.swipeRefreshLayout.setColorSchemeResources(
             R.color.colorPrimary,
             R.color.colorAccent,
             R.color.secondaryColor
         )
     }
-    
+
     private fun showSearchBar() {
         // Mark that the search bar was explicitly opened
         isSearchBarExplicitlyOpened = true
-        
+
         // Show the search card
-        searchCard.visibility = View.VISIBLE
-        
+        binding.searchCard.visibility = View.VISIBLE
+
         // Post the focus and keyboard show to ensure the view is properly laid out
-        searchCard.post {
+        binding.searchCard.post {
             // Focus on the search view and show keyboard
-            searchView.requestFocus()
-            searchView.isIconified = false
-            
+            binding.searchView.requestFocus()
+            binding.searchView.isIconified = false
+
             // Show keyboard with a delay to ensure proper layout
-            searchView.post {
+            binding.searchView.post {
                 val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
+                imm.showSoftInput(binding.searchView, InputMethodManager.SHOW_IMPLICIT)
             }
         }
     }
-    
+
     private fun closeSearchBar() {
         // Reset the explicit open flag
         isSearchBarExplicitlyOpened = false
-        
+
         // Hide the search card
-        searchCard.visibility = View.GONE
-        
+        binding.searchCard.visibility = View.GONE
+
         // Clear search query
-        searchView.setQuery("", false)
-        
+        binding.searchView.setQuery("", false)
+
         // Hide keyboard
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(searchView.windowToken, 0)
-        
-        // Show all saved articles
-        observeViewModel()
+        imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
+
+        viewModel.loadArticles()
     }
-    
+
     private fun hideSearchBar() {
         // Hide keyboard
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(searchView.windowToken, 0)
-        
+        imm.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
+
         // Only hide the search bar if it's not focused (user explicitly closed it) or if it wasn't explicitly opened
-        if ((!searchView.hasFocus() && !isSearchBarExplicitlyOpened) || searchView.query.isNullOrEmpty()) {
-            searchCard.visibility = View.GONE
+        if ((!binding.searchView.hasFocus() && !isSearchBarExplicitlyOpened) || binding.searchView.query.isNullOrEmpty()) {
+            binding.searchCard.visibility = View.GONE
             isSearchBarExplicitlyOpened = false
             // Clear search query
-            searchView.setQuery("", false)
-            // Show all saved articles
-            observeViewModel()
+            binding.searchView.setQuery("", false)
+            viewModel.loadArticles()
         }
     }
-    
+
+    private fun showAddTagDialog() {
+        AddTagDialogFragment().show(supportFragmentManager, "AddTagDialogFragment")
+    }
+
+    private fun updateViewStyle(viewStyle: SavedArticlesViewStyle) {
+        adapter.updateViewStyle(viewStyle)
+        // Save the preference
+        settingsService.setSavedArticlesViewStyle(viewStyle.name)
+    }
+
+    private fun loadSavedViewStyle() {
+        val savedStyleName = settingsService.getSavedArticlesViewStyle()
+        val currentViewStyle = try {
+            SavedArticlesViewStyle.valueOf(savedStyleName)
+        } catch (_: IllegalArgumentException) {
+            SavedArticlesViewStyle.CARD // Default to card view
+        }
+        adapter.updateViewStyle(currentViewStyle)
+    }
+
     private fun setupKeyboardVisibilityListener() {
         // Listen for keyboard visibility changes
         window.decorView.viewTreeObserver.addOnGlobalLayoutListener {
@@ -265,9 +314,9 @@ class SavedArticlesActivity : AppCompatActivity() {
             window.decorView.getWindowVisibleDisplayFrame(rect)
             val screenHeight = window.decorView.height
             val keypadHeight = screenHeight - rect.bottom
-            
+
             // Update search card bottom margin to position it above keyboard
-            val layoutParams = searchCard.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            val layoutParams = binding.searchCard.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
             layoutParams.bottomMargin = if (keypadHeight > screenHeight * 0.15) {
                 // Keyboard is visible, position above it
                 keypadHeight + 32 // Add some padding
@@ -275,23 +324,95 @@ class SavedArticlesActivity : AppCompatActivity() {
                 // Keyboard is hidden, use default margin
                 32
             }
-            searchCard.layoutParams = layoutParams
-            
+            binding.searchCard.layoutParams = layoutParams
+
             // If keyboard is hidden AND search view is not focused AND search bar wasn't explicitly opened, hide it
-            if (keypadHeight < screenHeight * 0.15 && !searchView.hasFocus() && !isSearchBarExplicitlyOpened) {
-                if (searchCard.visibility == View.VISIBLE && searchView.query.isNullOrEmpty()) {
-                    searchCard.visibility = View.GONE
+            if (keypadHeight < screenHeight * 0.15 && !binding.searchView.hasFocus() && !isSearchBarExplicitlyOpened) {
+                if (binding.searchCard.isVisible && binding.searchView.query.isNullOrEmpty()) {
+                    binding.searchCard.visibility = View.GONE
                 }
             }
         }
     }
-    
-    override fun onBackPressed() {
-        // If search bar is visible, close it instead of closing the activity
-        if (searchCard.visibility == View.VISIBLE) {
-            closeSearchBar()
-        } else {
-            super.onBackPressed()
+
+    private fun openArticleInReaderMode(article: SavedArticle) {
+        val intent = Intent(this, OfflineReaderActivity::class.java).apply {
+            putExtra(OfflineReaderActivity.EXTRA_ARTICLE_URL, article.url)
         }
+        startActivity(intent)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_saved_articles, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun setupOnBackPressed() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // If search bar is visible, close it instead of closing the activity
+                if (binding.searchCard.isVisible) {
+                    closeSearchBar()
+                } else if (binding.drawerLayout.isDrawerOpen(binding.navView)) {
+                    // If drawer is open, close it
+                    binding.drawerLayout.closeDrawer(binding.navView)
+                } else if (viewModel.uiState.value.currentTag != null) {
+                    // If we're viewing a folder, go back to all articles
+                    viewModel.setCurrentTag(null)
+                } else {
+                    // If none of the above, perform the default back press action
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
+    }
+
+    private fun setupSidePanel() {
+        // Set up close button in side panel
+        binding.sidePanel.closeButton.setOnClickListener {
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        // Set up add tag button
+        binding.sidePanel.addTagButton.setOnClickListener {
+            showAddTagDialog()
+        }
+
+        // Set up all articles item
+        binding.sidePanel.allArticlesItem.setOnClickListener {
+            // Show all articles
+            viewModel.setCurrentTag(null)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        // Set up view style selection
+        binding.sidePanel.cardViewItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.CARD)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        binding.sidePanel.compactCardItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.COMPACT_CARD)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        binding.sidePanel.compactItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.COMPACT)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+
+        binding.sidePanel.superCompactItem.setOnClickListener {
+            updateViewStyle(SavedArticlesViewStyle.SUPER_COMPACT)
+            binding.drawerLayout.closeDrawer(binding.navView)
+        }
+    }
+
+    companion object {
+        private const val TAG = "SavedArticlesActivity"
     }
 }

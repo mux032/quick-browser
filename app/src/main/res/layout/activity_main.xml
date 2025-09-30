@@ -9,9 +9,9 @@
     <!-- App Logo and Title -->
     <ImageView
         android:id="@+id/app_logo"
-        android:layout_width="96dp"
-        android:layout_height="96dp"
-        android:layout_marginStart="16dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="0dp"
         android:layout_marginTop="64dp"
         android:contentDescription="@string/app_logo"
         android:src="@drawable/ic_launcher_foreground"
@@ -22,11 +22,11 @@
         android:id="@+id/app_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="0dp"
-        android:text="@string/app_name"
+        android:layout_marginStart="-12dp"
+        android:text="@string/app_name_main"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textColor="?android:attr/colorPrimary"
-        android:textStyle="bold"
+        android:textStyle="normal"
         app:layout_constraintBottom_toBottomOf="@id/app_logo"
         app:layout_constraintStart_toEndOf="@id/app_logo"
         app:layout_constraintTop_toTopOf="@id/app_logo" />
@@ -74,7 +74,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:shapeAppearanceOverlay="@style/ExpandedContainerTopRoundedCorners">
         
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -85,8 +86,8 @@
                 android:id="@+id/address_bar"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginStart="18dp"
+                android:layout_marginEnd="4dp"
                 android:layout_marginTop="18dp"
                 android:layout_marginBottom="18dp"
                 android:background="@drawable/address_bar_background"
@@ -113,7 +114,7 @@
                 android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/menu"
-                android:padding="12dp"
+                android:padding="0dp"
                 android:src="@drawable/ic_more_vert"
                 app:tint="@android:color/white"
                 app:layout_constraintTop_toTopOf="parent"

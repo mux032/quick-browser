@@ -2,10 +2,13 @@ package com.quick.browser.di
 
 import android.content.Context
 import androidx.room.Room
-import com.quick.browser.data.SavedArticleDao
+import com.quick.browser.data.local.dao.ArticleTagDao
+import com.quick.browser.data.local.dao.SavedArticleDao
 import com.quick.browser.data.local.dao.SettingsDao
+import com.quick.browser.data.local.dao.TagDao
 import com.quick.browser.data.local.dao.WebPageDao
 import com.quick.browser.data.local.database.AppDatabase
+import com.quick.browser.data.local.database.Migration1To2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,7 +40,8 @@ object DatabaseModule {
             AppDatabase::class.java,
             "quick_browser.db"
         )
-            .fallbackToDestructiveMigration(false)
+            .addMigrations(Migration1To2)
+            .fallbackToDestructiveMigration()
             .build()
     }
 
@@ -72,5 +76,27 @@ object DatabaseModule {
     @Provides
     fun provideSavedArticleDao(database: AppDatabase): SavedArticleDao {
         return database.savedArticleDao()
+    }
+
+    /**
+     * Provide the TagDao instance
+     *
+     * @param database The AppDatabase instance
+     * @return The TagDao instance
+     */
+    @Provides
+    fun provideTagDao(database: AppDatabase): TagDao {
+        return database.tagDao()
+    }
+
+    /**
+     * Provide the ArticleTagDao instance
+     *
+     * @param database The AppDatabase instance
+     * @return The ArticleTagDao instance
+     */
+    @Provides
+    fun provideArticleTagDao(database: AppDatabase): ArticleTagDao {
+        return database.articleTagDao()
     }
 }
